@@ -5,6 +5,9 @@ import id.kodenusa.core.ai.PapanTulisProjek
 import id.kodenusa.core.project.ProjectFiles
 import java.io.File
 
+/** Batas ukuran berkas yang boleh dilampirkan ke AI; lebih dari ini RAM HP 2 GB kepayahan. */
+const val MAKS_BYTE_BERKAS_AI = 200_000L
+
 /**
  * Jembatan antara agen AI dan projek sungguhan.
  *

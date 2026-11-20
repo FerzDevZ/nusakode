@@ -64,6 +64,30 @@ class AiUiTest {
     }
 
     @Test
+    fun ai_bisa_memilih_berkas_dari_folder_projek() {
+        // Setelan AI disemai lebih dulu supaya layar langsung masuk mode obrolan (bukan formulir).
+        InstrumentationRegistry.getInstrumentation().targetContext
+            .getSharedPreferences("ai", android.content.Context.MODE_PRIVATE)
+            .edit()
+            .putString("endpoint", "https://api.crown.ai.id/v1")
+            .putString("kunci", "kunci-uji-panjang")
+            .putString("model", "model-uji")
+            .commit()
+
+        bukaEditor()
+        layar.onNodeWithTag("buka-ai").performClick()
+        layar.waitForIdle()
+
+        // Tombol konteks projek harus ada: AI bekerja di tingkat folder, bukan cuma satu berkas.
+        layar.onNodeWithTag("konteks-projek").assertExists()
+        layar.onNodeWithTag("pilih-berkas-ai").performClick()
+        layar.waitForIdle()
+        layar.onNodeWithText("Pilih berkas projek").assertExists()
+        layar.onNodeWithTag("tutup-pilih-berkas").performClick()
+        layar.waitForIdle()
+    }
+
+    @Test
     fun setelan_ai_tidak_hilang_setelah_layar_ditutup() {
         bukaEditor()
         layar.onNodeWithTag("buka-ai").performClick()

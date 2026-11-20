@@ -53,6 +53,7 @@ fun KodeNusaApp(container: AppContainer) {
             projectDir = current.projectDir,
             onBack = { screen = Screen.Workspace },
             onBuild = { screen = Screen.Build(current.projectDir) },
+            onSitus = { screen = Screen.Situs(current.projectDir) },
         )
 
         is Screen.Build -> BuildScreen(

@@ -23,6 +23,9 @@ class EditorState {
     var matches by mutableStateOf(0)
     var matchIndex by mutableStateOf(0)
     var findOpen by mutableStateOf(false)
+    /** false = cari di berkas aktif, true = cari di seluruh berkas projek. */
+    var findProjek by mutableStateOf(false)
+    var hasilProjek by mutableStateOf(emptyList<id.kodenusa.core.project.HasilCari>())
     var wrap by mutableStateOf(false)
     var toast by mutableStateOf<String?>(null)
 

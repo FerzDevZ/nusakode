@@ -46,8 +46,9 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Simpan manual + simpan otomatis | ✅ | `AutoSave`, `KeyBar` |
 | Cari dalam berkas + lompat antar hasil | ✅ | `FindBar` |
 | Undo / redo, geser kursor, sisip simbol | ✅ | `CodeEditorView`, `KeyBar` |
-| Word-wrap (lipat baris) | ✅ | `FindBar` toggle |
+| Word-wrap (lipat baris) | ✅ | `FindBar` toggle; **semua baris tetap terlihat** walau wrap mati (`EditorBarisDeviceTest`) |
 | Nomor baris, posisi kursor | ✅ | `KeyBar` |
+| **Cari di seluruh projek** (bukan cuma berkas aktif) | ✅ | `ProjectSearch` + `ProjectSearchTest` (5 uji); panel hasil `jalur:baris` bisa diketuk |
 | Multi-kursor, lipat kode (code folding) | ⛔ | rencana |
 | Format otomatis (prettier/google-java-format) | ⛔ | rencana |
 
@@ -90,6 +91,9 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Setelan endpoint/kunci bertahan setelah layar AI ditutup | ✅ | `AiUiTest.setelan_ai_tidak_hilang_setelah_layar_ditutup` (draf disimpan tiap ketikan) |
 | Riwayat percakapan disimpan per projek | ✅ | `AiSettingsStore.simpanPercakapan` / `muatPercakapan` |
 | Kode AI benar-benar masuk ke berkas (buffer + disk) | ✅ | `EditorScreen.ketikaSisip` → `session.update` + `session.save` + `editor.setContent` |
+| **AI bekerja di tingkat folder projek, bukan cuma berkas aktif** | ✅ | tombol `konteks-projek` + `pilih-berkas-ai` (`AiProjectBoard.konteks()`, 2.400 karakter, lewati `build/.git/node_modules`) |
+| **"Simpan berkas dari jawaban ini ke projek"** — blok `<<<BERKAS: jalur>>>` langsung ditulis ke disk | ✅ | `UbahanBerkas.ambil()` + `AiProjectBoard.tulis()`; `AiProjectBoardTest` (6 uji), `UbahanBerkasTest` (6 uji) |
+| Lampirkan gambar/screenshot galat (vision) | ✅ | `GambarUntukAi` (≤1024 px, ≤700 KB) + `GambarVisionTest`, `GambarAiDeviceTest` |
 
 **Bukti ke endpoint sungguhan** (dijalankan terhadap endpoint milik pengguna):
 model terbaca `zai-org/GLM-5.3-Flash`, `deepseek-ai/DeepSeek-V4-Flash-0731`, `MiniMaxAI/MiniMax-M2.7`;
@@ -134,6 +138,8 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 
 | Fitur | Status | Bukti / catatan |
 |---|---|---|
+| **Jenis projek "Website saja (tanpa APK)"** di wizard — hasilnya **nol berkas Android** | ✅ | `WizardUiTest.website_saja_tidak_membuat_folder_aplikasi_android` (menegaskan `src/` tidak ada, `web/index.html` ada) |
+| Editor membuka `web/index.html`, dan tombol utama jadi **"Susun situs"** (bukan Build APK) | ✅ | `EditorScreen` `webMurni` + `jenis` di `kodenusa.json` |
 | Template "Situs murni" di wizard (HTML/CSS/JS saja, tanpa AndroidManifest) | ✅ | `SitusDeviceTest.template_situs_murni_disusun_jadi_folder_siap_terbit` |
 | "Jadikan situs" → folder `build/situs` siap unggah | ✅ | `SitusStatisTest` (8 uji) + `SitusDeviceTest` (3 uji di HP) |
 | **Layar "Situs"** di app: tombol Susun, ringkasan berkas/ukuran, daftar berkas yang dilewati | ✅ | `SitusUiTest.menekan_susun_menampilkan_isi_situs` |
@@ -164,9 +170,8 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 
 | Fitur | Status | Bukti |
 |---|---|---|
-| Uji unit | ✅ | 167 uji (`./gradlew test`) |
-| Uji di perangkat | ✅ | 29 uji, hijau di Android 7 (API 24) **dan** Android 14 (API 34) |
-| Uji perangkat (UI + build + kebijakan exec) | ✅ | 26 uji, API 24 & API 34 |
+| Uji unit | ✅ | 215 uji (`./gradlew test`) |
+| Uji di perangkat | ✅ | 55 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
 | Analisis statis detekt, 0 temuan | ✅ | `./gradlew detekt` |
 | CI menjalankan gerbang yang sama | ✅ | `.github/workflows/ci.yml` |
 

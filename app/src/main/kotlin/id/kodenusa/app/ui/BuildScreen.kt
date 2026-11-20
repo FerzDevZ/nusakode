@@ -298,6 +298,7 @@ fun BuildScreen(
                 judul = "AI · galat build",
             ),
             kunciProjek = "build",
+            akarProjek = projectDir,
             onDismiss = { aiTerbuka = false },
             onSisip = { _, _ ->
                 "Buka berkas yang ingin diperbaiki dulu, lalu tekan AI dari layar editor supaya kodenya masuk ke berkas itu."

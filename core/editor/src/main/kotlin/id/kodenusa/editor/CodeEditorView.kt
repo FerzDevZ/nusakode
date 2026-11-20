@@ -173,7 +173,10 @@ class CodeEditorView @JvmOverloads constructor(
     fun setWordWrap(enabled: Boolean) {
         wrap = enabled
         editor.setHorizontallyScrolling(!enabled)
-        editor.maxLines = if (enabled) Int.MAX_VALUE else 1
+        // JANGAN menyetel maxLines = 1 di sini. Dulu baris di bawah ini ada, dan efeknya seluruh
+        // berkas hanya menampilkan SATU baris — sisa teks seolah tertutup kotak gelap. maxLines
+        // hanya membatasi jumlah baris yang dilukis, bukan cara mematikan wrap.
+        editor.maxLines = Int.MAX_VALUE
     }
 
     val wordWrap: Boolean get() = wrap

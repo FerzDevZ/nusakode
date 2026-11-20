@@ -20,6 +20,8 @@ data class KodenusaProject(
     val javaVersion: Int = DEFAULT_JAVA_VERSION,
     val entry: String? = null,
     val buildEngine: String = ENGINE_TIER0,
+    /** `aplikasi`, `web` (WebView jadi APK), atau `web-murni` (situs tanpa APK). */
+    val jenis: String = "aplikasi",
     @SerialName("templateId") val templateId: String? = null,
     val dependencies: ProjectDependencies = ProjectDependencies(),
 ) {
@@ -29,6 +31,7 @@ data class KodenusaProject(
         const val DEFAULT_TARGET_SDK = 34
         const val DEFAULT_JAVA_VERSION = 8
         const val ENGINE_TIER0 = "tier0"
+        const val JENIS_WEB_MURNI = "web-murni"
         const val FILE_NAME = "kodenusa.json"
     }
 }

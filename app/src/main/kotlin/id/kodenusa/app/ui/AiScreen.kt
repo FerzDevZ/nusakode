@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -41,6 +42,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import id.kodenusa.app.MAKS_BYTE_BERKAS_AI
+import id.kodenusa.app.AiProjectBoard
 import id.kodenusa.app.AiSettingsStore
 import id.kodenusa.core.ai.AiGagal
 import id.kodenusa.core.ai.AiModel
@@ -49,6 +52,8 @@ import id.kodenusa.core.ai.ChatMessage
 import id.kodenusa.core.ai.CodeBlocks
 import id.kodenusa.core.ai.OpenAiCompatClient
 import id.kodenusa.core.ai.PromptBuilder
+import id.kodenusa.core.ai.UbahanBerkas
+import id.kodenusa.core.project.ProjectTree
 import id.kodenusa.ui.GhostButton
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
@@ -58,6 +63,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 /** Konteks yang dibawa layar AI: berkas yang sedang dibuka, galat build, atau kosong. */
 data class AiKonteks(
@@ -81,6 +87,7 @@ fun AiScreen(
     store: AiSettingsStore,
     konteks: AiKonteks,
     kunciProjek: String,
+    akarProjek: File,
     onDismiss: () -> Unit,
     onSisip: (kode: String, bahasa: String) -> String?,
 ) {
@@ -105,6 +112,20 @@ fun AiScreen(
     var pekerjaan by remember { mutableStateOf<Job?>(null) }
     var gambar by remember { mutableStateOf<String?>(null) }
     var memuatGambar by remember { mutableStateOf(false) }
+
+    // Akses tingkat PROJEK, bukan hanya berkas yang sedang terbuka. Tanpa ini, AI tidak bisa
+    // membaca berkas lain (mis. nama kolom di DatabaseKasir.java) dan tidak bisa membuat berkas
+    // baru — dan itu yang membuat "AI-nya belum bisa buka folder source".
+    val papan = remember(akarProjek) { AiProjectBoard(akarProjek) }
+    val daftarBerkasProjek = remember(akarProjek) {
+        ProjectTree.list(akarProjek)
+            .filter { !it.directory && !it.relativePath.startsWith("build/") }
+            .map { it.relativePath }
+    }
+    var pakaiKonteksProjek by remember { mutableStateOf(false) }
+    var berkasKonteks by remember { mutableStateOf<String?>(null) }
+    var pilihBerkas by remember { mutableStateOf(false) }
+    var hasilTulis by remember { mutableStateOf<String?>(null) }
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val pemilihGambar = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -120,8 +141,19 @@ fun AiScreen(
 
     fun simpanDraf() = store.simpanDraf(endpoint, kunci)
 
+    /** Isi berkas projek, dipakai untuk melampirkan berkas mana pun sebagai konteks. */
+    fun isiBerkas(jalur: String): String? = runCatching {
+        val berkas = File(akarProjek, jalur)
+        if (berkas.isFile && berkas.length() <= MAKS_BYTE_BERKAS_AI) berkas.readText() else null
+    }.getOrNull()
+
     fun pesanUntuk(teks: String): List<ChatMessage> {
+        val dipilih = berkasKonteks
         val dasar = when {
+            // Konteks projek dipakai lebih dulu: model perlu tahu struktur folder sebelum
+            // menulis berkas baru, dan hanya prompt agen yang mengajarkan format <<<BERKAS: …>>>.
+            pakaiKonteksProjek -> PromptBuilder.untukAgen(teks, papan.konteks(), "")
+            dipilih != null -> PromptBuilder.untukBerkas(teks, dipilih, isiBerkas(dipilih).orEmpty())
             konteks.galat != null ->
                 PromptBuilder.untukGalat(konteks.galat.orEmpty(), konteks.jalur, konteks.isi)
             konteks.jalur != null && konteks.isi != null ->
@@ -186,6 +218,30 @@ fun AiScreen(
         config = config.denganModel(id)
         store.simpan(config)
         sedangAtur = false
+    }
+
+    /**
+     * Menulis semua blok `<<<BERKAS: jalur>>>` dari jawaban model langsung ke folder projek.
+     * Ini yang membuat AI bisa membuat berkas baru (mis. `web/index.html`) tanpa dibuka dulu.
+     */
+    fun tulisKeProjek(jawabanModel: String) {
+        val edits = UbahanBerkas.ambil(jawabanModel)
+        if (edits.isEmpty()) {
+            galat = "Jawaban ini tidak berisi penanda <<<BERKAS: jalur>>>. Pakai tombol Konteks projek " +
+                "supaya AI menulis berkas lengkap, atau tekan Sisip untuk berkas yang sedang terbuka."
+            return
+        }
+        var ditulis = 0
+        val ditolak = ArrayList<String>()
+        edits.forEach { edit ->
+            if (papan.tulis(edit) == null) ditulis++ else ditolak += edit.jalur
+        }
+        galat = null
+        hasilTulis = buildString {
+            append("$ditulis berkas disimpan di projek")
+            if (ditolak.isNotEmpty()) append(". Ditolak: ").append(ditolak.joinToString(", "))
+            append('.')
+        }
     }
 
     Dialog(
@@ -277,7 +333,70 @@ fun AiScreen(
                             )
                         },
                         onBuangGambar = { gambar = null },
+                        adaKonteksProjek = pakaiKonteksProjek,
+                        berkasKonteks = berkasKonteks,
+                        hasilTulis = hasilTulis,
+                        onKonteksProjek = {
+                            pakaiKonteksProjek = !pakaiKonteksProjek
+                            if (pakaiKonteksProjek) berkasKonteks = null
+                            hasilTulis = null
+                        },
+                        onPilihBerkas = { pilihBerkas = true },
+                        onBuangBerkas = { berkasKonteks = null },
+                        onTulisProjek = { tulisKeProjek(jawaban.ifEmpty { riwayat.lastOrNull()?.second.orEmpty() }) },
                     )
+                }
+            }
+        }
+
+        if (pilihBerkas) {
+            Dialog(onDismissRequest = { pilihBerkas = false }) {
+                Surface(
+                    color = Color(KodenusaPalette.SURFACE),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 520.dp),
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(
+                            "Pilih berkas projek",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color(KodenusaPalette.TEXT),
+                        )
+                        Text(
+                            "Isi berkas ini dikirim sebagai konteks, hanya ke endpoint AI milikmu.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(KodenusaPalette.TEXT_DIM),
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        if (daftarBerkasProjek.isEmpty()) {
+                            Text(
+                                "Belum ada berkas di projek ini.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(KodenusaPalette.TEXT_DIM),
+                            )
+                        }
+                        LazyColumn(Modifier.weight(1f, fill = false)) {
+                            items(daftarBerkasProjek) { jalur ->
+                                Text(
+                                    jalur,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(KodenusaPalette.TEXT),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            berkasKonteks = jalur
+                                            pakaiKonteksProjek = false
+                                            pilihBerkas = false
+                                            hasilTulis = null
+                                        }
+                                        .padding(vertical = 10.dp)
+                                        .testTag("berkas-ai-$jalur"),
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        GhostButton("Tutup", { pilihBerkas = false }, Modifier.testTag("tutup-pilih-berkas"))
+                    }
                 }
             }
         }
@@ -415,6 +534,13 @@ private fun ChatAiPanel(
     memuatGambar: Boolean = false,
     onLampirkan: () -> Unit = {},
     onBuangGambar: () -> Unit = {},
+    adaKonteksProjek: Boolean = false,
+    berkasKonteks: String? = null,
+    hasilTulis: String? = null,
+    onKonteksProjek: () -> Unit = {},
+    onPilihBerkas: () -> Unit = {},
+    onBuangBerkas: () -> Unit = {},
+    onTulisProjek: () -> Unit = {},
 ) {
     val daftar = rememberLazyListState()
     val terakhir = jawaban.ifBlank { riwayat.lastOrNull { it.first == "assistant" }?.second.orEmpty() }
@@ -487,6 +613,51 @@ private fun ChatAiPanel(
             )
             Spacer(Modifier.height(6.dp))
         }
+
+        if (terakhir.contains("<<<BERKAS:")) {
+            PrimaryButton(
+                "Simpan berkas dari jawaban ini ke projek",
+                onTulisProjek,
+                modifier = Modifier.fillMaxWidth().testTag("tulis-ke-projek"),
+            )
+            Spacer(Modifier.height(6.dp))
+        }
+
+        hasilTulis?.let { pesan ->
+            Text(
+                pesan,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(KodenusaPalette.OK),
+                modifier = Modifier.testTag("hasil-tulis"),
+            )
+            Spacer(Modifier.height(6.dp))
+        }
+
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            GhostButton(
+                if (adaKonteksProjek) "Konteks projek ✓" else "Konteks projek",
+                onKonteksProjek,
+                modifier = Modifier.testTag("konteks-projek"),
+            )
+            GhostButton(
+                "Pilih berkas…",
+                onPilihBerkas,
+                modifier = Modifier.testTag("pilih-berkas-ai"),
+            )
+            berkasKonteks?.let { jalur ->
+                Pill(
+                    jalur.substringAfterLast('/'),
+                    KodenusaPalette.INFO,
+                    modifier = Modifier.testTag("berkas-terpasang"),
+                )
+                GhostButton("Buang", onBuangBerkas)
+            }
+        }
+        Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             GhostButton(
                 if (memuatGambar) "Menyiapkan gambar…" else "Lampirkan gambar",

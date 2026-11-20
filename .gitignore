@@ -37,3 +37,6 @@ dist/
 # Semua bisa dibuat ulang: bash scripts/toolchain/build-android-toolchain.sh
 app/src/main/assets/toolchain/
 app/src/main/jniLibs/*/libaapt2.so
+
+# Tangkapan layar uji manual (tidak perlu di repo)
+screens/

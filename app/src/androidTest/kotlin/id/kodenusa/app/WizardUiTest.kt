@@ -10,8 +10,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -91,5 +93,46 @@ class WizardUiTest {
         layar.waitUntil(timeoutMillis = 20_000) {
             layar.onAllNodes(hasText("Projek Dari Nol", substring = true)).fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    @Test
+    fun website_saja_tidak_membuat_folder_aplikasi_android() {
+        bukaFormProjekBaru()
+        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasTestTag("jenis-web-murni"))
+        layar.onNodeWithTag("jenis-web-murni").performClick()
+        // Catatan khusus situs murni harus terlihat: ini yang membedakannya dari "Website jadi APK".
+        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasTestTag("catatan-web-murni"))
+        layar.onNodeWithTag("catatan-web-murni").assertExists()
+
+        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasSetTextAction())
+        layar.onAllNodes(hasSetTextAction())[0].performTextReplacement("Toko Bu Sri")
+        layar.waitForIdle()
+
+        layar.onNodeWithTag("tombol-buat").assertIsEnabled().performClick()
+        layar.waitUntil(timeoutMillis = 20_000) {
+            layar.onAllNodes(hasTestTag("daftar-berkas")).fetchSemanticsNodes().isNotEmpty() ||
+                layar.onAllNodes(hasText("Toko Bu Sri", substring = true)).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        val projek = projekTerbaru()
+        // Inti keluhan: projek web tidak boleh diberi kerangka aplikasi Android.
+        assertTrue(
+            "folder src tidak boleh ada di projek web murni",
+            !java.io.File(projek, "src").exists(),
+        )
+        assertTrue(
+            "web/index.html harus ada",
+            java.io.File(projek, "web/index.html").isFile,
+        )
+    }
+
+    /** Projek yang baru dibuat: folder dengan `kodenusa.json` paling baru diubah. */
+    private fun projekTerbaru(): java.io.File {
+        val akar = InstrumentationRegistry.getInstrumentation().targetContext.filesDir
+        val kandidat = akar.walkTopDown()
+            .filter { it.isDirectory && java.io.File(it, "kodenusa.json").isFile }
+            .maxByOrNull { java.io.File(it, "kodenusa.json").lastModified() }
+        requireNotNull(kandidat) { "tidak ada projek yang dibuat" }
+        return kandidat
     }
 }

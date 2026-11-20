@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -48,8 +49,11 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.viewinterop.AndroidView
 import id.kodenusa.app.AppContainer
 import id.kodenusa.app.EditorSession
+import id.kodenusa.core.project.HasilCari
+import id.kodenusa.core.project.KodenusaProject
 import id.kodenusa.core.project.ProjectFiles
 import id.kodenusa.core.project.ProjectNode
+import id.kodenusa.core.project.ProjectSearch
 import id.kodenusa.core.project.ProjectTree
 import id.kodenusa.editor.CodeEditorView
 import id.kodenusa.editor.Language
@@ -71,8 +75,12 @@ fun EditorScreen(
     projectDir: File,
     onBack: () -> Unit,
     onBuild: () -> Unit,
+    onSitus: (() -> Unit)? = null,
 ) {
     val loaded = remember(projectDir) { container.projectStore.load(projectDir) }
+    // Situs murni tidak punya APK. Menampilkan tombol "Build APK" di projek seperti itu hanya
+    // membuat pengguna menekan tombol yang pasti gagal — jadi tombolnya diganti "Susun situs".
+    val webMurni = loaded.project?.jenis == KodenusaProject.JENIS_WEB_MURNI
     // Daftar berkas adalah state, bukan nilai sekali baca: setelah menambah/menghapus berkas,
     // panel harus langsung berubah tanpa keluar-masuk projek.
     var nodes by remember(projectDir) { mutableStateOf(ProjectTree.list(projectDir)) }
@@ -129,6 +137,8 @@ fun EditorScreen(
                         }
                     },
                     buildable = canBuild,
+                    webMurni = webMurni,
+                    onSitus = { session.saveAll(); onSitus?.invoke() },
                 )
             }
         },
@@ -147,6 +157,8 @@ fun EditorScreen(
                     },
                     onAi = { aiTerbuka = true },
                     buildable = canBuild,
+                    webMurni = webMurni,
+                    onSitus = { session.saveAll(); onSitus?.invoke() },
                 )
 
                 TabStrip(session, onSelect = { file -> session.open(file); state.load(file) })
@@ -156,11 +168,24 @@ fun EditorScreen(
                         query = state.query,
                         onQuery = { value ->
                             state.query = value
-                            state.matches = state.editor?.countMatches(value) ?: 0
-                            state.matchIndex = 0
+                            if (state.findProjek) {
+                                state.hasilProjek = ProjectSearch.cari(projectDir, value)
+                            } else {
+                                state.matches = state.editor?.countMatches(value) ?: 0
+                                state.matchIndex = 0
+                            }
                         },
-                        matches = state.matches,
+                        matches = if (state.findProjek) state.hasilProjek.size else state.matches,
                         index = state.matchIndex,
+                        modeProjek = state.findProjek,
+                        onMode = {
+                            state.findProjek = !state.findProjek
+                            state.hasilProjek = if (state.findProjek) {
+                                ProjectSearch.cari(projectDir, state.query)
+                            } else {
+                                emptyList()
+                            }
+                        },
                         onNext = {
                             if (state.matches > 0) {
                                 state.matchIndex = (state.matchIndex + 1) % state.matches
@@ -177,6 +202,22 @@ fun EditorScreen(
                         onWrap = {
                             state.wrap = !state.wrap
                             state.editor?.setWordWrap(state.wrap)
+                        },
+                    )
+                }
+
+                if (state.findOpen && state.findProjek) {
+                    HasilCariPanel(
+                        hasil = state.hasilProjek,
+                        onBuka = { hit ->
+                            val berkas = File(projectDir, hit.jalur)
+                            if (berkas.isFile) {
+                                session.open(berkas)
+                                state.load(berkas)
+                                state.query = state.query
+                                state.findProjek = false
+                                state.findOpen = false
+                            }
                         },
                     )
                 }
@@ -234,6 +275,7 @@ fun EditorScreen(
                 judul = if (aktif == null) "Tanya AI" else "AI · ${aktif.name}",
             ),
             kunciProjek = projectDir.name,
+            akarProjek = projectDir,
             onDismiss = { aiTerbuka = false },
             onSisip = { kode, bahasa ->
                 val pesan = ketikaSisip(aktif, session, state.editor, kode, bahasa)
@@ -383,6 +425,8 @@ private fun EditorTopBar(
     onBuild: () -> Unit,
     onAi: () -> Unit,
     buildable: Boolean,
+    webMurni: Boolean = false,
+    onSitus: () -> Unit = {},
 ) {
     Column(Modifier.fillMaxWidth()) {
         Row(
@@ -406,7 +450,11 @@ private fun EditorTopBar(
                     )
                 }
             }
-            PrimaryButton("Build APK", onBuild, enabled = buildable)
+            if (webMurni) {
+                PrimaryButton("Susun situs", onSitus, modifier = Modifier.testTag("susun-dari-editor"))
+            } else {
+                PrimaryButton("Build APK", onBuild, enabled = buildable)
+            }
         }
         // Baris kedua: aksi yang sering dipakai tapi tidak boleh berebut tempat dengan tombol build
         // di layar 360dp (HP kelas bawah yang jadi sasaran aplikasi ini).
@@ -480,6 +528,8 @@ private fun FilePanel(
     onMove: (ProjectNode) -> Unit,
     onDuplicate: (ProjectNode) -> Unit,
     buildable: Boolean,
+    webMurni: Boolean = false,
+    onSitus: () -> Unit = {},
 ) {
     val visible = ProjectTree.visible(nodes, collapsed)
     Column(Modifier.fillMaxHeight()) {
@@ -523,7 +573,11 @@ private fun FilePanel(
             }
         }
         Box(Modifier.fillMaxWidth().padding(12.dp)) {
-            PrimaryButton("Build APK", onBuild, enabled = buildable)
+            if (webMurni) {
+                PrimaryButton("Susun situs", onSitus, modifier = Modifier.testTag("susun-dari-panel"))
+            } else {
+                PrimaryButton("Build APK", onBuild, enabled = buildable)
+            }
         }
     }
 }
@@ -595,6 +649,8 @@ private fun FindBar(
     onQuery: (String) -> Unit,
     matches: Int,
     index: Int,
+    modeProjek: Boolean,
+    onMode: () -> Unit,
     onNext: () -> Unit,
     onPrev: () -> Unit,
     wrap: Boolean,
@@ -609,7 +665,12 @@ private fun FindBar(
             value = query,
             onValueChange = onQuery,
             singleLine = true,
-            placeholder = { Text("cari di berkas", style = MaterialTheme.typography.bodySmall) },
+            placeholder = {
+                Text(
+                    if (modeProjek) "cari di seluruh projek" else "cari di berkas",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            },
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
                 unfocusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
@@ -619,13 +680,57 @@ private fun FindBar(
             modifier = Modifier.weight(1f),
         )
         Text(
-            if (matches == 0) "0" else "${index + 1}/$matches",
+            if (matches == 0) "0" else if (modeProjek) "$matches" else "${index + 1}/$matches",
             style = MaterialTheme.typography.labelSmall,
             color = Color(KodenusaPalette.TEXT_DIM),
+        )
+        GhostButton(
+            if (modeProjek) "projek ✓" else "projek",
+            onMode,
+            Modifier.testTag("cari-projek"),
         )
         GhostButton("↑", onPrev)
         GhostButton("↓", onNext)
         GhostButton(if (wrap) "wrap on" else "wrap off", onWrap)
+    }
+}
+
+/** Daftar kecocokan lintas berkas; satu ketukan membuka berkasnya. */
+@Composable
+private fun HasilCariPanel(hasil: List<HasilCari>, onBuka: (HasilCari) -> Unit) {
+    if (hasil.isEmpty()) {
+        Text(
+            "Tidak ada kecocokan di berkas projek.",
+            style = MaterialTheme.typography.labelSmall,
+            color = Color(KodenusaPalette.TEXT_DIM),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+        )
+        return
+    }
+    LazyColumn(
+        Modifier.fillMaxWidth().heightIn(max = 180.dp).testTag("hasil-cari-projek"),
+    ) {
+        items(hasil) { hit ->
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { onBuka(hit) }
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .testTag("cari-${hit.jalur}-${hit.baris}"),
+            ) {
+                Text(
+                    "${hit.jalur}:${hit.baris}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(KodenusaPalette.INFO),
+                )
+                Text(
+                    hit.teks,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(KodenusaPalette.TEXT_DIM),
+                    maxLines = 1,
+                )
+            }
+        }
     }
 }
 
@@ -720,7 +825,18 @@ private fun Autosave(session: EditorSession) {
 }
 
 private fun initialFile(projectDir: File, nodes: List<ProjectNode>): File? {
-    val main = File(projectDir, "src/main/java/app/MainActivity.java")
-    if (main.isFile) return main
-    return nodes.firstOrNull { !it.directory && it.file.extension == "java" }?.file
+    // Urutan ini membuat projek web langsung terbuka di halamannya, bukan di layar kosong.
+    val kandidat = listOf(
+        "src/main/java/app/MainActivity.java",
+        "web/index.html",
+        "src/main/assets/index.html",
+        "index.html",
+        "web/gaya.css",
+    )
+    kandidat.forEach { jalur ->
+        val berkas = File(projectDir, jalur)
+        if (berkas.isFile) return berkas
+    }
+    val ekstensiKode = setOf("java", "html", "htm", "css", "js", "json")
+    return nodes.firstOrNull { !it.directory && it.file.extension.lowercase() in ekstensiKode }?.file
 }

@@ -54,7 +54,8 @@ import java.io.File
  */
 private enum class Jenis(val label: String, val keyword: String, val contohNama: String) {
     APLIKASI("Aplikasi Android", "aplikasi", "Nama aplikasi"),
-    WEB("Website (HTML/CSS/JS)", "web", "Nama website"),
+    WEB("Website saja (tanpa APK)", "web-murni", "Nama website"),
+    WEBVIEW("Website jadi APK", "web", "Nama aplikasi"),
     KOSONG("Mulai kosong", "kosong", "Nama projek"),
 }
 
@@ -90,7 +91,10 @@ fun WizardScreen(
     // ID kosong berarti "buatkan dari nama", jadi yang divalidasi adalah ID yang benar-benar dipakai.
     val efektifId = appId.trim().ifBlank { defaultId(name) }
     val candidate = KodenusaProject(name = name.trim(), applicationId = efektifId)
-    val masalah = if (name.isBlank()) emptyList() else ProjectValidator.validate(candidate)
+    // Situs murni tidak punya applicationId yang berarti, jadi jangan pernah menahan tombol Buat
+    // hanya karena ID turunan dari nama website tidak lolos aturan paket Android.
+    val webSaja = jenis == Jenis.WEB
+    val masalah = if (name.isBlank() || webSaja) emptyList() else ProjectValidator.validate(candidate)
     val nameError = masalah.firstOrNull { it.field == "name" }
     val idError = masalah.firstOrNull { it.field == "applicationId" }
     val masalahLain = masalah.filter {
@@ -241,6 +245,7 @@ fun WizardScreen(
                     onValueChange = { name = it.take(50) },
                     helper = nameError?.fallbackMessage ?: when (jenis) {
                         Jenis.WEB -> "Judul halaman web-mu. Contoh: Katalog Toko Bu Sri"
+                        Jenis.WEBVIEW -> "Muncul di layar utama HP. Contoh: Katalog Toko"
                         Jenis.KOSONG -> "Nama folder projek. Contoh: Percobaan Pertama"
                         Jenis.APLIKASI -> "Muncul di layar utama HP. Contoh: Kasir Warung Bu Sri"
                     },
@@ -264,7 +269,15 @@ fun WizardScreen(
 
             // ID aplikasi hanya relevan untuk APK, dan hampir tidak pernah perlu diubah pemula.
             item {
-                if (jenis == Jenis.WEB || jenis == Jenis.KOSONG) {
+                if (jenis == Jenis.WEB) {
+                    Text(
+                        "Website saja: hanya HTML, CSS, dan JavaScript. Tidak ada folder aplikasi Android " +
+                            "dan tidak ada APK — hasilnya dibuka lewat tautan.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(KodenusaPalette.OK),
+                        modifier = Modifier.testTag("catatan-web-murni"),
+                    )
+                } else if (jenis == Jenis.WEBVIEW || jenis == Jenis.KOSONG) {
                     Text(
                         "Website tetap dibungkus jadi APK, tetapi kamu tidak perlu memikirkan ID aplikasi.",
                         style = MaterialTheme.typography.labelSmall,
