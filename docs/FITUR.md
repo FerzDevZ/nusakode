@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.9.7** (`versionCode 19`) · **252 uji unit · 77 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.9.8** (`versionCode 20`) · **236 uji unit · 84 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -149,8 +149,9 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | Unduh (klon) repo jadi projek | ✅ | `RepoGit.klon`; klon kosong dilaporkan sebagai galat, bukan folder hampa |
 | `build/`, `*.apk`, keystore otomatis diabaikan | ✅ | `.gitignore` bawaan + uji |
 | Jalan di Android 7 (API 24) | ✅ | JGit 3.7.1; ADR-024. JGit 5.x/4.11 **gagal** (`java.nio.file`) |
-| Layar GitHub di aplikasi (token, commit, push, riwayat) | ⛔ | pekerjaan berikutnya; mesin + ujinya sudah ada |
-| Buat repo otomatis & unggah APK ke Releases | ⛔ | butuh GitHub REST, ditambahkan terpisah |
+| Layar GitHub di aplikasi (token, commit, push, riwayat) | ✅ | `GitScreen` + `GitUiTest`, `GitDeviceTest` |
+| Buat repo baru langsung dari layar Git | ✅ | `GitHubRilis.buatRepo` (REST, teruji `GitHubRilisTest`) + `BuatRepoCard` (`BuatRepoUiTest`); tanpa token tombol mati dengan alasan |
+| Ambil (klon) repo dari UI layar projek | ✅ | `KlonProjekDialog` + `LaporanKlonUiTest.klon_dari_repo_lokal_menghasilkan_projek_yang_terbuka` (remote `file://`, tanpa jaringan) |
 
 ## 4e. Situs murni (tanpa APK, tanpa WebView)
 
@@ -200,10 +201,10 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | # | Pekerjaan | Kenapa sekarang | Ukuran |
 |---|---|---|---|
 | 1 | ~~Hapus janji "build di server"~~ ✅ | Teks itu menyebut server yang tidak ada | Selesai |
-| 2 | Penangkap crash + "Bagikan laporan" (offline) | Tanpa telemetri, kita buta terhadap kerusakan di HP orang | Sedang |
-| 3 | Klon projek dari GitHub (`RepoGit.klon` sudah ada) | Perjalanan masih searah: bisa kirim, tidak bisa ambil | Sedang |
-| 4 | Catatan "Kotlin belum didukung" saat membuka `.kt` | Sejajar dengan catatan Python yang sudah ada | Kecil |
-| 5 | Tombol "buat repo" di layar Git (`GitHubRilis.buatRepo` sudah ada) | Fungsi REST sudah teruji, hanya belum tersambung | Kecil |
+| 2 | ~~Penangkap crash + "Bagikan laporan" (offline)~~ ✅ | Selesai di 0.9.8: `LaporanGalat` + kartu di layar projek (ADR-032) | Selesai |
+| 3 | ~~Klon projek dari GitHub~~ ✅ | Selesai di 0.9.8: `KlonProjekDialog` tersambung ke `RepoGit.klon` | Selesai |
+| 4 | ~~Catatan "Kotlin belum didukung" saat membuka `.kt`~~ ✅ | Selesai di 0.9.8: `catatan-kotlin`, sejajar catatan Python | Selesai |
+| 5 | ~~Tombol "buat repo" di layar Git~~ ✅ | Selesai di 0.9.8: `BuatRepoCard` tersambung ke `GitHubRilis.buatRepo` | Selesai |
 | 6 | Ukur di HP 4 GB fisik + `AI_EVAL=1` | Satu-satunya angka yang belum bisa saya ukur sendiri | Butuh perangkat/kunci pengguna |
 
 Yang **tidak** akan dikerjakan tanpa bukti kebutuhan nyata: Kotlin di perangkat (ADR-003), Tier 1

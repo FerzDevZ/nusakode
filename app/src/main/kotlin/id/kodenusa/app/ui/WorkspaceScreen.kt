@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import id.kodenusa.app.AppContainer
+import id.kodenusa.app.GitSettingsStore
 import id.kodenusa.app.ProjectArchive
 import id.kodenusa.app.ProjectSummary
 import id.kodenusa.ui.EmptyState
@@ -52,13 +53,15 @@ fun WorkspaceScreen(
     onOpenProject: (java.io.File) -> Unit,
     onNewProject: () -> Unit,
 ) {
+    val konteks = androidx.compose.ui.platform.LocalContext.current
     var refresh by remember { mutableIntStateOf(0) }
     var deleting by remember { mutableStateOf<ProjectSummary?>(null) }
     var pesan by remember { mutableStateOf<String?>(null) }
     var ekspor by remember { mutableStateOf<ProjectSummary?>(null) }
+    var klon by remember { mutableStateOf(false) }
+    val setelanGit = remember(konteks) { GitSettingsStore(konteks) }
     val projects = remember(refresh) { container.projectStore.list() }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
-    val konteks = androidx.compose.ui.platform.LocalContext.current
 
     // Menyimpan zip ke lokasi yang dipilih pengguna (Unduhan, Drive, kartu SD).
     val pemilihEkspor = rememberLauncherForActivityResult(
@@ -140,6 +143,7 @@ fun WorkspaceScreen(
                     { mintaImpor = true },
                     Modifier.testTag("impor-zip"),
                 )
+                GhostButton("Dari GitHub", { klon = true }, Modifier.testTag("buka-klon"))
                 GhostButton("Ekspor? pilih projek", { pesan = "Tekan \"Ekspor .zip\" pada salah satu projek di bawah." })
             }
             Spacer(Modifier.height(4.dp))
@@ -155,6 +159,10 @@ fun WorkspaceScreen(
                 Text(teks, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.ACCENT))
             }
             Spacer(Modifier.height(16.dp))
+
+            // Laporan galat dari proses yang mati sebelumnya. Ditempatkan paling atas supaya
+            // terlihat sebelum pengguna mulai bekerja, dan hilang begitu dihapus.
+            LaporanGalatCard(onHapus = { refresh += 1 })
 
             if (projects.isEmpty()) {
                 Panel(Modifier.fillMaxWidth()) {
@@ -219,6 +227,21 @@ fun WorkspaceScreen(
                 TextButton(onClick = { deleting = null }) { Text("Batal") }
             },
             containerColor = Color(KodenusaPalette.SURFACE),
+        )
+    }
+
+    if (klon) {
+        KlonProjekDialog(
+            tujuanInduk = container.workspaceRoot,
+            alamatAwal = setelanGit.alamatRepo(),
+            tokenAwal = setelanGit.token(),
+            onTutup = { klon = false },
+            onSelesai = { folder ->
+                klon = false
+                refresh += 1
+                pesan = "Projek diunduh dari GitHub."
+                onOpenProject(folder)
+            },
         )
     }
 }

@@ -221,12 +221,22 @@ fun GitScreen(
                             Text("Alamat repo projek", style = MaterialTheme.typography.titleMedium, color = Color(KodenusaPalette.TEXT))
                             Spacer(Modifier.height(6.dp))
                             Text(
-                                remote.ifBlank { "Belum diatur. Isi alamat repo di layar Situs." },
+                                remote.ifBlank { "Belum diatur. Isi alamat repo di layar Situs, atau buat repo baru di bawah." },
                                 style = CodeTextStyle.copy(fontSize = MaterialTheme.typography.bodySmall.fontSize),
                                 color = Color(KodenusaPalette.TEXT_DIM),
                                 modifier = Modifier.testTag("remote-git"),
                             )
                         }
+                    }
+                }
+
+                if (remote.isBlank()) {
+                    item {
+                        BuatRepoCard(
+                            projectDir = projectDir,
+                            setelan = setelan,
+                            onSelesai = { scope.launch { segarkan() } },
+                        )
                     }
                 }
 

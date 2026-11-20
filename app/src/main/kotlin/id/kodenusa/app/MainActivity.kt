@@ -18,11 +18,29 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pasangPenangkapGalat()
         container = AppContainer(applicationContext)
         setContent {
             KodenusaTheme {
                 KodeNusaApp(container)
             }
+        }
+    }
+    /**
+     * Laporan galat ditulis ke penyimpanan internal, tidak dikirim ke mana pun (ADR-032).
+     * Penangan lama tetap dipanggil supaya proses mati seperti biasa dan Android tetap tahu.
+     */
+    private fun pasangPenangkapGalat() {
+        val lama = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { benang, galat ->
+            runCatching {
+                LaporanGalat.tulis(
+                    applicationContext,
+                    galat,
+                    LaporanGalat.info(applicationContext, BuildConfig.VERSION_NAME),
+                )
+            }
+            lama?.uncaughtException(benang, galat)
         }
     }
 }

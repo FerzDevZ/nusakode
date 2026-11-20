@@ -327,9 +327,9 @@ fun EditorScreen(
                     )
                 }
 
-                // Python: jujur di layar, bukan janji kosong. KodeNusa bisa menyunting dan
-                // membagikan berkas .py, tetapi Tier 0 hanya mengenal Java — jadi build akan gagal
-                // dan pengguna berhak tahu sebelum menekan Build APK.
+                // Python dan Kotlin: jujur di layar, bukan janji kosong. KodeNusa bisa menyunting
+                // dan membagikan kedua jenis berkas itu, tetapi Tier 0 hanya mengenal Java — jadi
+                // build akan gagal dan pengguna berhak tahu sebelum menekan Build APK.
                 val berkasAktif = session.active
                 if (berkasAktif != null && berkasAktif.name.endsWith(".py", ignoreCase = true)) {
                     Row(
@@ -344,6 +344,22 @@ fun EditorScreen(
                             style = MaterialTheme.typography.labelSmall,
                             color = Color(KodenusaPalette.WARN),
                             modifier = Modifier.testTag("catatan-python"),
+                        )
+                    }
+                }
+                if (berkasAktif != null && berkasAktif.name.endsWith(".kt", ignoreCase = true)) {
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .background(Color(KodenusaPalette.WARN).copy(alpha = 0.14f))
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "Kotlin belum bisa dibuild di KodeNusa (lihat catatan di wizard). " +
+                                "Berkas tetap bisa disunting dan dikirim ke GitHub.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(KodenusaPalette.WARN),
+                            modifier = Modifier.testTag("catatan-kotlin"),
                         )
                     }
                 }

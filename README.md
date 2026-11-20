@@ -1,14 +1,14 @@
 # KodeNusa
 
-[![Unduh APK](https://img.shields.io/badge/Unduh-APK%200.9.7-amber?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases/download/v0.9.7/KodeNusa-0.9.7.apk)
-[![Rilis](https://img.shields.io/badge/rilis-v0.9.7-blue?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases)
+[![Unduh APK](https://img.shields.io/badge/Unduh-APK%200.9.8-amber?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases/download/v0.9.8/KodeNusa-0.9.8.apk)
+[![Rilis](https://img.shields.io/badge/rilis-v0.9.8-blue?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases)
 [![Uji](https://img.shields.io/badge/uji-252%20unit%20%C2%B7%2077%20perangkat-brightgreen?style=flat-square)](docs/FITUR.md)
 
 **IDE Android yang menulis kode dan membangun APK sendiri di dalam HP — tanpa PC, tanpa Gradle, tanpa internet.**
 
 Dibuat untuk HP yang paling banyak dipakai di Indonesia: RAM 2–4 GB, penyimpanan 32–64 GB, jaringan yang sering putus. Aplikasi ini tidak mengasumsikan Anda punya laptop, Android Studio, atau koneksi stabil.
 
-**→ [Unduh APK KodeNusa 0.9.7 (32,3 MB)](https://github.com/FerzDevZ/nusakode/releases/download/v0.9.7/KodeNusa-0.9.7.apk)** · [semua rilis](https://github.com/FerzDevZ/nusakode/releases) · [daftar fitur](docs/FITUR.md)
+**→ [Unduh APK KodeNusa 0.9.8 (32,3 MB)](https://github.com/FerzDevZ/nusakode/releases/download/v0.9.8/KodeNusa-0.9.8.apk)** · [semua rilis](https://github.com/FerzDevZ/nusakode/releases) · [daftar fitur](docs/FITUR.md)
 
 ## Pasang
 
@@ -94,7 +94,7 @@ Detail aliran data, invariant keamanan, dan alasan tiap pilihan ada di [docs/01-
 |---|---|
 | [docs/00-visi-produk.md](docs/00-visi-produk.md) | Untuk siapa, masalah apa, dan apa yang sengaja tidak dikerjakan |
 | [docs/01-arsitektur-teknis.md](docs/01-arsitektur-teknis.md) | Modul, aliran build, invariant keamanan |
-| [docs/02-roadmap-milestone.md](docs/02-roadmap-milestone.md) | Riwayat rilis v0.1.0 → v0.9.7 dan langkah berikutnya |
+| [docs/02-roadmap-milestone.md](docs/02-roadmap-milestone.md) | Riwayat rilis v0.1.0 → v0.9.8 dan langkah berikutnya |
 | [docs/03-adr.md](docs/03-adr.md) | 31 keputusan arsitektur beserta konsekuensinya |
 | [docs/04-backlog-agent-matrix.md](docs/04-backlog-agent-matrix.md) | Agen dan skill yang dipakai membangun proyek ini |
 | [docs/05-toolchain-di-perangkat.md](docs/05-toolchain-di-perangkat.md) | Versi tool, alasan pin, dan cara memverifikasi |

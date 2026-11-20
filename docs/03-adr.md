@@ -463,3 +463,15 @@ Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif
 
 **Konsekuensi:** (+) Aksi baru tidak lagi berebut ruang dengan tombol Build APK. (+) Projek `web-murni` tidak pernah menawarkan "Build APK" di palet. (−) Aksi yang sangat sering (Simpan) tetap punya tombol sendiri; palet bukan pengganti tombol utama.
 
+
+---
+
+## ADR-032 — Laporan galat: offline, disaring rahasianya, dikirim hanya bila pengguna mau
+
+**Keputusan:** penangkap galat tak tertangkap (`Thread.setDefaultUncaughtExceptionHandler` di `MainActivity`) menulis laporan ke penyimpanan internal (`filesDir/laporan/galat-terakhir.txt`, maksimum 60 baris jejak tumpukan), lalu **memanggil penangan lama** supaya proses mati seperti biasa. Laporan tampil sebagai kartu di layar projek dengan dua tombol: **Bagikan laporan** (menyalin ke `cacheDir` dan membuka lembar bagikan Android) dan **Hapus laporan**.
+
+**Mengapa bukan layanan telemetri:** janji produk adalah tanpa server, tanpa akun, tanpa telemetri. Laporan yang tidak pernah keluar dari HP tidak bisa melanggar janji itu. Pengguna yang memang mau melapor bisa membagikannya sendiri ke mana pun.
+
+**Penyaringan rahasia:** sebelum ditulis, isi laporan disaring: pola `ghp_…`, `github_pat_…`, `sk-…`, `AIza…`, `crown-…`, `x-access-token:…`, dan `token/kunci/api_key/password/sandi = nilai` diganti `<disembunyikan>`. Alasannya sederhana: jejak tumpukan bisa memuat URL push yang menyisipkan token.
+
+**Konsekuensi:** (+) Kerusakan di HP pengguna jadi bisa didiagnosis tanpa melanggar privasi. (+) Uji: `LaporanGalatTest` (5 uji JVM: penyaringan, pemotongan jejak) + `LaporanKlonUiTest` (kartu muncul/hilang di perangkat). (−) Laporan hilang kalau pengguna menghapus data aplikasi; hanya satu laporan terakhir disimpan — pilihan sadar, bukan kekurangan.
