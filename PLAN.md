@@ -51,3 +51,12 @@ Status: **M1–M2 tercapai** — Tier 0 terbukti membangun APK di host *dan* di 
 ```
 
 Setiap milestone **tidak boleh** ditandai selesai tanpa exit criteria dieksekusi dan exit code 0 (lihat `docs/02`).
+
+## Status 0.4.0 (2025-11-20)
+
+- ✅ Operasi berkas penuh di panel projek: tambah berkas/folder, ganti nama, hapus (ADR-022).
+- ✅ Ekspor/impor projek sebagai `.zip` lewat pemilih berkas Android.
+- ✅ Berkas web (HTML/CSS/JS) dan Python/SQL muncul dan bisa diedit.
+- ✅ Peta fitur jujur: `docs/FITUR.md` (✅/🟡/⛔ + bukti uji).
+- ✅ 131 uji unit + 24 uji perangkat hijau di API 24 dan API 34.
+- Berikutnya: pindah berkas antar folder, cari di seluruh projek, perkecil APK < 15 MB, uji di HP 4 GB.
