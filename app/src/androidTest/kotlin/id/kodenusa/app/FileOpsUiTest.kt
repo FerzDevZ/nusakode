@@ -160,7 +160,7 @@ class FileOpsUiTest {
     }
 
     private fun bukaPanelBerkas() {
-        layar.onNodeWithText("☰").performClick()
+        layar.onNodeWithTag("buka-menu").performClick()
         layar.waitUntil(timeoutMillis = 10_000) {
             layar.onAllNodesWithTag("berkas-baru").fetchSemanticsNodes().isNotEmpty()
         }

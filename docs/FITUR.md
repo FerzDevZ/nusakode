@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.10.0** (`versionCode 22`) · **236 uji unit · 90 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.11.0** (`versionCode 23`) · **229 uji unit · 97 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -83,7 +83,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Cache build (hanya bangun ulang yang berubah) | ✅ | `BuildCacheTest` |
 | Laporan ukuran & waktu build | ✅ | `BuildScreen` |
 | Kotlin di perangkat | ⛔ | butuh compiler Kotlin JVM (berat) → Tier 1/2 |
-| Python di perangkat | ⛔ | butuh interpreter; tidak dijanjikan di UI |
+| Python di perangkat | ✅ | 0.10.0: MicroPython dibawa di APK (`libmicropython.so`), tombol "Jalankan" di berkas `.py` (ADR-034). Batas jujur: modul requests/numpy/pip tidak ada, build APK dari Python belum bisa |
 | Build lewat Gradle di perangkat (proot + JDK) | ⛔ | Tier 2, untuk HP 4 GB+ |
 | Build di cloud | ⛔ | Tier 1, butuh server + biaya |
 
@@ -172,6 +172,19 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | Bagikan lewat zip (Netlify Drop / Cloudflare Pages) | ✅ | tombol "Bagikan zip" di layar Situs (`SitusUiTest`) |
 | Server lokal di HP untuk dibuka keluarga via Wi-Fi | ⛔ | rencana langkah S4 (`docs/06-rencana-2026.md`) |
 | PWA (manifest + service worker) agar bisa "dipasang" tanpa APK | ⛔ | rencana |
+
+## 4f. Tema & tampilan (0.11.0)
+
+| Fitur | Status | Bukti / catatan |
+|---|---|---|
+| 4 tema bawaan: Gelap bengkel, Gelap AMOLED, Terang kertas, Terang kontras tinggi | ✅ | `KodenusaTokens`, `ContrastTest` (4 tema: teks ≥ 4,5:1, garis ≥ 3:1, aksen wajib hangat) |
+| Pilihan "Ikuti sistem" (mengikuti mode malam Android) | ✅ | `TemaStore`, dibaca sebelum `setContent` (tanpa kilat tema salah) |
+| Layar Tema dengan pratinjau kartu warna | ✅ | `TemaScreen`, uji UI `TemaUiTest` (pilihan bertahan setelah recreate) |
+| Tema kustom `.kntema` (impor SAF, unduh URL, ekspor) | ✅ | `Kntema` + `KntemaTest` (9 uji), ADR-036 |
+| Gerbang kontras menolak tema buruk dengan pesan spesifik | ✅ | `Kntema.pasanganGagal` — menyebut pasangan warna & rasio yang gagal |
+| Ikon bilah status mengikuti tema | ✅ | `MainActivity` + `SideEffect` di `KodeNusaApp` (ditemukan lewat screenshot nyata) |
+| Ikon vektor + komponen Banner/SegmentedControl | ✅ | `Components.kt` (`GhostIconButton`, `Banner`, `SegmentedControl`, `Modifier.tekan()`) |
+| Tema dinamis Material You (warna wallpaper) | ⛔ | butuh API 31+, minSdk 24; bisa jadi ADR nanti |
 
 ## 5. Distribusi & keamanan
 

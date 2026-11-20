@@ -62,6 +62,7 @@ import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
 import id.kodenusa.ui.Pill
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -264,7 +265,7 @@ fun AiScreen(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
-        Surface(color = Color(KodenusaPalette.BACKGROUND), modifier = Modifier.fillMaxSize()) {
+        Surface(color = Kode.background, modifier = Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().imePadding()) {
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
@@ -274,7 +275,7 @@ fun AiScreen(
                     Text(
                         konteks.judul,
                         style = MaterialTheme.typography.titleSmall,
-                        color = Color(KodenusaPalette.TEXT),
+                        color = Kode.text,
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                         maxLines = 1,
                     )
@@ -387,7 +388,7 @@ fun AiScreen(
         if (pilihBerkas) {
             Dialog(onDismissRequest = { pilihBerkas = false }) {
                 Surface(
-                    color = Color(KodenusaPalette.SURFACE),
+                    color = Kode.surface,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth().heightIn(max = 520.dp),
                 ) {
@@ -395,19 +396,19 @@ fun AiScreen(
                         Text(
                             "Pilih berkas projek",
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color(KodenusaPalette.TEXT),
+                            color = Kode.text,
                         )
                         Text(
                             "Isi berkas ini dikirim sebagai konteks, hanya ke endpoint AI milikmu.",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(KodenusaPalette.TEXT_DIM),
+                            color = Kode.textDim,
                         )
                         Spacer(Modifier.height(8.dp))
                         if (daftarBerkasProjek.isEmpty()) {
                             Text(
                                 "Belum ada berkas di projek ini.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(KodenusaPalette.TEXT_DIM),
+                                color = Kode.textDim,
                             )
                         }
                         LazyColumn(Modifier.weight(1f, fill = false)) {
@@ -415,7 +416,7 @@ fun AiScreen(
                                 Text(
                                     jalur,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(KodenusaPalette.TEXT),
+                                    color = Kode.text,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
@@ -458,7 +459,7 @@ private fun AturAiPanel(
             "Pakai endpoint dan kunci milikmu sendiri. KodeNusa tidak punya server AI dan tidak " +
                 "mengirim apa pun sebelum kamu mengisi ini.",
             style = MaterialTheme.typography.bodySmall,
-            color = Color(KodenusaPalette.TEXT_DIM),
+            color = Kode.textDim,
         )
         Spacer(Modifier.height(12.dp))
         IsianAi("Alamat endpoint", endpoint, onEndpoint, "https://api.crown.ai.id/v1", rahasia = false)
@@ -468,7 +469,7 @@ private fun AturAiPanel(
         Text(
             "Yang diketik langsung tersimpan — boleh ditutup lalu dibuka lagi.",
             style = MaterialTheme.typography.labelSmall,
-            color = Color(KodenusaPalette.TEXT_DIM),
+            color = Kode.textDim,
         )
         Spacer(Modifier.height(10.dp))
         PrimaryButton(
@@ -479,7 +480,7 @@ private fun AturAiPanel(
         )
         if (modelList.isNotEmpty()) {
             Spacer(Modifier.height(14.dp))
-            Text("Pilih model", style = MaterialTheme.typography.titleSmall, color = Color(KodenusaPalette.TEXT))
+            Text("Pilih model", style = MaterialTheme.typography.titleSmall, color = Kode.text)
             Spacer(Modifier.height(6.dp))
             modelList.forEach { model ->
                 Panel(
@@ -488,20 +489,18 @@ private fun AturAiPanel(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             if (model.id == modelTerpilih) "● " else "○ ",
-                            color = Color(
-                                if (model.id == modelTerpilih) KodenusaPalette.ACCENT else KodenusaPalette.TEXT_DIM,
-                            ),
+                            color = if (model.id == modelTerpilih) Kode.accent else Kode.textDim,
                         )
                         Column(Modifier.weight(1f)) {
                             Text(
                                 model.label(),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(KodenusaPalette.TEXT),
+                                color = Kode.text,
                             )
                             Text(
                                 model.id,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color(KodenusaPalette.TEXT_DIM),
+                                color = Kode.textDim,
                             )
                         }
                     }
@@ -510,7 +509,7 @@ private fun AturAiPanel(
         }
         galat?.let {
             Spacer(Modifier.height(10.dp))
-            Text(it, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.ERROR))
+            Text(it, style = MaterialTheme.typography.bodySmall, color = Kode.error)
         }
         Spacer(Modifier.height(24.dp))
     }
@@ -525,13 +524,13 @@ private fun IsianAi(
     rahasia: Boolean,
 ) {
     Column {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = Color(KodenusaPalette.TEXT_DIM))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = Kode.textDim)
         Spacer(Modifier.height(4.dp))
         TextField(
             value = nilai,
             onValueChange = onNilai,
             singleLine = true,
-            placeholder = { Text(contoh, color = Color(KodenusaPalette.TEXT_DIM)) },
+            placeholder = { Text(contoh, color = Kode.textDim) },
             visualTransformation = if (rahasia) {
                 PasswordVisualTransformation()
             } else {
@@ -539,10 +538,10 @@ private fun IsianAi(
             },
             modifier = Modifier.fillMaxWidth().testTag(label),
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
-                unfocusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
-                focusedTextColor = Color(KodenusaPalette.TEXT),
-                unfocusedTextColor = Color(KodenusaPalette.TEXT),
+                focusedContainerColor = Kode.surfaceRaised,
+                unfocusedContainerColor = Kode.surfaceRaised,
+                focusedTextColor = Kode.text,
+                unfocusedTextColor = Kode.text,
             ),
         )
     }
@@ -594,7 +593,7 @@ private fun ChatAiPanel(
             Text(
                 "model: $model",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(KodenusaPalette.TEXT_DIM),
+                color = Kode.textDim,
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
             )
@@ -634,7 +633,7 @@ private fun ChatAiPanel(
                     Text(
                         pesan,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(KodenusaPalette.ERROR),
+                        color = Kode.error,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                 }
@@ -663,7 +662,7 @@ private fun ChatAiPanel(
             Text(
                 pesan,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(KodenusaPalette.OK),
+                color = Kode.ok,
                 modifier = Modifier.testTag("hasil-tulis"),
             )
             Spacer(Modifier.height(6.dp))
@@ -687,7 +686,7 @@ private fun ChatAiPanel(
             berkasKonteks?.let { jalur ->
                 Pill(
                     jalur.substringAfterLast('/'),
-                    KodenusaPalette.INFO,
+                    Kode.info,
                     modifier = Modifier.testTag("berkas-terpasang"),
                 )
                 GhostButton("Buang", onBuangBerkas)
@@ -712,7 +711,7 @@ private fun ChatAiPanel(
                 Spacer(Modifier.width(6.dp))
                 Pill(
                     "1 gambar siap",
-                    KodenusaPalette.OK,
+                    Kode.ok,
                     modifier = Modifier.testTag("gambar-terpasang"),
                 )
                 GhostButton("Buang", onBuangGambar)
@@ -728,13 +727,13 @@ private fun ChatAiPanel(
                 value = pertanyaan,
                 onValueChange = onPertanyaan,
                 maxLines = 3,
-                placeholder = { Text("Tulis permintaan…", color = Color(KodenusaPalette.TEXT_DIM)) },
+                placeholder = { Text("Tulis permintaan…", color = Kode.textDim) },
                 modifier = Modifier.weight(1f).testTag("tanya-ai"),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
-                    unfocusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
-                    focusedTextColor = Color(KodenusaPalette.TEXT),
-                    unfocusedTextColor = Color(KodenusaPalette.TEXT),
+                    focusedContainerColor = Kode.surfaceRaised,
+                    unfocusedContainerColor = Kode.surfaceRaised,
+                    focusedTextColor = Kode.text,
+                    unfocusedTextColor = Kode.text,
                 ),
             )
             if (sibuk) GhostButton("Hentikan", onHentikan) else PrimaryButton("Kirim", onKirim)
@@ -747,7 +746,7 @@ private fun ChatAiPanel(
 private fun PesanAi(peran: String, isi: String) {
     val pengguna = peran == "user"
     Surface(
-        color = Color(if (pengguna) KodenusaPalette.SURFACE_RAISED else KodenusaPalette.SURFACE),
+        color = if (pengguna) Kode.surfaceRaised else Kode.surface,
         shape = RoundedCornerShape(10.dp),
         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
     ) {
@@ -755,14 +754,14 @@ private fun PesanAi(peran: String, isi: String) {
             Text(
                 if (pengguna) "kamu" else "AI",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(if (pengguna) KodenusaPalette.TEXT_DIM else KodenusaPalette.ACCENT),
+                color = if (pengguna) Kode.textDim else Kode.accent,
             )
             Spacer(Modifier.height(4.dp))
             // Penjelasan ditampilkan tanpa pagar kode; isi kodenya muncul di tombol sisip di bawah.
             Text(
                 if (pengguna) isi else CodeBlocks.tanpaPagar(isi).take(3_000),
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(KodenusaPalette.TEXT),
+                color = Kode.text,
             )
         }
     }

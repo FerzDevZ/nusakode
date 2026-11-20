@@ -43,6 +43,7 @@ import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
 import id.kodenusa.ui.Pill
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -52,6 +53,7 @@ fun WorkspaceScreen(
     container: AppContainer,
     onOpenProject: (java.io.File) -> Unit,
     onNewProject: () -> Unit,
+    onBukaTema: () -> Unit = {},
 ) {
     val konteks = androidx.compose.ui.platform.LocalContext.current
     var refresh by remember { mutableIntStateOf(0) }
@@ -122,15 +124,22 @@ fun WorkspaceScreen(
         }
     }
 
-    Scaffold(containerColor = Color(KodenusaPalette.BACKGROUND)) { padding ->
+    Scaffold(containerColor = Kode.background) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp)) {
             Spacer(Modifier.height(20.dp))
-            Text("Projek saya", style = MaterialTheme.typography.headlineMedium, color = Color(KodenusaPalette.TEXT))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Projek saya", style = MaterialTheme.typography.headlineMedium, color = Kode.text)
+                GhostButton("Tema", onBukaTema, Modifier.testTag("buka-tema"))
+            }
             Spacer(Modifier.height(4.dp))
             Text(
                 "${projects.size} projek di perangkat ini. Semua tersimpan sebagai folder biasa.",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(KodenusaPalette.TEXT_DIM),
+                color = Kode.textDim,
             )
             Spacer(Modifier.height(16.dp))
 
@@ -167,12 +176,12 @@ fun WorkspaceScreen(
                 "Ekspor projek ada di menu ⋯ pada tiap baris. Tidak perlu izin penyimpanan: berkas " +
                     "diakses lewat pemilih bawaan Android.",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(KodenusaPalette.TEXT_DIM),
+                color = Kode.textDim,
                 modifier = Modifier.testTag("catatan-izin"),
             )
             pesan?.let { teks ->
                 Spacer(Modifier.height(6.dp))
-                Text(teks, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.ACCENT))
+                Text(teks, style = MaterialTheme.typography.bodySmall, color = Kode.accent)
             }
             Spacer(Modifier.height(16.dp))
 
@@ -225,12 +234,12 @@ fun WorkspaceScreen(
                         deleting = null
                         refresh += 1
                     },
-                ) { Text("Hapus", color = Color(KodenusaPalette.ERROR)) }
+                ) { Text("Hapus", color = Kode.error) }
             },
             dismissButton = {
                 TextButton(onClick = { deleting = null }) { Text("Batal") }
             },
-            containerColor = Color(KodenusaPalette.SURFACE),
+            containerColor = Kode.surface,
         )
     }
 
@@ -258,26 +267,26 @@ private fun ProjectRow(project: ProjectSummary, onClick: () -> Unit, onDelete: (
                 Text(
                     project.name,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color(KodenusaPalette.TEXT),
+                    color = Kode.text,
                     modifier = Modifier.weight(1f),
                 )
                 if (project.buildable) {
-                    Pill("siap build", KodenusaPalette.OK)
+                    Pill("siap build", Kode.ok)
                 } else {
-                    Pill("perlu diperbaiki", KodenusaPalette.WARN)
+                    Pill("perlu diperbaiki", Kode.warn)
                 }
             }
             Spacer(Modifier.height(6.dp))
             Text(
                 project.applicationId,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(KodenusaPalette.TEXT_DIM),
+                color = Kode.textDim,
             )
             Spacer(Modifier.height(2.dp))
             Text(
                 "Terakhir dibuka ${tanggal(project.lastOpened)}",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(KodenusaPalette.TEXT_DIM),
+                color = Kode.textDim,
             )
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

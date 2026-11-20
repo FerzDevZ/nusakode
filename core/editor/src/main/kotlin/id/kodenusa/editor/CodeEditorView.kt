@@ -15,7 +15,8 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import id.kodenusa.ui.KodenusaPalette
+import id.kodenusa.ui.PaletGelapBengkel
+import id.kodenusa.ui.PaletInt
 import kotlin.math.max
 
 /**
@@ -45,6 +46,18 @@ class CodeEditorView @JvmOverloads constructor(
     private var highlighting = false
     private var wrap = false
 
+    /**
+     * Palet warna editor dalam ARGB (dunia View, bukan Compose). Diisi dari tema aktif oleh
+     * EditorScreen; menggantinya langsung mengecat ulang gutter, teks, dan penyorotan.
+     */
+    var palet: PaletInt = PaletGelapBengkel
+        set(value) {
+            field = value
+            gutter.setTextColor(value.textDim)
+            editor.setTextColor(value.text)
+            applyHighlight()
+        }
+
     private val undoStack = ArrayDeque<String>()
     private val redoStack = ArrayDeque<String>()
     private var lastSnapshotAt = 0L
@@ -59,7 +72,7 @@ class CodeEditorView @JvmOverloads constructor(
     init {
         background = null
         gutter.apply {
-            setTextColor(KodenusaPalette.TEXT_DIM)
+            setTextColor(palet.textDim)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
             typeface = Typeface.MONOSPACE
             gravity = Gravity.TOP or Gravity.END
@@ -74,7 +87,7 @@ class CodeEditorView @JvmOverloads constructor(
 
         editor.apply {
             setBackgroundColor(0x00000000)
-            setTextColor(KodenusaPalette.TEXT)
+            setTextColor(palet.text)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
             typeface = Typeface.MONOSPACE
             gravity = Gravity.TOP or Gravity.START
@@ -295,12 +308,12 @@ class CodeEditorView @JvmOverloads constructor(
     }
 
     private fun colorOf(type: Highlighter.TokenType): Int = when (type) {
-        Highlighter.TokenType.KEYWORD -> KodenusaPalette.ACCENT
-        Highlighter.TokenType.STRING -> KodenusaPalette.OK
-        Highlighter.TokenType.COMMENT -> KodenusaPalette.TEXT_DIM
-        Highlighter.TokenType.NUMBER -> KodenusaPalette.WARN
-        Highlighter.TokenType.ANNOTATION -> KodenusaPalette.INFO
-        Highlighter.TokenType.TAG -> KodenusaPalette.INFO
+        Highlighter.TokenType.KEYWORD -> palet.accent
+        Highlighter.TokenType.STRING -> palet.ok
+        Highlighter.TokenType.COMMENT -> palet.textDim
+        Highlighter.TokenType.NUMBER -> palet.warn
+        Highlighter.TokenType.ANNOTATION -> palet.info
+        Highlighter.TokenType.TAG -> palet.info
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()

@@ -43,6 +43,7 @@ import id.kodenusa.ui.KodeField
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -107,11 +108,11 @@ fun WizardScreen(
         masalah.none { it.severity == Severity.ERROR } && !busy
 
     Scaffold(
-        containerColor = Color(KodenusaPalette.BACKGROUND),
+        containerColor = Kode.background,
         // Tombol aksi tinggal di bilah bawah, tidak ikut tergulir: dulu tombol ini adalah item
         // terakhir LazyColumn sehingga tertutup keyboard dan user tidak bisa menekannya.
         bottomBar = {
-            Surface(color = Color(KodenusaPalette.BACKGROUND)) {
+            Surface(color = Kode.background) {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
                     // Nama projek ADA di bilah bawah, dekat tombolnya. Dulu field ini item terakhir
                     // LazyColumn: di layar pertama ia tersembunyi di bawah lipatan, sementara pesan
@@ -140,7 +141,7 @@ fun WizardScreen(
                         Text(
                             alasan,
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(KodenusaPalette.WARN),
+                            color = Kode.warn,
                             modifier = Modifier.padding(bottom = 6.dp).testTag("alasan-buat"),
                         )
                     }
@@ -187,13 +188,13 @@ fun WizardScreen(
                 Text(
                     "Mau bikin apa?",
                     style = MaterialTheme.typography.headlineMedium,
-                    color = Color(KodenusaPalette.TEXT),
+                    color = Kode.text,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "Pilih jenisnya dulu. Isian yang tidak perlu tidak akan ditanyakan.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(KodenusaPalette.TEXT_DIM),
+                    color = Kode.textDim,
                 )
             }
 
@@ -204,7 +205,7 @@ fun WizardScreen(
                 Text(
                     "Jenis projek",
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color(KodenusaPalette.TEXT_DIM),
+                    color = Kode.textDim,
                 )
             }
 
@@ -214,13 +215,11 @@ fun WizardScreen(
                         val aktif = jenis == opsi
                         Surface(
                             shape = RoundedCornerShape(KodenusaPalette.RADIUS_SMALL.dp),
-                            color = Color(
-                                if (aktif) KodenusaPalette.SURFACE_RAISED else KodenusaPalette.SURFACE,
-                            ),
+                            color = if (aktif) Kode.surfaceRaised else Kode.surface,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .border(
-                                    BorderStroke(1.dp, Color(if (aktif) KodenusaPalette.ACCENT else KodenusaPalette.BORDER)),
+                                    BorderStroke(1.dp, if (aktif) Kode.accent else Kode.border),
                                     RoundedCornerShape(KodenusaPalette.RADIUS_SMALL.dp),
                                 )
                                 .clickable {
@@ -237,14 +236,12 @@ fun WizardScreen(
                             ) {
                                 Text(
                                     if (aktif) "● " else "○ ",
-                                    color = Color(
-                                        if (aktif) KodenusaPalette.ACCENT else KodenusaPalette.TEXT_DIM,
-                                    ),
+                                    color = if (aktif) Kode.accent else Kode.textDim,
                                 )
                                 Text(
                                     opsi.label,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(KodenusaPalette.TEXT),
+                                    color = Kode.text,
                                     fontWeight = if (aktif) FontWeight.SemiBold else FontWeight.Normal,
                                     modifier = Modifier.weight(1f),
                                 )
@@ -259,7 +256,7 @@ fun WizardScreen(
                 Text(
                     "Pilih titik awal",
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color(KodenusaPalette.TEXT_DIM),
+                    color = Kode.textDim,
                 )
             }
 
@@ -271,7 +268,7 @@ fun WizardScreen(
                             "Template bawaan gagal dimuat: " +
                                 "${galatTemplate.message ?: "sebab tidak diketahui"}. " +
                                 "Kamu masih bisa mulai dari projek kosong.",
-                            color = Color(KodenusaPalette.ERROR),
+                            color = Kode.error,
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
@@ -292,7 +289,7 @@ fun WizardScreen(
                         masalahLain.forEach { issue ->
                             Text(
                                 issue.fallbackMessage,
-                                color = Color(KodenusaPalette.ERROR),
+                                color = Kode.error,
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         }
@@ -307,20 +304,20 @@ fun WizardScreen(
                         "Website saja: hanya HTML, CSS, dan JavaScript. Tidak ada folder aplikasi Android " +
                             "dan tidak ada APK — hasilnya dibuka lewat tautan.",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(KodenusaPalette.OK),
+                        color = Kode.ok,
                         modifier = Modifier.testTag("catatan-web-murni"),
                     )
                 } else if (jenis == Jenis.WEBVIEW || jenis == Jenis.KOSONG) {
                     Text(
                         "Website tetap dibungkus jadi APK, tetapi kamu tidak perlu memikirkan ID aplikasi.",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(KodenusaPalette.TEXT_DIM),
+                        color = Kode.textDim,
                     )
                 } else {
                     TextButton(onClick = { lanjutan = !lanjutan }) {
                         Text(
                             if (lanjutan) "Sembunyikan pengaturan lanjutan" else "Pengaturan lanjutan",
-                            color = Color(KodenusaPalette.TEXT_DIM),
+                            color = Kode.textDim,
                         )
                     }
                 }
@@ -344,7 +341,7 @@ fun WizardScreen(
                     Panel(Modifier.fillMaxWidth()) {
                         Text(
                             pesan,
-                            color = Color(KodenusaPalette.ERROR),
+                            color = Kode.error,
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     }
@@ -363,7 +360,7 @@ private fun TemplateCard(template: TemplateInfo, selected: Boolean, onClick: () 
             .then(
                 if (selected) {
                     Modifier.border(
-                        BorderStroke(1.dp, Color(KodenusaPalette.ACCENT)),
+                        BorderStroke(1.dp, Kode.accent),
                         RoundedCornerShape(KodenusaPalette.RADIUS_MEDIUM.dp),
                     )
                 } else {
@@ -375,29 +372,29 @@ private fun TemplateCard(template: TemplateInfo, selected: Boolean, onClick: () 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     if (selected) "● " else "○ ",
-                    color = Color(if (selected) KodenusaPalette.ACCENT else KodenusaPalette.TEXT_DIM),
+                    color = if (selected) Kode.accent else Kode.textDim,
                 )
                 Text(
                     template.title,
                     style = MaterialTheme.typography.titleSmall,
-                    color = Color(KodenusaPalette.TEXT),
+                    color = Kode.text,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f),
                 )
                 TextButton(onClick = onClick) {
-                    Text(if (selected) "dipilih" else "pilih", color = Color(KodenusaPalette.TEXT_DIM))
+                    Text(if (selected) "dipilih" else "pilih", color = Kode.textDim)
                 }
             }
             Text(
                 template.tagline,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(KodenusaPalette.TEXT_DIM),
+                color = Kode.textDim,
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 "Untuk ${template.audience}",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(KodenusaPalette.TEXT_DIM),
+                color = Kode.textDim,
             )
         }
     }

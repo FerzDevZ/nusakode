@@ -48,6 +48,7 @@ import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
 import id.kodenusa.ui.Pill
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -105,7 +106,7 @@ fun BuildScreen(
         }
     }
 
-    Scaffold(containerColor = Color(KodenusaPalette.BACKGROUND)) { padding ->
+    Scaffold(containerColor = Kode.background) { padding ->
         Column(
             Modifier
                 .fillMaxSize()
@@ -125,10 +126,10 @@ fun BuildScreen(
                 })
                 Spacer(Modifier.weight(1f))
                 when {
-                    state.running -> Pill("sedang build", KodenusaPalette.INFO)
-                    state.apk != null -> Pill("APK siap", KodenusaPalette.OK)
-                    state.result != null || setupMessage != null -> Pill("gagal", KodenusaPalette.ERROR)
-                    else -> Pill("siap", KodenusaPalette.TEXT_DIM)
+                    state.running -> Pill("sedang build", Kode.info)
+                    state.apk != null -> Pill("APK siap", Kode.ok)
+                    state.result != null || setupMessage != null -> Pill("gagal", Kode.error)
+                    else -> Pill("siap", Kode.textDim)
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -141,12 +142,12 @@ fun BuildScreen(
             if (batasHemat.hemat) {
                 Spacer(Modifier.height(6.dp))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Pill("mode hemat", KodenusaPalette.INFO, modifier = Modifier.testTag("mode-hemat"))
+                    Pill("mode hemat", Kode.info, modifier = Modifier.testTag("mode-hemat"))
                     Spacer(Modifier.width(8.dp))
                     Text(
                         "log ${batasHemat.batasLog} baris · disesuaikan untuk RAM kecil",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(KodenusaPalette.TEXT_DIM),
+                        color = Kode.textDim,
                     )
                 }
             }
@@ -158,13 +159,13 @@ fun BuildScreen(
                             Text(
                                 "Hasil build menumpuk",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = Color(KodenusaPalette.TEXT),
+                                color = Kode.text,
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 PenyimpananProjek.ringkasByte(ukuranBuild) + " di folder build/",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(KodenusaPalette.TEXT_DIM),
+                                color = Kode.textDim,
                                 modifier = Modifier.testTag("ukuran-build"),
                             )
                         }
@@ -180,7 +181,7 @@ fun BuildScreen(
                     }
                     pesanBersih?.let { pesan ->
                         Spacer(Modifier.height(6.dp))
-                        Text(pesan, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.OK))
+                        Text(pesan, style = MaterialTheme.typography.bodySmall, color = Kode.ok)
                     }
                 }
             }
@@ -197,10 +198,10 @@ fun BuildScreen(
                         Text(
                             "Build belum bisa dijalankan",
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color(KodenusaPalette.ERROR),
+                            color = Kode.error,
                         )
                         Spacer(Modifier.height(6.dp))
-                        Text(pesan, style = MaterialTheme.typography.bodyMedium, color = Color(KodenusaPalette.TEXT_DIM))
+                        Text(pesan, style = MaterialTheme.typography.bodyMedium, color = Kode.textDim)
                     }
                 }
             }
@@ -212,7 +213,7 @@ fun BuildScreen(
             }
 
             if (state.diagnostics.isNotEmpty()) {
-                Text("Perlu diperbaiki", style = MaterialTheme.typography.titleMedium, color = Color(KodenusaPalette.TEXT))
+                Text("Perlu diperbaiki", style = MaterialTheme.typography.titleMedium, color = Kode.text)
                 state.diagnostics.forEach { diagnostic ->
                     val info = explain(diagnostic)
                     Panel(Modifier.fillMaxWidth()) {
@@ -221,24 +222,22 @@ fun BuildScreen(
                                 Text(
                                     info.title,
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = Color(
-                                        if (info.severity == Severity.ERROR) KodenusaPalette.ERROR else KodenusaPalette.WARN,
-                                    ),
+                                    color = if (info.severity == Severity.ERROR) Kode.error else Kode.warn,
                                     modifier = Modifier.weight(1f),
                                 )
                             }
                             if (info.location.isNotBlank()) {
                                 Spacer(Modifier.height(4.dp))
-                                Text(info.location, style = CodeTextStyle, color = Color(KodenusaPalette.ACCENT))
+                                Text(info.location, style = CodeTextStyle, color = Kode.accent)
                             }
                             Spacer(Modifier.height(8.dp))
-                            Text(info.explanation, style = MaterialTheme.typography.bodyMedium, color = Color(KodenusaPalette.TEXT))
+                            Text(info.explanation, style = MaterialTheme.typography.bodyMedium, color = Kode.text)
                             Spacer(Modifier.height(8.dp))
-                            Text("Cara memperbaiki", style = MaterialTheme.typography.labelMedium, color = Color(KodenusaPalette.TEXT_DIM))
-                            Text(info.fix, style = MaterialTheme.typography.bodyMedium, color = Color(KodenusaPalette.OK))
+                            Text("Cara memperbaiki", style = MaterialTheme.typography.labelMedium, color = Kode.textDim)
+                            Text(info.fix, style = MaterialTheme.typography.bodyMedium, color = Kode.ok)
                             if (info.raw.isNotBlank()) {
                                 Spacer(Modifier.height(8.dp))
-                                Text(info.raw, style = CodeTextStyle.copy(fontSize = MaterialTheme.typography.bodySmall.fontSize), color = Color(KodenusaPalette.TEXT_DIM))
+                                Text(info.raw, style = CodeTextStyle.copy(fontSize = MaterialTheme.typography.bodySmall.fontSize), color = Kode.textDim)
                             }
                         }
                     }
@@ -251,13 +250,13 @@ fun BuildScreen(
                         Text(
                             "APK siap dipasang",
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color(KodenusaPalette.OK),
+                            color = Kode.ok,
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "${apk.name} · ${ukuran(apk.length())}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(KodenusaPalette.TEXT_DIM),
+                            color = Kode.textDim,
                         )
                         Spacer(Modifier.height(10.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -336,14 +335,14 @@ private fun galatUntukAi(state: BuildUiState, setup: String?): String = buildStr
 private fun StepsPanel(state: BuildUiState) {
     Panel(Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Tahapan build", style = MaterialTheme.typography.titleMedium, color = Color(KodenusaPalette.TEXT))
+            Text("Tahapan build", style = MaterialTheme.typography.titleMedium, color = Kode.text)
             BuildStep.entries.filter { it != BuildStep.PREPARE }.forEach { step ->
                 val done = state.completedSteps.contains(step)
                 val active = state.currentStep == step
                 val color = when {
-                    active -> KodenusaPalette.ACCENT
-                    done -> KodenusaPalette.OK
-                    else -> KodenusaPalette.TEXT_DIM
+                    active -> Kode.accent
+                    done -> Kode.ok
+                    else -> Kode.textDim
                 }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -353,15 +352,15 @@ private fun StepsPanel(state: BuildUiState) {
                             else -> "·"
                         },
                         style = CodeTextStyle,
-                        color = Color(color),
+                        color = color,
                     )
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(step.title, style = MaterialTheme.typography.bodyMedium, color = Color(color))
+                        Text(step.title, style = MaterialTheme.typography.bodyMedium, color = color)
                         Text(
                             step.detail,
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(KodenusaPalette.TEXT_DIM),
+                            color = Kode.textDim,
                         )
                     }
                 }
@@ -377,18 +376,18 @@ private fun LogPanel(log: List<String>) {
         if (log.isNotEmpty()) listState.scrollToItem(log.size - 1)
     }
     Column {
-        Text("Catatan build", style = MaterialTheme.typography.titleMedium, color = Color(KodenusaPalette.TEXT))
+        Text("Catatan build", style = MaterialTheme.typography.titleMedium, color = Kode.text)
         Spacer(Modifier.height(6.dp))
         LazyColumn(
             state = listState,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(180.dp)
-                .background(Color(KodenusaPalette.SURFACE), RoundedCornerShape(KodenusaPalette.RADIUS_SMALL.dp))
+                .background(Kode.surface, RoundedCornerShape(KodenusaPalette.RADIUS_SMALL.dp))
                 .padding(10.dp),
         ) {
             items(log.size) { index ->
-                Text(log[index], style = CodeTextStyle, color = Color(KodenusaPalette.TEXT_DIM))
+                Text(log[index], style = CodeTextStyle, color = Kode.textDim)
             }
         }
     }

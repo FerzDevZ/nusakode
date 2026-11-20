@@ -56,7 +56,7 @@ class PythonJalankanUiTest {
         }
 
         // Buka berkas .py dari panel berkas.
-        layar.onAllNodes(hasText("☰"))[0].performClick()
+        layar.onNodeWithTag("buka-menu").performClick()
         layar.waitUntil(timeoutMillis = 10_000) {
             layar.onAllNodesWithTag("daftar-berkas").fetchSemanticsNodes().isNotEmpty()
         }

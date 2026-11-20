@@ -27,6 +27,7 @@ import id.kodenusa.core.git.HasilUnggah
 import id.kodenusa.ui.GhostButton
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
+import id.kodenusa.ui.Kode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -63,7 +64,7 @@ fun BagikanApkCard(
             Text(
                 "Bagikan APK ke GitHub",
                 style = MaterialTheme.typography.titleMedium,
-                color = Color(KodenusaPalette.TEXT),
+                color = Kode.text,
             )
             Spacer(Modifier.height(4.dp))
             val repo = GitHubRilis.repoDariAlamat(store.alamatRepo())
@@ -74,13 +75,13 @@ fun BagikanApkCard(
                     else -> "Naik ke ${repo.pemilik}/${repo.nama} sebagai rilis v$versi."
                 },
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(KodenusaPalette.TEXT_DIM),
+                color = Kode.textDim,
             )
             Spacer(Modifier.height(6.dp))
             Text(
                 PenyimpananProjek.ringkasByte(apk.length()) + " akan diunggah · butuh kuota internet",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(KodenusaPalette.WARN),
+                color = Kode.warn,
                 modifier = Modifier.testTag("info-unggah"),
             )
             Spacer(Modifier.height(8.dp))
@@ -142,7 +143,7 @@ fun BagikanApkCard(
                     "Mengunggah $persen% (${PenyimpananProjek.ringkasByte(terkirim)} dari " +
                         PenyimpananProjek.ringkasByte(apk.length()) + ")",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(KodenusaPalette.INFO),
+                    color = Kode.info,
                     modifier = Modifier.testTag("progres-unggah"),
                 )
             }
@@ -151,7 +152,7 @@ fun BagikanApkCard(
                 Text(
                     "Terunggah. Tautan: ${sukses.tautanUnduh}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(KodenusaPalette.OK),
+                    color = Kode.ok,
                     modifier = Modifier.testTag("tautan-apk"),
                 )
             }
@@ -160,7 +161,7 @@ fun BagikanApkCard(
                 Text(
                     pesan,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(KodenusaPalette.ERROR),
+                    color = Kode.error,
                     modifier = Modifier.testTag("galat-unggah"),
                 )
             }

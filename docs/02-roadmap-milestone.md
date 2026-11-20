@@ -1,6 +1,6 @@
 # Roadmap dan riwayat rilis
 
-Versi terakhir: **0.10.0** (`versionCode 22`), dirilis 20 November 2026.
+Versi terakhir: **0.11.0** (`versionCode 23`), dirilis 20 November 2026.
 
 ## Fase
 
@@ -39,6 +39,7 @@ Versi terakhir: **0.10.0** (`versionCode 22`), dirilis 20 November 2026.
 | **0.9.8** | Laporan galat offline + tombol bagikan (ADR-032); klon repo GitHub dari layar projek; buat repo baru dari layar Git; catatan jujur untuk berkas `.kt` |
 | **0.9.9** | Perapatan tampilan (ADR-033): tombol sekunder berwujud, kolom nama wizard selalu terlihat di bilah bawah, kelompok pilihan diberi judul, Git menyuruh siapkan repo dulu |
 | **0.10.0** | Python bisa dijalankan (ADR-034): MicroPython v1.25 dibawa sebagai libmicropython.so, tombol Jalankan + konsol keluaran di editor, batas 20 detik |
+| **0.11.0** | Tema & tampilan (ADR-035/036): token semantik jadi sumber kebenaran, 4 tema bawaan teruji kontras (JVM), pilihan "Ikuti sistem" tanpa kilat, layar Tema, tema kustom `.kntema` ≤ 4 KB dengan gerbang kontras saat impor, ikon vektor, Banner/SegmentedControl, transisi antar layar |
 
 Artefak 0.10.0: `KodeNusa-0.10.0.apk`, **32.772.723 bita**, sha256 `50a56613334cda7dcedf9138639a2f6f28ca2911a53c143956690ae67d5a7895`.
 

@@ -522,3 +522,48 @@ tersedia; build APK dari Python belum bisa; skrip dibatasi 20 detik; `_thread` t
 `PythonRunner` memvalidasi berkas di dalam folder projek, argv berbentuk daftar (ADR-006),
 dan mematikan proses yang membeku. Uji: 5 uji perangkat `PythonRunnerDeviceTest` menjalankan
 skrip sungguhan (halo, galat, batas waktu, di luar folder, bukan .py) + 1 uji UI konsol.
+
+### ADR-035 — Token semantik jadi sumber kebenaran warna (sistem tema)
+**Tanggal:** 2026-11-20 · **Status:** diterima (fitur 0.11.0)
+
+**Konteks.** Seluruh 0.9.x memakai konstanta `KodenusaPalette` yang ditulis langsung di 20+
+berkas Compose dan `Theme.kt` terkunci gelap. Tidak ada tema terang, tidak ada AMOLED, tidak ada
+cara memilih. Permintaan pengguna: tema terang/gelap dan bisa mengunduh tema.
+
+**Pilihan yang dipertimbangkan.**
+1. **MaterialTheme.colorScheme sebagai sumber kebenaran**: cepat, tetapi `ColorScheme` M3 punya
+   30+ slot dan tidak bisa dipetakan balik ke warna editor View (kode editor bukan Compose).
+2. **Token semantik sendiri (`KodenusaTokens` + `PaletInt`) yang mengisi ColorScheme**: 13 warna
+   semantik dipakai Compose lewat `Kode.accent` dkk., dan dipakai editor View lewat
+   `paletInt: PaletInt`. `MaterialTheme.colorScheme` diisi **dari** token, bukan sebaliknya.
+
+**Keputusan.** `KodenusaTokens` (Compose Color + `gelap` + `paletInt`) disediakan lewat
+`LocalKodenusaTokens`; akses di Compose lewat objek `Kode`. Empat tema bawaan: Gelap bengkel
+(byte-identik dengan palet lama), Gelap AMOLED, Terang kertas, Terang kontras tinggi. Tema terang
+**tidak** inversi otomatis: aksen digelapkan ulang (`oklch ~0,60`) supaya kontras teks ≥ 4,5:1.
+`ContrastTest` JVM menguji keempat tema (teks ≥ 4,5:1, garis kuat ≥ 3:1, aksen wajib hangat —
+tidak boleh ungu/indigo).
+
+**Konsekuensi.** `KodenusaPalette` hanya menyisakan konstanta radius; warna lama dipertahankan
+sebagai nilai `PaletGelapBengkel` supaya uji JVM tetap jalan tanpa emulator. Komponen baru:
+`Banner`, `SegmentedControl`, `GhostIconButton`, `Modifier.tekan()` (skala tekan 0,98, 150 ms).
+Ikon teks (`☰`, `⋯`, `‹`) diganti ikon vektor dengan `contentDescription` wajib.
+
+### ADR-036 — Tema kustom `.kntema`: berkas JSON ≤ 4 KB + gerbang kontras saat impor
+**Tanggal:** 2026-11-20 · **Status:** diterima (fitur 0.11.0)
+
+**Konteks.** Pengguna ingin "bisa unduh thema". Tanpa server KodeNusa (ADR-001), tema dibagikan
+sebagai berkas, bukan daftar daring resmi.
+
+**Keputusan.** Format `.kntema`: JSON `{"versi":1,"nama":…,"gelap":…,"warna":{13 kunci warna
+hex}}`, maksimum 4096 byte. Impor lewat SAF (picker berkas), unduh lewat URL (HttpURLConnection,
+batas 4 KB, waktu habis 10 s), ekspor lewat SAF buat-berkas. **Gerbang kontras dijalankan saat
+impor**: tema yang gagal WCAG ditolak dengan pesan yang menyebut pasangan warna yang gagal
+("Teks #888 terlalu redup di latar #101010 — 2,9:1, butuh ≥ 4,5:1"). Tema kustom disimpan di
+`filesDir/tema/` (offline, ikut dihapus saat aplikasi dihapus). Tidak ada toko tema terpusat;
+bagikan lewat tautan/berkas apa pun, termasuk GitHub milik pengguna sendiri.
+
+**Konsekuensi.** Tema buruk tidak pernah bisa merusak keterbacaan aplikasi — gerbangnya sama
+dengan `ContrastTest` bawaan (satu sumber kebenaran: `Kontras.rasio`). Mode "Ikuti sistem" dibaca
+di `MainActivity` sebelum `setContent` supaya tidak ada kilat tema salah. Ikon bilah status
+mengikuti kegelapan tema.

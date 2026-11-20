@@ -42,6 +42,7 @@ import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
 import id.kodenusa.ui.Pill
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -79,17 +80,17 @@ fun AgenScreen(
         else -> null
     }
 
-    Scaffold(containerColor = Color(KodenusaPalette.BACKGROUND)) { padding ->
+    Scaffold(containerColor = Kode.background) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(4.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 GhostButton("Kembali", onBack)
                 Spacer(Modifier.weight(1f))
                 when {
-                    berjalan -> Pill("bekerja", KodenusaPalette.INFO)
-                    hasil?.sukses == true -> Pill("APK jadi", KodenusaPalette.OK)
-                    hasil != null || galat != null -> Pill("berhenti", KodenusaPalette.ERROR)
-                    else -> Pill("siap", KodenusaPalette.TEXT_DIM)
+                    berjalan -> Pill("bekerja", Kode.info)
+                    hasil?.sukses == true -> Pill("APK jadi", Kode.ok)
+                    hasil != null || galat != null -> Pill("berhenti", Kode.error)
+                    else -> Pill("siap", Kode.textDim)
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -98,13 +99,13 @@ fun AgenScreen(
                 item {
                     Panel(Modifier.fillMaxWidth()) {
                         Column {
-                            Text("Minta AI buatkan", style = MaterialTheme.typography.titleMedium, color = Color(KodenusaPalette.TEXT))
+                            Text("Minta AI buatkan", style = MaterialTheme.typography.titleMedium, color = Kode.text)
                             Spacer(Modifier.height(6.dp))
                             Text(
                                 "Tulis keinginanmu dalam bahasa Indonesia. Agen mengubah berkas projek, " +
                                     "lalu build dijalankan sendiri. Maksimal 3 putaran per tugas.",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(KodenusaPalette.TEXT_DIM),
+                                color = Kode.textDim,
                             )
                             Spacer(Modifier.height(10.dp))
                             OutlinedTextField(
@@ -164,7 +165,7 @@ fun AgenScreen(
                             )
                             alasanMulai?.let { alasan ->
                                 Spacer(Modifier.height(6.dp))
-                                Text(alasan, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.TEXT_DIM), modifier = Modifier.testTag("alasan-agen"))
+                                Text(alasan, style = MaterialTheme.typography.bodySmall, color = Kode.textDim, modifier = Modifier.testTag("alasan-agen"))
                             }
                             if (berjalan) {
                                 Spacer(Modifier.height(8.dp))
@@ -184,7 +185,7 @@ fun AgenScreen(
 
                 if (langkah.isNotEmpty()) {
                     item {
-                        Text("Proses", style = MaterialTheme.typography.titleMedium, color = Color(KodenusaPalette.TEXT))
+                        Text("Proses", style = MaterialTheme.typography.titleMedium, color = Kode.text)
                     }
                     items(langkah) { satu ->
                         Panel(Modifier.fillMaxWidth()) {
@@ -192,14 +193,14 @@ fun AgenScreen(
                                 Text(
                                     "Putaran ${satu.putaran}/${satu.maksPutaran} · ${satu.jumlahBerkas} berkas",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(KodenusaPalette.TEXT),
+                                    color = Kode.text,
                                 )
                                 if (satu.catatan.isNotBlank()) {
-                                    Text(satu.catatan, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.TEXT_DIM))
+                                    Text(satu.catatan, style = MaterialTheme.typography.bodySmall, color = Kode.textDim)
                                 }
                                 satu.galat?.let { salah ->
                                     Spacer(Modifier.height(4.dp))
-                                    Text(salah, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.ERROR))
+                                    Text(salah, style = MaterialTheme.typography.bodySmall, color = Kode.error)
                                 }
                             }
                         }
@@ -213,20 +214,20 @@ fun AgenScreen(
                                 Text(
                                     if (akhir.sukses) "APK berhasil dibuat" else "Belum berhasil",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = Color(if (akhir.sukses) KodenusaPalette.OK else KodenusaPalette.ERROR),
+                                    color = if (akhir.sukses) Kode.ok else Kode.error,
                                 )
                                 Spacer(Modifier.height(6.dp))
                                 Text(
                                     "${akhir.putaran} putaran · ${akhir.berkas.size} berkas diubah",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(KodenusaPalette.TEXT_DIM),
+                                    color = Kode.textDim,
                                 )
                                 akhir.berkas.take(8).forEach { satu ->
-                                    Text(satu.jalur, style = CodeTextStyle.copy(fontSize = MaterialTheme.typography.bodySmall.fontSize), color = Color(KodenusaPalette.TEXT_DIM))
+                                    Text(satu.jalur, style = CodeTextStyle.copy(fontSize = MaterialTheme.typography.bodySmall.fontSize), color = Kode.textDim)
                                 }
                                 if (!akhir.sukses) {
                                     Spacer(Modifier.height(6.dp))
-                                    Text(akhir.galat, style = MaterialTheme.typography.bodyMedium, color = Color(KodenusaPalette.ERROR))
+                                    Text(akhir.galat, style = MaterialTheme.typography.bodyMedium, color = Kode.error)
                                 }
                             }
                         }
@@ -236,7 +237,7 @@ fun AgenScreen(
                 galat?.let { salah ->
                     item {
                         Panel(Modifier.fillMaxWidth().testTag("galat-agen")) {
-                            Text(salah, style = MaterialTheme.typography.bodyMedium, color = Color(KodenusaPalette.ERROR))
+                            Text(salah, style = MaterialTheme.typography.bodyMedium, color = Kode.error)
                         }
                     }
                 }

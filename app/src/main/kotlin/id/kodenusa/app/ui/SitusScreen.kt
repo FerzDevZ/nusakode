@@ -44,6 +44,7 @@ import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
 import id.kodenusa.ui.Pill
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -109,7 +110,7 @@ fun SitusScreen(
         }
     }
 
-    Scaffold(containerColor = Color(KodenusaPalette.BACKGROUND)) { padding ->
+    Scaffold(containerColor = Kode.background) { padding ->
         Column(
             Modifier
                 .fillMaxSize()
@@ -123,10 +124,10 @@ fun SitusScreen(
                 GhostButton("Kembali", onBack)
                 Spacer(Modifier.weight(1f))
                 when {
-                    sibuk -> Pill("menyusun", KodenusaPalette.INFO)
-                    hasil != null -> Pill("situs siap", KodenusaPalette.OK)
-                    galat != null -> Pill("perlu diperbaiki", KodenusaPalette.ERROR)
-                    else -> Pill("belum disusun", KodenusaPalette.TEXT_DIM)
+                    sibuk -> Pill("menyusun", Kode.info)
+                    hasil != null -> Pill("situs siap", Kode.ok)
+                    galat != null -> Pill("perlu diperbaiki", Kode.error)
+                    else -> Pill("belum disusun", Kode.textDim)
                 }
             }
 
@@ -135,27 +136,27 @@ fun SitusScreen(
                     Text(
                         "Situs murni",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color(KodenusaPalette.TEXT),
+                        color = Kode.text,
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
                         "HTML, CSS, dan JavaScript saja. Hasilnya bisa dibuka di browser mana pun, " +
                             "tanpa memasang aplikasi dan tanpa Play Store.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(KodenusaPalette.TEXT_DIM),
+                        color = Kode.textDim,
                     )
                     Spacer(Modifier.height(10.dp))
                     Text(
                         "Sumber: ${SitusStatis.sumber(projectDir)?.let { "ditemukan" } ?: "belum ada"}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(KodenusaPalette.TEXT_DIM),
+                        color = Kode.textDim,
                     )
                     if (SitusStatis.sumber(projectDir) == null) {
                         Spacer(Modifier.height(6.dp))
                         Text(
                             "Tambahkan berkas web/index.html — atau pakai template \"Situs murni\" saat membuat projek.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color(KodenusaPalette.WARN),
+                            color = Kode.warn,
                         )
                     }
                     Spacer(Modifier.height(12.dp))
@@ -174,7 +175,7 @@ fun SitusScreen(
                     Text(
                         "Bisa dibuka tanpa internet",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color(KodenusaPalette.TEXT),
+                        color = Kode.text,
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
@@ -182,7 +183,7 @@ fun SitusScreen(
                             "index.html. Situs tetap terbuka saat sinyal hilang dan bisa " +
                             "\"Tambahkan ke layar utama\" seperti aplikasi.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(KodenusaPalette.TEXT_DIM),
+                        color = Kode.textDim,
                     )
                     Spacer(Modifier.height(10.dp))
                     Text(
@@ -192,7 +193,7 @@ fun SitusScreen(
                             "Berkas yang sudah ada tidak akan ditimpa."
                         },
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(KodenusaPalette.TEXT_DIM),
+                        color = Kode.textDim,
                     )
                     Spacer(Modifier.height(12.dp))
                     GhostButton(
@@ -220,7 +221,7 @@ fun SitusScreen(
                         Text(
                             it,
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(KodenusaPalette.OK),
+                            color = Kode.ok,
                             modifier = Modifier.testTag("pesan-pwa"),
                         )
                     }
@@ -230,9 +231,9 @@ fun SitusScreen(
             galat?.let { salah ->
                 Panel(Modifier.fillMaxWidth().testTag("galat-situs")) {
                     Column {
-                        Text("Belum bisa disusun", style = MaterialTheme.typography.titleMedium, color = Color(KodenusaPalette.ERROR))
+                        Text("Belum bisa disusun", style = MaterialTheme.typography.titleMedium, color = Kode.error)
                         Spacer(Modifier.height(6.dp))
-                        Text(salah, style = MaterialTheme.typography.bodyMedium, color = Color(KodenusaPalette.TEXT))
+                        Text(salah, style = MaterialTheme.typography.bodyMedium, color = Kode.text)
                     }
                 }
             }
@@ -240,26 +241,26 @@ fun SitusScreen(
             hasil?.let { situs ->
                 Panel(Modifier.fillMaxWidth().testTag("ringkasan-situs")) {
                     Column {
-                        Text("Isi situs", style = MaterialTheme.typography.titleMedium, color = Color(KodenusaPalette.TEXT))
+                        Text("Isi situs", style = MaterialTheme.typography.titleMedium, color = Kode.text)
                         Spacer(Modifier.height(6.dp))
                         Text(
                             "${situs.berkas.size} berkas · ${ukuranManusia(situs.totalByte)} · ${situs.jumlahHtml} halaman",
                             style = CodeTextStyle,
-                            color = Color(KodenusaPalette.ACCENT),
+                            color = Kode.accent,
                         )
                         Spacer(Modifier.height(8.dp))
                         situs.berkas.take(8).forEach { berkas ->
                             Text(
                                 "${berkas.jalur}  (${ukuranManusia(berkas.ukuran)})",
                                 style = CodeTextStyle.copy(fontSize = MaterialTheme.typography.bodySmall.fontSize),
-                                color = Color(KodenusaPalette.TEXT_DIM),
+                                color = Kode.textDim,
                             )
                         }
                         if (situs.berkas.size > 8) {
                             Text(
                                 "+${situs.berkas.size - 8} berkas lain",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(KodenusaPalette.TEXT_DIM),
+                                color = Kode.textDim,
                             )
                         }
                         if (situs.diabaikan.isNotEmpty()) {
@@ -268,7 +269,7 @@ fun SitusScreen(
                                 "Dilewati: " + situs.diabaikan.take(4).joinToString(", ") +
                                     if (situs.diabaikan.size > 4) " dan ${situs.diabaikan.size - 4} lainnya" else "",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(KodenusaPalette.TEXT_DIM),
+                                color = Kode.textDim,
                             )
                         }
                         Spacer(Modifier.height(12.dp))
@@ -300,7 +301,7 @@ fun SitusScreen(
                         Text(
                             "Terbit gratis ke GitHub Pages: siapkan token GitHub dulu di layar GitHub (menyusul).",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(KodenusaPalette.TEXT_DIM),
+                            color = Kode.textDim,
                         )
                     }
                 }
@@ -311,14 +312,14 @@ fun SitusScreen(
                     Text(
                         "Terbitkan ke GitHub Pages",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color(KodenusaPalette.TEXT),
+                        color = Kode.text,
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
                         "Gratis, tanpa server KodeNusa. Situs dikirim ke cabang ${GitSettingsStore.CABANG_BAWAAN} " +
                             "dari repo sementara, jadi kode Java projek tidak ikut tampil.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(KodenusaPalette.TEXT_DIM),
+                        color = Kode.textDim,
                     )
                     Spacer(Modifier.height(10.dp))
                     OutlinedTextField(
@@ -379,15 +380,15 @@ fun SitusScreen(
                     )
                     if (alasanTerbit != null) {
                         Spacer(Modifier.height(8.dp))
-                        Text(alasanTerbit, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.TEXT_DIM))
+                        Text(alasanTerbit, style = MaterialTheme.typography.bodySmall, color = Kode.textDim)
                     }
                     terbitGalat?.let { salah ->
                         Spacer(Modifier.height(8.dp))
-                        Text(salah, style = MaterialTheme.typography.bodyMedium, color = Color(KodenusaPalette.ERROR), modifier = Modifier.testTag("galat-terbit"))
+                        Text(salah, style = MaterialTheme.typography.bodyMedium, color = Kode.error, modifier = Modifier.testTag("galat-terbit"))
                     }
                     tautan?.let { alamatSitus ->
                         Spacer(Modifier.height(10.dp))
-                        Text(alamatSitus, style = CodeTextStyle, color = Color(KodenusaPalette.ACCENT), modifier = Modifier.testTag("tautan-situs"))
+                        Text(alamatSitus, style = CodeTextStyle, color = Kode.accent, modifier = Modifier.testTag("tautan-situs"))
                         Spacer(Modifier.height(8.dp))
                         GhostButton(
                             "Salin tautan",
@@ -400,7 +401,7 @@ fun SitusScreen(
 
             pesan?.let { info ->
                 Panel(Modifier.fillMaxWidth()) {
-                    Text(info, style = MaterialTheme.typography.bodyMedium, color = Color(KodenusaPalette.TEXT))
+                    Text(info, style = MaterialTheme.typography.bodyMedium, color = Kode.text)
                 }
             }
 

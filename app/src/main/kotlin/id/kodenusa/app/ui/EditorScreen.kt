@@ -6,6 +6,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,10 +68,15 @@ import id.kodenusa.core.project.ProjectSearch
 import id.kodenusa.core.project.ProjectTree
 import id.kodenusa.editor.CodeEditorView
 import id.kodenusa.editor.Language
+import id.kodenusa.ui.Banner
 import id.kodenusa.ui.GhostButton
+import id.kodenusa.ui.JenisBanner
+import id.kodenusa.ui.GhostIconButton
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Pill
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
+import id.kodenusa.ui.LocalKodenusaTokens
 import java.io.File
 
 /**
@@ -154,7 +163,7 @@ fun EditorScreen(
         gesturesEnabled = true,
         drawerContent = {
             ModalDrawerSheet(
-                drawerContainerColor = Color(KodenusaPalette.SURFACE),
+                drawerContainerColor = Kode.surface,
                 modifier = Modifier.width(272.dp),
             ) {
                 FilePanel(
@@ -221,7 +230,7 @@ fun EditorScreen(
             hostPesan.showSnackbar(pesan)
         }
         Scaffold(
-            containerColor = Color(KodenusaPalette.BACKGROUND),
+            containerColor = Kode.background,
             snackbarHost = { SnackbarHost(hostPesan) { data -> Pesan(data.visuals.message) } },
         ) { padding ->
             Column(Modifier.fillMaxSize().padding(padding)) {
@@ -344,41 +353,26 @@ fun EditorScreen(
                 // build akan gagal dan pengguna berhak tahu sebelum menekan Build APK.
                 val berkasAktif = session.active
                 if (berkasAktif != null && berkasAktif.name.endsWith(".py", ignoreCase = true)) {
-                    Row(
-                        Modifier.fillMaxWidth()
-                            .background(Color(KodenusaPalette.WARN).copy(alpha = 0.14f))
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "Python dijalankan dengan MicroPython di dalam HP (tanpa internet). " +
-                                "Kode dasar jalan; modul seperti requests, numpy, dan pip belum " +
-                                "tersedia. Build APK dari Python belum bisa.",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color(KodenusaPalette.WARN),
-                            modifier = Modifier.testTag("catatan-python"),
-                        )
-                    }
+                    Banner(
+                        JenisBanner.PERINGATAN,
+                        "Python dijalankan dengan MicroPython di dalam HP (tanpa internet). " +
+                            "Kode dasar jalan; modul seperti requests, numpy, dan pip belum tersedia. " +
+                            "Build APK dari Python belum bisa.",
+                        Modifier.testTag("catatan-python"),
+                    )
                 }
                 if (berkasAktif != null && berkasAktif.name.endsWith(".kt", ignoreCase = true)) {
-                    Row(
-                        Modifier.fillMaxWidth()
-                            .background(Color(KodenusaPalette.WARN).copy(alpha = 0.14f))
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "Kotlin belum bisa dibuild di KodeNusa (lihat catatan di wizard). " +
-                                "Berkas tetap bisa disunting dan dikirim ke GitHub.",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color(KodenusaPalette.WARN),
-                            modifier = Modifier.testTag("catatan-kotlin"),
-                        )
-                    }
+                    Banner(
+                        JenisBanner.PERINGATAN,
+                        "Kotlin belum bisa dibuild di KodeNusa (lihat catatan di wizard). " +
+                            "Berkas tetap bisa disunting dan dikirim ke GitHub.",
+                        Modifier.testTag("catatan-kotlin"),
+                    )
                 }
 
-                Box(Modifier.weight(1f).fillMaxWidth().background(Color(KodenusaPalette.SURFACE))) {
+                Box(Modifier.weight(1f).fillMaxWidth().background(Kode.surface)) {
                     val file = session.active
+                    val paletEditor = LocalKodenusaTokens.current.paletInt
                     if (file == null) {
                         EmptyEditor()
                     } else {
@@ -396,6 +390,7 @@ fun EditorScreen(
                                 }
                             },
                             update = { view ->
+                                view.palet = paletEditor
                                 if (state.loadedPath != file.path) {
                                     view.setContent(session.textOf(file), Language.of(file.name))
                                     state.loadedPath = file.path
@@ -623,20 +618,20 @@ private fun EditorTopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            GhostButton("☰", onMenu)
+            GhostIconButton(Icons.Filled.Menu, "Buka panel berkas", onMenu, Modifier.testTag("buka-menu"))
             GhostButton("Aksi", onPalet, Modifier.testTag("buka-palet"))
             Column(Modifier.weight(1f)) {
                 Text(
                     title,
                     style = MaterialTheme.typography.titleSmall,
-                    color = Color(KodenusaPalette.TEXT),
+                    color = Kode.text,
                     maxLines = 1,
                 )
                 if (dirty) {
                     Text(
                         "belum disimpan · tersimpan otomatis",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(KodenusaPalette.WARN),
+                        color = Kode.warn,
                     )
                 }
             }
@@ -671,7 +666,7 @@ private fun TabStrip(session: EditorSession, onSelect: (File) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Color(KodenusaPalette.SURFACE_RAISED))
+            .background(Kode.surfaceRaised)
             .horizontalScroll(rememberScrollState())
             .padding(horizontal = 6.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -681,12 +676,12 @@ private fun TabStrip(session: EditorSession, onSelect: (File) -> Unit) {
             Row(
                 Modifier
                     .background(
-                        Color(if (active) KodenusaPalette.BACKGROUND else KodenusaPalette.SURFACE),
+                        if (active) Kode.background else Kode.surface,
                         RoundedCornerShape(6.dp),
                     )
                     .border(
                         1.dp,
-                        Color(if (active) KodenusaPalette.ACCENT else KodenusaPalette.BORDER),
+                        if (active) Kode.accent else Kode.border,
                         RoundedCornerShape(6.dp),
                     )
                     .clickable { onSelect(file) }
@@ -696,11 +691,11 @@ private fun TabStrip(session: EditorSession, onSelect: (File) -> Unit) {
                 Text(
                     file.name,
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color(if (active) KodenusaPalette.TEXT else KodenusaPalette.TEXT_DIM),
+                    color = if (active) Kode.text else Kode.textDim,
                 )
                 if (session.isDirty(file)) {
                     Spacer(Modifier.width(4.dp))
-                    Text("●", style = MaterialTheme.typography.labelSmall, color = Color(KodenusaPalette.WARN))
+                    Text("●", style = MaterialTheme.typography.labelSmall, color = Kode.warn)
                 }
             }
         }
@@ -739,11 +734,11 @@ private fun FilePanel(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            GhostButton("‹", onBack)
+            GhostIconButton(Icons.Filled.ArrowBack, "Kembali", onBack)
             Text(
                 "Berkas projek",
                 style = MaterialTheme.typography.titleSmall,
-                color = Color(KodenusaPalette.TEXT),
+                color = Kode.text,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f),
             )
@@ -773,15 +768,15 @@ private fun FilePanel(
                 Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 4.dp)
-                    .background(Color(KodenusaPalette.SURFACE_RAISED), RoundedCornerShape(10.dp))
-                    .border(1.dp, Color(KodenusaPalette.BORDER), RoundedCornerShape(10.dp))
+                    .background(Kode.surfaceRaised, RoundedCornerShape(10.dp))
+                    .border(1.dp, Kode.border, RoundedCornerShape(10.dp))
                     .padding(horizontal = 10.dp, vertical = 8.dp)
                     .testTag("pesan-berkas"),
             ) {
                 Text(
                     pesan,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(KodenusaPalette.TEXT_DIM),
+                    color = Kode.textDim,
                 )
             }
         }
@@ -827,7 +822,7 @@ private fun FileRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .background(if (active) Color(KodenusaPalette.SURFACE_RAISED) else Color.Transparent)
+            .background(if (active) Kode.surfaceRaised else Color.Transparent)
             .clickable(onClick = onClick)
             .testTag("baris-${node.relativePath}")
             .padding(start = (8 + node.depth * 12).dp, top = 6.dp, bottom = 6.dp, end = 4.dp),
@@ -836,42 +831,43 @@ private fun FileRow(
         Text(
             if (node.directory) ("▸ " + node.name) else node.name,
             style = MaterialTheme.typography.bodySmall,
-            color = Color(if (node.directory) KodenusaPalette.TEXT else KodenusaPalette.TEXT_DIM),
+            color = if (node.directory) Kode.text else Kode.textDim,
             maxLines = 1,
             modifier = Modifier.weight(1f),
         )
         Box {
             // Tombol dengan ukuran sentuh 48dp, bukan teks kecil: target 12dp tidak bisa ditekan
             // dengan jempol dan juga gagal di uji instrumentasi ("Failed to inject touch input").
-            GhostButton(
-                "⋯",
+            GhostIconButton(
+                Icons.Filled.MoreVert,
+                "Menu berkas ${node.name}",
                 { menu = true },
                 Modifier.width(48.dp).testTag("menu-${node.name}"),
             )
             DropdownMenu(
                 expanded = menu,
                 onDismissRequest = { menu = false },
-                containerColor = Color(KodenusaPalette.SURFACE_RAISED),
+                containerColor = Kode.surfaceRaised,
             ) {
                 DropdownMenuItem(
-                    text = { Text("Bagikan berkas…", color = Color(KodenusaPalette.TEXT)) },
+                    text = { Text("Bagikan berkas…", color = Kode.text) },
                     onClick = { menu = false; onBagikan(node) },
                     enabled = !node.directory,
                 )
                 DropdownMenuItem(
-                    text = { Text("Pindahkan…", color = Color(KodenusaPalette.TEXT)) },
+                    text = { Text("Pindahkan…", color = Kode.text) },
                     onClick = { menu = false; onMove() },
                 )
                 DropdownMenuItem(
-                    text = { Text("Duplikat", color = Color(KodenusaPalette.TEXT)) },
+                    text = { Text("Duplikat", color = Kode.text) },
                     onClick = { menu = false; onDuplicate() },
                 )
                 DropdownMenuItem(
-                    text = { Text("Ganti nama", color = Color(KodenusaPalette.TEXT)) },
+                    text = { Text("Ganti nama", color = Kode.text) },
                     onClick = { menu = false; onRename() },
                 )
                 DropdownMenuItem(
-                    text = { Text("Hapus", color = Color(KodenusaPalette.ERROR)) },
+                    text = { Text("Hapus", color = Kode.error) },
                     onClick = { menu = false; onDelete() },
                 )
             }
@@ -912,17 +908,17 @@ private fun FindBar(
                 )
             },
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
-                unfocusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
-                focusedTextColor = Color(KodenusaPalette.TEXT),
-                unfocusedTextColor = Color(KodenusaPalette.TEXT),
+                focusedContainerColor = Kode.surfaceRaised,
+                unfocusedContainerColor = Kode.surfaceRaised,
+                focusedTextColor = Kode.text,
+                unfocusedTextColor = Kode.text,
             ),
             modifier = Modifier.weight(1f),
         )
         Text(
             if (matches == 0) "0" else if (modeProjek) "$matches" else "${index + 1}/$matches",
             style = MaterialTheme.typography.labelSmall,
-            color = Color(KodenusaPalette.TEXT_DIM),
+            color = Kode.textDim,
         )
         GhostButton(
             if (modeProjek) "projek ✓" else "projek",
@@ -947,10 +943,10 @@ private fun FindBar(
                 singleLine = true,
                 placeholder = { Text("ganti dengan…", style = MaterialTheme.typography.bodySmall) },
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
-                    unfocusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
-                    focusedTextColor = Color(KodenusaPalette.TEXT),
-                    unfocusedTextColor = Color(KodenusaPalette.TEXT),
+                    focusedContainerColor = Kode.surfaceRaised,
+                    unfocusedContainerColor = Kode.surfaceRaised,
+                    focusedTextColor = Kode.text,
+                    unfocusedTextColor = Kode.text,
                 ),
                 modifier = Modifier.weight(1f).testTag("isi-pengganti"),
             )
@@ -965,7 +961,7 @@ private fun FindBar(
             Text(
                 pesanGanti,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(KodenusaPalette.OK),
+                color = Kode.ok,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp)
                     .testTag("pesan-ganti"),
             )
@@ -980,7 +976,7 @@ private fun HasilCariPanel(hasil: List<HasilCari>, onBuka: (HasilCari) -> Unit) 
         Text(
             "Tidak ada kecocokan di berkas projek.",
             style = MaterialTheme.typography.labelSmall,
-            color = Color(KodenusaPalette.TEXT_DIM),
+            color = Kode.textDim,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
         )
         return
@@ -999,12 +995,12 @@ private fun HasilCariPanel(hasil: List<HasilCari>, onBuka: (HasilCari) -> Unit) 
                 Text(
                     "${hit.jalur}:${hit.baris}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(KodenusaPalette.INFO),
+                    color = Kode.info,
                 )
                 Text(
                     hit.teks,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(KodenusaPalette.TEXT_DIM),
+                    color = Kode.textDim,
                     maxLines = 1,
                 )
             }
@@ -1026,7 +1022,7 @@ private fun KeyBar(
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Color(KodenusaPalette.SURFACE_RAISED))
+            .background(Kode.surfaceRaised)
             .horizontalScroll(rememberScrollState())
             .padding(horizontal = 6.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1053,7 +1049,7 @@ private fun KeyBar(
         Text(
             position,
             style = MaterialTheme.typography.labelSmall,
-            color = Color(KodenusaPalette.TEXT_DIM),
+            color = Kode.textDim,
             modifier = Modifier.padding(horizontal = 8.dp),
         )
     }
@@ -1063,12 +1059,12 @@ private fun KeyBar(
 private fun Key(label: String, onClick: () -> Unit) {
     Box(
         Modifier
-            .background(Color(KodenusaPalette.SURFACE), RoundedCornerShape(5.dp))
-            .border(1.dp, Color(KodenusaPalette.BORDER), RoundedCornerShape(5.dp))
+            .background(Kode.surface, RoundedCornerShape(5.dp))
+            .border(1.dp, Kode.border, RoundedCornerShape(5.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 8.dp),
     ) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = Color(KodenusaPalette.TEXT))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = Kode.text)
     }
 }
 
@@ -1079,15 +1075,15 @@ private fun EmptyEditor() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("Belum ada berkas dibuka", style = MaterialTheme.typography.titleSmall, color = Color(KodenusaPalette.TEXT))
+        Text("Belum ada berkas dibuka", style = MaterialTheme.typography.titleSmall, color = Kode.text)
         Spacer(Modifier.height(6.dp))
         Text(
             "Buka panel ☰ lalu pilih berkas. Semua perubahan tersimpan otomatis.",
             style = MaterialTheme.typography.bodySmall,
-            color = Color(KodenusaPalette.TEXT_DIM),
+            color = Kode.textDim,
         )
         Spacer(Modifier.height(12.dp))
-        Pill("Tier 0 · tanpa Gradle", KodenusaPalette.INFO)
+        Pill("Tier 0 · tanpa Gradle", Kode.info)
     }
 }
 
@@ -1155,11 +1151,11 @@ private fun Pesan(teks: String) {
         Modifier
             .fillMaxWidth()
             .padding(12.dp)
-            .background(Color(KodenusaPalette.SURFACE_RAISED), RoundedCornerShape(12.dp))
-            .border(1.dp, Color(KodenusaPalette.BORDER), RoundedCornerShape(12.dp))
+            .background(Kode.surfaceRaised, RoundedCornerShape(12.dp))
+            .border(1.dp, Kode.border, RoundedCornerShape(12.dp))
             .padding(horizontal = 14.dp, vertical = 10.dp)
             .testTag("pesan-aksi"),
     ) {
-        Text(teks, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.TEXT))
+        Text(teks, style = MaterialTheme.typography.bodySmall, color = Kode.text)
     }
 }

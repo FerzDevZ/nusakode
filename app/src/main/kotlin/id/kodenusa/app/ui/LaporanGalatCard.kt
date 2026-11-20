@@ -25,6 +25,7 @@ import id.kodenusa.ui.CodeTextStyle
 import id.kodenusa.ui.GhostButton
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
+import id.kodenusa.ui.Kode
 import java.io.File
 
 /**
@@ -46,25 +47,25 @@ fun LaporanGalatCard(onHapus: () -> Unit) {
             Text(
                 "Aplikasi berhenti mendadak",
                 style = MaterialTheme.typography.titleMedium,
-                color = Color(KodenusaPalette.WARN),
+                color = Kode.warn,
             )
             Spacer(Modifier.height(6.dp))
             Text(
                 "Laporan ini tersimpan di HP Anda dan tidak dikirim ke mana pun. Bagikan hanya kalau " +
                     "Anda mau melaporkannya.",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(KodenusaPalette.TEXT_DIM),
+                color = Kode.textDim,
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 isi.lineSequence().take(4).joinToString("\n"),
                 style = CodeTextStyle.copy(fontSize = MaterialTheme.typography.bodySmall.fontSize),
-                color = Color(KodenusaPalette.TEXT_DIM),
+                color = Kode.textDim,
                 modifier = Modifier.testTag("isi-laporan"),
             )
             galat?.let { pesan ->
                 Spacer(Modifier.height(6.dp))
-                Text(pesan, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.ERROR))
+                Text(pesan, style = MaterialTheme.typography.bodySmall, color = Kode.error)
             }
             Spacer(Modifier.height(10.dp))
             Row {

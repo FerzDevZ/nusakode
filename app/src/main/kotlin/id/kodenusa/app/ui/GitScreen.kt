@@ -38,6 +38,7 @@ import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
 import id.kodenusa.ui.Pill
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -106,16 +107,16 @@ fun GitScreen(
         else -> null
     }
 
-    Scaffold(containerColor = Color(KodenusaPalette.BACKGROUND)) { padding ->
+    Scaffold(containerColor = Kode.background) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(4.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 GhostButton("Kembali", onBack)
                 Spacer(Modifier.weight(1f))
                 when {
-                    sibuk -> Pill("bekerja", KodenusaPalette.INFO)
-                    adalahRepo -> Pill("repo siap", KodenusaPalette.OK)
-                    else -> Pill("belum ada repo", KodenusaPalette.TEXT_DIM)
+                    sibuk -> Pill("bekerja", Kode.info)
+                    adalahRepo -> Pill("repo siap", Kode.ok)
+                    else -> Pill("belum ada repo", Kode.textDim)
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -130,7 +131,7 @@ fun GitScreen(
                             Text(
                                 if (adalahRepo) "Simpan perubahan" else "Siapkan repo dulu",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = Color(KodenusaPalette.TEXT),
+                                color = Kode.text,
                             )
                             Spacer(Modifier.height(6.dp))
                             Text(
@@ -139,13 +140,13 @@ fun GitScreen(
                                 else "${perubahan.jumlah} berkas berubah · +${perubahan.ditambah.size} " +
                                     "~${perubahan.diubah.size} -${perubahan.dihapus.size}",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(KodenusaPalette.TEXT_DIM),
+                                color = Kode.textDim,
                                 modifier = Modifier.testTag("ringkasan-git"),
                             )
                             if (adalahRepo && !perubahan.kosong) {
                                 Spacer(Modifier.height(6.dp))
                                 (perubahan.ditambah + perubahan.diubah + perubahan.dihapus).take(6).forEach { jalur ->
-                                    Text(jalur, style = CodeTextStyle.copy(fontSize = MaterialTheme.typography.bodySmall.fontSize), color = Color(KodenusaPalette.TEXT_DIM))
+                                    Text(jalur, style = CodeTextStyle.copy(fontSize = MaterialTheme.typography.bodySmall.fontSize), color = Kode.textDim)
                                 }
                             }
                             Spacer(Modifier.height(10.dp))
@@ -205,19 +206,19 @@ fun GitScreen(
                                 )
                                 alasanKirim?.let { alasan ->
                                     Spacer(Modifier.height(6.dp))
-                                    Text(alasan, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.TEXT_DIM))
+                                    Text(alasan, style = MaterialTheme.typography.bodySmall, color = Kode.textDim)
                                 }
                             }
                             kabar?.let { info ->
                                 Spacer(Modifier.height(8.dp))
-                                Text(info, style = MaterialTheme.typography.bodyMedium, color = Color(KodenusaPalette.OK))
+                                Text(info, style = MaterialTheme.typography.bodyMedium, color = Kode.ok)
                             }
                             galat?.let { salah ->
                                 Spacer(Modifier.height(8.dp))
                                 Text(
                                     salah,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(KodenusaPalette.ERROR),
+                                    color = Kode.error,
                                     modifier = Modifier.testTag("galat-git"),
                                 )
                             }
@@ -228,12 +229,12 @@ fun GitScreen(
                 item {
                     Panel(Modifier.fillMaxWidth()) {
                         Column {
-                            Text("Alamat repo projek", style = MaterialTheme.typography.titleMedium, color = Color(KodenusaPalette.TEXT))
+                            Text("Alamat repo projek", style = MaterialTheme.typography.titleMedium, color = Kode.text)
                             Spacer(Modifier.height(6.dp))
                             Text(
                                 remote.ifBlank { "Belum diatur. Isi alamat repo di layar Situs, atau buat repo baru di bawah." },
                                 style = CodeTextStyle.copy(fontSize = MaterialTheme.typography.bodySmall.fontSize),
-                                color = Color(KodenusaPalette.TEXT_DIM),
+                                color = Kode.textDim,
                                 modifier = Modifier.testTag("remote-git"),
                             )
                         }
@@ -251,7 +252,7 @@ fun GitScreen(
                 }
 
                 item {
-                    Text("Riwayat", style = MaterialTheme.typography.titleMedium, color = Color(KodenusaPalette.TEXT), modifier = Modifier.testTag("judul-riwayat"))
+                    Text("Riwayat", style = MaterialTheme.typography.titleMedium, color = Kode.text, modifier = Modifier.testTag("judul-riwayat"))
                 }
 
                 if (riwayat.isEmpty()) {
@@ -259,19 +260,19 @@ fun GitScreen(
                         Text(
                             if (adalahRepo) "Belum ada commit." else "Riwayat muncul setelah repo disiapkan dan perubahan disimpan.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color(KodenusaPalette.TEXT_DIM),
+                            color = Kode.textDim,
                         )
                     }
                 } else {
                     items(riwayat, key = { it.sha }) { commit ->
                         Panel(Modifier.fillMaxWidth()) {
                             Column {
-                                Text(commit.pesan, style = MaterialTheme.typography.bodyMedium, color = Color(KodenusaPalette.TEXT))
+                                Text(commit.pesan, style = MaterialTheme.typography.bodyMedium, color = Kode.text)
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     "${commit.sha7()} · ${commit.penulis} · ${tanggalRingkas(commit.waktu)}",
                                     style = CodeTextStyle.copy(fontSize = MaterialTheme.typography.bodySmall.fontSize),
-                                    color = Color(KodenusaPalette.TEXT_DIM),
+                                    color = Kode.textDim,
                                 )
                             }
                         }

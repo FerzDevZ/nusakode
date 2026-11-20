@@ -31,6 +31,7 @@ import id.kodenusa.core.build.SitusStatis
 import id.kodenusa.ui.GhostButton
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
 import java.io.File
 
 /**
@@ -53,7 +54,7 @@ fun PratinjauSitusDialog(akarProjek: File, onTutup: () -> Unit) {
 
     Dialog(onDismissRequest = onTutup, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
-            Modifier.fillMaxSize().background(Color(KodenusaPalette.BACKGROUND)).padding(8.dp),
+            Modifier.fillMaxSize().background(Kode.background).padding(8.dp),
         ) {
             Row(
                 Modifier.fillMaxWidth(),
@@ -63,7 +64,7 @@ fun PratinjauSitusDialog(akarProjek: File, onTutup: () -> Unit) {
                 Text(
                     "Pratinjau situs",
                     style = MaterialTheme.typography.titleSmall,
-                    color = Color(KodenusaPalette.TEXT),
+                    color = Kode.text,
                     modifier = Modifier.weight(1f),
                 )
                 if (indeks != null) {
@@ -83,7 +84,7 @@ fun PratinjauSitusDialog(akarProjek: File, onTutup: () -> Unit) {
                     "index.html belum ada. Pratinjau membutuhkan index.html di akar folder situs " +
                         "(biasanya web/index.html).",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(KodenusaPalette.WARN),
+                    color = Kode.warn,
                     modifier = Modifier.testTag("galat-pratinjau"),
                 )
                 return@Column
@@ -92,14 +93,14 @@ fun PratinjauSitusDialog(akarProjek: File, onTutup: () -> Unit) {
                 "Dibuka dari berkas lokal. Mode offline (PWA) hanya aktif setelah situs diterbitkan " +
                     "lewat https.",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(KodenusaPalette.TEXT_DIM),
+                color = Kode.textDim,
                 modifier = Modifier.padding(bottom = 4.dp),
             )
             if (galat != null) {
                 Text(
                     galat.orEmpty(),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(KodenusaPalette.ERROR),
+                    color = Kode.error,
                     modifier = Modifier.testTag("galat-pratinjau"),
                 )
             }

@@ -32,6 +32,7 @@ import androidx.compose.ui.window.DialogProperties
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Pill
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
 
 /** Satu perintah yang bisa dicari dan dijalankan dari palet. */
 data class Perintah(
@@ -63,13 +64,13 @@ fun PaletPerintahDialog(perintah: List<Perintah>, onTutup: () -> Unit) {
         Column(
             Modifier.fillMaxWidth()
                 .padding(12.dp)
-                .background(Color(KodenusaPalette.SURFACE_RAISED))
+                .background(Kode.surfaceRaised)
                 .padding(12.dp),
         ) {
             Text(
                 "Palet perintah",
                 style = MaterialTheme.typography.titleMedium,
-                color = Color(KodenusaPalette.TEXT),
+                color = Kode.text,
             )
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
@@ -85,7 +86,7 @@ fun PaletPerintahDialog(perintah: List<Perintah>, onTutup: () -> Unit) {
                 Text(
                     "Tidak ada aksi yang cocok dengan \"$kueri\".",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(KodenusaPalette.TEXT_DIM),
+                    color = Kode.textDim,
                     modifier = Modifier.testTag("aksi-kosong"),
                 )
             } else {
@@ -105,18 +106,18 @@ fun PaletPerintahDialog(perintah: List<Perintah>, onTutup: () -> Unit) {
                                 Text(
                                     aksi.judul,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(KodenusaPalette.TEXT),
+                                    color = Kode.text,
                                     modifier = Modifier.testTag("aksi-${aksi.id}"),
                                 )
                                 if (aksi.keterangan.isNotBlank()) {
                                     Text(
                                         aksi.keterangan,
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = Color(KodenusaPalette.TEXT_DIM),
+                                        color = Kode.textDim,
                                     )
                                 }
                             }
-                            if (aksi.lain) Pill("lain", KodenusaPalette.INFO)
+                            if (aksi.lain) Pill("lain", Kode.info)
                         }
                     }
                 }

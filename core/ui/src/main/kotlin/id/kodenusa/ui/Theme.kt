@@ -2,7 +2,6 @@ package id.kodenusa.ui
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -10,27 +9,6 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-
-/**
- * KodeNusa selalu gelap. Alasannya bukan gaya: layar AMOLED di HP murah menghemat baterai, dan
- * kontras teks gelap-terang lebih mudah dijaga pada panel TN yang ada di perangkat 1,5 juta.
- */
-val KodenusaColors = darkColorScheme(
-    primary = Color(KodenusaPalette.ACCENT),
-    onPrimary = Color(KodenusaPalette.ACCENT_INK),
-    secondary = Color(KodenusaPalette.INFO),
-    onSecondary = Color(KodenusaPalette.BACKGROUND),
-    background = Color(KodenusaPalette.BACKGROUND),
-    onBackground = Color(KodenusaPalette.TEXT),
-    surface = Color(KodenusaPalette.SURFACE),
-    onSurface = Color(KodenusaPalette.TEXT),
-    surfaceVariant = Color(KodenusaPalette.SURFACE_RAISED),
-    onSurfaceVariant = Color(KodenusaPalette.TEXT_DIM),
-    outline = Color(KodenusaPalette.BORDER_STRONG),
-    outlineVariant = Color(KodenusaPalette.BORDER),
-    error = Color(KodenusaPalette.ERROR),
-    onError = Color(KodenusaPalette.BACKGROUND),
-)
 
 val JakartaSans = FontFamily(
     Font(R.font.plus_jakarta_sans, FontWeight.Normal),
@@ -68,9 +46,58 @@ val CodeTextStyle = TextStyle(
 
 @Composable
 fun KodenusaTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = KodenusaColors,
-        typography = KodenusaTypography,
-        content = content,
-    )
+    KodenusaTheme(GelapBengkel, content)
 }
+
+/**
+ * Tema KodeNusa dari token semantik; tanpa argumen = tema gelap bengkel (perilaku lama).
+ */
+@Composable
+fun KodenusaTheme(tokens: KodenusaTokens, content: @Composable () -> Unit) {
+    androidx.compose.runtime.CompositionLocalProvider(LocalKodenusaTokens provides tokens) {
+        MaterialTheme(
+            colorScheme = skemaDari(tokens),
+            typography = KodenusaTypography,
+            content = content,
+        )
+    }
+}
+
+private fun skemaDari(t: KodenusaTokens) = androidx.compose.material3.ColorScheme(
+    primary = t.accent,
+    onPrimary = t.accentInk,
+    primaryContainer = t.accent,
+    onPrimaryContainer = t.accentInk,
+    secondary = t.info,
+    onSecondary = t.background,
+    secondaryContainer = t.surfaceRaised,
+    onSecondaryContainer = t.text,
+    tertiary = t.ok,
+    onTertiary = t.background,
+    tertiaryContainer = t.surfaceRaised,
+    onTertiaryContainer = t.text,
+    background = t.background,
+    onBackground = t.text,
+    surface = t.surface,
+    onSurface = t.text,
+    surfaceVariant = t.surfaceRaised,
+    onSurfaceVariant = t.textDim,
+    surfaceTint = t.surfaceRaised,
+    inversePrimary = t.accent,
+    inverseSurface = t.text,
+    inverseOnSurface = t.background,
+    error = t.error,
+    onError = t.background,
+    errorContainer = t.surfaceRaised,
+    onErrorContainer = t.error,
+    outline = t.borderStrong,
+    outlineVariant = t.border,
+    scrim = t.background,
+    surfaceBright = t.surfaceRaised,
+    surfaceDim = t.background,
+    surfaceContainer = t.surface,
+    surfaceContainerHigh = t.surfaceRaised,
+    surfaceContainerHighest = t.surfaceRaised,
+    surfaceContainerLow = t.surface,
+    surfaceContainerLowest = t.background,
+)

@@ -23,6 +23,9 @@ class AppContainer(context: Context) {
     /** Setelan endpoint + kunci AI milik pengguna (kosong = AI belum aktif). */
     val aiStore = AiSettingsStore(context)
 
+    /** Pilihan tema pengguna (bawaan, ikut sistem, atau .kntema kustom). */
+    val temaStore = TemaStore(context)
+
     fun newEngine(toolchain: Toolchain): BuildEngine = Tier0BuildEngine(toolchain)
 
     private companion object {

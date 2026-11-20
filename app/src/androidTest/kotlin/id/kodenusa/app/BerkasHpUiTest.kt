@@ -66,7 +66,7 @@ class BerkasHpUiTest {
     fun panel_berkas_punya_tombol_ambil_dari_hp() {
         bukaProjek()
 
-        layar.onNodeWithText("☰").performClick()
+        layar.onNodeWithTag("buka-menu").performClick()
         layar.waitForIdle()
 
         layar.onNodeWithTag("daftar-berkas").assertExists()

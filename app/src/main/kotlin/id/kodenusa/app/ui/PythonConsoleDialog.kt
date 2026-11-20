@@ -35,6 +35,7 @@ import id.kodenusa.app.PythonRunner
 import id.kodenusa.ui.GhostButton
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
 import java.io.File
 import kotlinx.coroutines.launch
 
@@ -85,7 +86,7 @@ fun PythonConsoleDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
-            color = Color(KodenusaPalette.BACKGROUND),
+            color = Kode.background,
             modifier = Modifier.fillMaxSize().padding(12.dp),
             shape = MaterialTheme.shapes.large,
         ) {
@@ -98,12 +99,12 @@ fun PythonConsoleDialog(
                         Text(
                             "Python — ${berkas.name}",
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color(KodenusaPalette.TEXT),
+                            color = Kode.text,
                         )
                         Text(
                             "MicroPython · tanpa internet",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(KodenusaPalette.TEXT_DIM),
+                            color = Kode.textDim,
                         )
                     }
                     GhostButton("Tutup", onTutup, Modifier.testTag("tutup-python"))
@@ -113,7 +114,7 @@ fun PythonConsoleDialog(
                     Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .background(Color(KodenusaPalette.SURFACE))
+                        .background(Kode.surface)
                         .padding(10.dp)
                         .testTag("keluaran-python"),
                     state = daftar,
@@ -125,7 +126,7 @@ fun PythonConsoleDialog(
                                 "menjalankan…",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontFamily = FontFamily.Monospace,
-                                color = Color(KodenusaPalette.TEXT_DIM),
+                                color = Kode.textDim,
                             )
                         }
                     }
@@ -134,7 +135,7 @@ fun PythonConsoleDialog(
                             teks,
                             style = MaterialTheme.typography.bodySmall,
                             fontFamily = FontFamily.Monospace,
-                            color = Color(KodenusaPalette.TEXT),
+                            color = Kode.text,
                         )
                     }
                 }
@@ -156,7 +157,7 @@ fun PythonConsoleDialog(
                     Text(
                         if (k == 0) "Selesai (kode 0)" else "Selesai (kode $k)",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (k == 0) Color(KodenusaPalette.OK) else Color(KodenusaPalette.WARN),
+                        color = if (k == 0) Kode.ok else Kode.warn,
                         modifier = Modifier.testTag("status-python"),
                     )
                 }

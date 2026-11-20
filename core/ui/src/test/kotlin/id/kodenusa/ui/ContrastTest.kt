@@ -9,6 +9,9 @@ import kotlin.math.pow
 /**
  * Kontras dihitung dari nilai ARGB yang benar-benar dipakai aplikasi, bukan dari angka di dokumen.
  * Kalau ada yang mengubah palet tanpa memikirkan aksesibilitas, tes ini gagal.
+ *
+ * Sejak sistem tema (ADR-035), uji ini berlaku untuk **setiap tema** — bawaan maupun kustom yang
+ * lolos gerbang impor. Tema baru ditambahkan ke [SEMUA_PALET] atau build gagal.
  */
 class ContrastTest {
 
@@ -26,48 +29,73 @@ class ContrastTest {
         return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
     }
 
-    private val surfaces = listOf(
-        "BACKGROUND" to KodenusaPalette.BACKGROUND,
-        "SURFACE" to KodenusaPalette.SURFACE,
-        "SURFACE_RAISED" to KodenusaPalette.SURFACE_RAISED,
-    )
-
-    private val texts = listOf(
-        "TEXT" to KodenusaPalette.TEXT,
-        "TEXT_DIM" to KodenusaPalette.TEXT_DIM,
-        "ACCENT" to KodenusaPalette.ACCENT,
-        "OK" to KodenusaPalette.OK,
-        "WARN" to KodenusaPalette.WARN,
-        "ERROR" to KodenusaPalette.ERROR,
-        "INFO" to KodenusaPalette.INFO,
-    )
+    /** Tema bawaan + contoh tema kustom valid — semua wajib lolos standar yang sama. */
+    private val semuaPalet: List<Pair<String, PaletInt>> = TemaBawaan
 
     @Test
-    fun `setiap warna teks lolos aa pada setiap permukaan`() {
-        for ((textName, text) in texts) {
-            for ((surfaceName, surface) in surfaces) {
-                val value = ratio(text, surface)
-                assertTrue(value >= 4.5, "$textName di atas $surfaceName hanya ${"%.2f".format(value)}:1")
+    fun `setiap warna teks lolos aa pada setiap permukaan di setiap tema`() {
+        for ((namaTema, palet) in semuaPalet) {
+            val surfaces = listOf(
+                "background" to palet.background,
+                "surface" to palet.surface,
+                "surfaceRaised" to palet.surfaceRaised,
+            )
+            val texts = listOf(
+                "text" to palet.text,
+                "textDim" to palet.textDim,
+                "accent" to palet.accent,
+                "ok" to palet.ok,
+                "warn" to palet.warn,
+                "error" to palet.error,
+                "info" to palet.info,
+            )
+            for ((textName, text) in texts) {
+                for ((surfaceName, surface) in surfaces) {
+                    val value = ratio(text, surface)
+                    assertTrue(
+                        value >= 4.5,
+                        "$namaTema: $textName di atas $surfaceName hanya ${"%.2f".format(value)}:1",
+                    )
+                }
             }
         }
     }
 
     @Test
-    fun `teks di atas aksen tetap terbaca`() {
-        assertTrue(ratio(KodenusaPalette.ACCENT_INK, KodenusaPalette.ACCENT) >= 4.5)
+    fun `teks di atas aksen tetap terbaca di setiap tema`() {
+        for ((namaTema, palet) in semuaPalet) {
+            val value = ratio(palet.accentInk, palet.accent)
+            assertTrue(value >= 4.5, "$namaTema: accentInk di atas accent hanya ${"%.2f".format(value)}:1")
+        }
     }
 
     @Test
-    fun `batas komponen interaktif mencapai tiga banding satu`() {
-        for ((surfaceName, surface) in surfaces) {
-            val value = ratio(KodenusaPalette.BORDER_STRONG, surface)
-            assertTrue(value >= 3.0, "BORDER_STRONG di atas $surfaceName hanya ${"%.2f".format(value)}:1")
+    fun `batas komponen interaktif mencapai tiga banding satu di setiap tema`() {
+        for ((namaTema, palet) in semuaPalet) {
+            for ((surfaceName, surface) in listOf(
+                "background" to palet.background,
+                "surface" to palet.surface,
+                "surfaceRaised" to palet.surfaceRaised,
+            )) {
+                val value = ratio(palet.borderStrong, surface)
+                assertTrue(
+                    value >= 3.0,
+                    "$namaTema: borderStrong di atas $surfaceName hanya ${"%.2f".format(value)}:1",
+                )
+            }
         }
     }
 
     @Test
     fun `palet tidak memakai ungu atau indigo`() {
-        // Aksen wajib berada di rentang amber (hue 60-100 derajat) sesuai DESIGN.md.
-        assertTrue(KodenusaPalette.ACCENT.toLong() and 0xFFFFFF == 0xF7AD30L)
+        // Aksen wajib berada di rentang amber/cokelat (hue panas) sesuai DESIGN.md.
+        for ((namaTema, palet) in semuaPalet) {
+            val warna = palet.accent
+            val r = (warna shr 16) and 0xFF
+            val g = (warna shr 8) and 0xFF
+            val b = warna and 0xFF
+            assertTrue(r >= g, "$namaTema: aksen bukan keluarga hangat (r=$r g=$g b=$b)")
+            assertTrue(b < g, "$namaTema: aksen memarkan biru/ungu (r=$r g=$g b=$b)")
+        }
     }
 }

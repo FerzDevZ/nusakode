@@ -30,6 +30,7 @@ import id.kodenusa.ui.GhostButton
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -51,14 +52,14 @@ fun BuatRepoCard(projectDir: File, setelan: GitSettingsStore, onSelesai: () -> U
             Text(
                 "Belum punya repo untuk projek ini?",
                 style = MaterialTheme.typography.titleMedium,
-                color = Color(KodenusaPalette.TEXT),
+                color = Kode.text,
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 "Buat repo baru di akun GitHub Anda (butuh internet), lalu alamatnya dipasang " +
                     "otomatis ke projek ini.",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(KodenusaPalette.TEXT_DIM),
+                color = Kode.textDim,
             )
             Spacer(Modifier.height(8.dp))
             GhostButton(
@@ -102,7 +103,7 @@ private fun BuatRepoDialog(
                     if (tanpaToken) "Token GitHub belum diisi. Isi dulu di layar Situs, lalu kembali ke sini."
                     else "Repo dibuat di akun GitHub Anda dengan token yang tersimpan.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(KodenusaPalette.TEXT_DIM),
+                    color = Kode.textDim,
                     modifier = Modifier.testTag("catatan-buat-repo"),
                 )
                 Spacer(Modifier.height(10.dp))
@@ -124,7 +125,7 @@ private fun BuatRepoDialog(
                     Text(
                         "Privat (hanya Anda yang bisa melihat)",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(KodenusaPalette.TEXT_DIM),
+                        color = Kode.textDim,
                     )
                 }
                 galat?.let { pesan ->
@@ -132,7 +133,7 @@ private fun BuatRepoDialog(
                     Text(
                         pesan,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(KodenusaPalette.ERROR),
+                        color = Kode.error,
                         modifier = Modifier.testTag("galat-buat-repo"),
                     )
                 }
@@ -175,7 +176,7 @@ private fun BuatRepoDialog(
             )
         },
         dismissButton = { TextButton(onClick = { if (!sibuk) onTutup() }) { Text("Batal") } },
-        containerColor = Color(KodenusaPalette.SURFACE),
+        containerColor = Kode.surface,
     )
 }
 

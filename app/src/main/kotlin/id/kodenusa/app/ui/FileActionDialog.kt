@@ -28,6 +28,7 @@ import id.kodenusa.core.project.ProjectNode
 import id.kodenusa.core.project.ProjectTree
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
 
 /** Aksi berkas yang menunggu jawaban pengguna di dialog. */
 sealed interface FileAction {
@@ -98,21 +99,21 @@ fun FileActionDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(KodenusaPalette.SURFACE),
-        title = { Text(judul, color = Color(KodenusaPalette.TEXT)) },
+        containerColor = Kode.surface,
+        title = { Text(judul, color = Kode.text) },
         text = {
             Column {
                 if (action is FileAction.Delete) {
                     Text(
                         "Berkas atau folder beserta isinya dihapus dari perangkat. Tindakan ini tidak bisa dibatalkan.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(KodenusaPalette.TEXT_DIM),
+                        color = Kode.textDim,
                     )
                 } else {
                     Text(
                         petunjuk(action),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(KodenusaPalette.TEXT_DIM),
+                        color = Kode.textDim,
                     )
                     LokasiField(induk, semuaNode) { induk = it }
                     TextField(
@@ -121,17 +122,17 @@ fun FileActionDialog(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("nama-berkas"),
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
-                            unfocusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
-                            focusedTextColor = Color(KodenusaPalette.TEXT),
-                            unfocusedTextColor = Color(KodenusaPalette.TEXT),
+                            focusedContainerColor = Kode.surfaceRaised,
+                            unfocusedContainerColor = Kode.surfaceRaised,
+                            focusedTextColor = Kode.text,
+                            unfocusedTextColor = Kode.text,
                         ),
                     )
                 }
                 galat?.let { pesan ->
                     Text(
                         pesan,
-                        color = Color(KodenusaPalette.ERROR),
+                        color = Kode.error,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 8.dp),
                     )
@@ -140,7 +141,7 @@ fun FileActionDialog(
         },
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick = onDismiss) { Text("Batal", color = Color(KodenusaPalette.TEXT_DIM)) }
+                TextButton(onClick = onDismiss) { Text("Batal", color = Kode.textDim) }
                 PrimaryButton(konfirmasi, ::jalankan, modifier = Modifier.testTag("aksi-berkas"))
             }
         },
@@ -159,28 +160,28 @@ private fun LokasiField(
         Text(
             "Lokasi: ",
             style = MaterialTheme.typography.labelMedium,
-            color = Color(KodenusaPalette.TEXT_DIM),
+            color = Kode.textDim,
         )
         Box {
             TextButton(onClick = { buka = true }, modifier = Modifier.testTag("pilih-lokasi")) {
                 Text(
                     induk.ifBlank { "akar projek" } + " ▾",
-                    color = Color(KodenusaPalette.ACCENT),
+                    color = Kode.accent,
                     style = MaterialTheme.typography.labelLarge,
                 )
             }
             DropdownMenu(
                 expanded = buka,
                 onDismissRequest = { buka = false },
-                containerColor = Color(KodenusaPalette.SURFACE_RAISED),
+                containerColor = Kode.surfaceRaised,
             ) {
                 DropdownMenuItem(
-                    text = { Text("akar projek", color = Color(KodenusaPalette.TEXT)) },
+                    text = { Text("akar projek", color = Kode.text) },
                     onClick = { buka = false; onInduk("") },
                 )
                 semuaNode.filter { it.directory }.forEach { folder ->
                     DropdownMenuItem(
-                        text = { Text(folder.relativePath, color = Color(KodenusaPalette.TEXT)) },
+                        text = { Text(folder.relativePath, color = Kode.text) },
                         onClick = { buka = false; onInduk(folder.relativePath) },
                     )
                 }
@@ -217,14 +218,14 @@ private fun MoveDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(KodenusaPalette.SURFACE),
-        title = { Text("Pindahkan ${node.name}", color = Color(KodenusaPalette.TEXT)) },
+        containerColor = Kode.surface,
+        title = { Text("Pindahkan ${node.name}", color = Kode.text) },
         text = {
             Column(Modifier.fillMaxWidth()) {
                 Text(
                     "Pilih folder tujuan di dalam projek ini.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(KodenusaPalette.TEXT_DIM),
+                    color = Kode.textDim,
                 )
                 kandidat.forEach { (relatif, label) ->
                     val sekarang = relatif == asal
@@ -241,9 +242,7 @@ private fun MoveDialog(
                     ) {
                         Text(
                             if (sekarang) "• $label (sekarang)" else label,
-                            color = Color(
-                                if (sekarang) KodenusaPalette.TEXT_DIM else KodenusaPalette.TEXT,
-                            ),
+                            color = if (sekarang) Kode.textDim else Kode.text,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -251,7 +250,7 @@ private fun MoveDialog(
                 galat?.let {
                     Text(
                         it,
-                        color = Color(KodenusaPalette.ERROR),
+                        color = Kode.error,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 6.dp),
                     )
@@ -259,7 +258,7 @@ private fun MoveDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Batal", color = Color(KodenusaPalette.TEXT_DIM)) }
+            TextButton(onClick = onDismiss) { Text("Batal", color = Kode.textDim) }
         },
     )
 }

@@ -28,6 +28,7 @@ import id.kodenusa.ui.GhostButton
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.Kode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -62,7 +63,7 @@ fun KlonProjekDialog(
                 Text(
                     "Kode diunduh sebagai folder projek biasa, lalu bisa langsung dibangun di sini.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(KodenusaPalette.TEXT_DIM),
+                    color = Kode.textDim,
                 )
                 Spacer(Modifier.height(10.dp))
                 OutlinedTextField(
@@ -87,7 +88,7 @@ fun KlonProjekDialog(
                     Text(
                         pesan,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(KodenusaPalette.ERROR),
+                        color = Kode.error,
                         modifier = Modifier.testTag("galat-klon"),
                     )
                 }
@@ -125,7 +126,7 @@ fun KlonProjekDialog(
         dismissButton = {
             TextButton(onClick = { if (!sibuk) onTutup() }) { Text("Batal") }
         },
-        containerColor = Color(KodenusaPalette.SURFACE),
+        containerColor = Kode.surface,
     )
 }
 
@@ -137,13 +138,13 @@ fun KlonProjekCard(onBuka: () -> Unit) {
             Text(
                 "Punya projek di GitHub?",
                 style = MaterialTheme.typography.titleMedium,
-                color = Color(KodenusaPalette.TEXT),
+                color = Kode.text,
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 "Unduh repo Anda sendiri ke HP ini, lalu lanjutkan mengerjakannya di sini.",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(KodenusaPalette.TEXT_DIM),
+                color = Kode.textDim,
             )
             Spacer(Modifier.height(8.dp))
             GhostButton("Ambil dari GitHub", onBuka, Modifier.testTag("buka-klon"))
