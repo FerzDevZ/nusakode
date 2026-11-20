@@ -22,7 +22,9 @@ object Kntema {
     private const val BATAS_TEKS = 4.5
     private const val BATAS_BATAS = 3.0
 
-    private val json = Json { ignoreUnknownKeys = true }
+    // encodeDefaults wajib true: tanpa ini "gelap":true (sama dengan default) tidak ditulis ke
+    // berkas, dan tema terang kustom salah terbaca sebagai gelap saat berkasnya dibaca ulang.
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     @Serializable
     private data class WarnaJson(

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Mengizinkan HTTP polos untuk unduh tema (.kntema) saja secara praktis: pengguna boleh
+  membagikan tema lewat LAN/HP sendiri tanpa sertifikat. Risiko rendah karena isi berkas
+  dibatasi 4 KB, diparse sebagai JSON, dan harus lolos gerbang kontras sebelum dipakai.
+  GitHub dan semua jalur lain tetap HTTPS.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

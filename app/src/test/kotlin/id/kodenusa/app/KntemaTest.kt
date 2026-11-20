@@ -96,3 +96,13 @@ class KntemaTest {
         assertFalse(berkas.absolutePath.contains(".."), "nama berkas tidak boleh lolos dari folder tema")
     }
 }
+
+    @Test
+    fun `serialisasi_tema_terang_menulis_gelap_false`() {
+        val palet = PaletTerangKertas
+        val tema = Kntema.Tema("Terang Uji", false, palet, null)
+        val json = Kntema.serialisasi(tema)
+        assertTrue(json.contains("\"gelap\":false"), "gelap=false harus tertulis di berkas")
+        val balik = Kntema.parse(json).getOrThrow()
+        assertFalse(balik.gelap, "tema terang harus terbaca kembali sebagai terang")
+    }
