@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import id.kodenusa.app.AppContainer
 import id.kodenusa.app.TemplateInfo
+import id.kodenusa.app.Templates
 import id.kodenusa.core.build.Severity
 import id.kodenusa.core.project.KodenusaProject
 import id.kodenusa.core.project.ProjectValidator
@@ -45,22 +46,26 @@ fun WizardScreen(
     onCancel: () -> Unit,
     onCreated: (File) -> Unit,
 ) {
-    val templates = remember { container.templates.list() }
-    var selected by remember { mutableStateOf(templates.firstOrNull()) }
+    // Template boleh kosong (user menulis sendiri). Kalau aset gagal dibaca, sebabnya ditampilkan
+    // supaya tombol "Buat projek" tidak pernah mati tanpa penjelasan.
+    val dimuat = remember { container.templates.load() }
+    val templates = dimuat.getOrNull().orEmpty()
+    val pilihan = remember(templates) { templates + TemplateInfoKosong }
+    var selected by remember(pilihan) { mutableStateOf(pilihan.firstOrNull()) }
     var name by remember { mutableStateOf("") }
     var appId by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var failure by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    val candidate = KodenusaProject(
-        name = name,
-        applicationId = appId.ifBlank { "id.kodenusa.projek" },
-    )
-    val issues = if (name.isBlank()) emptyList() else ProjectValidator.validate(candidate)
-    val nameError = issues.firstOrNull { it.field == "name" }
-    val idError = issues.firstOrNull { it.field == "applicationId" }
-    val canCreate = selected != null && name.isNotBlank() && issues.none { it.severity == Severity.ERROR } && !busy
+    // ID kosong berarti "buatkan dari nama", jadi yang divalidasi adalah ID yang benar-benar dipakai.
+    val efektifId = appId.trim().ifBlank { defaultId(name) }
+    val candidate = KodenusaProject(name = name.trim(), applicationId = efektifId)
+    val masalah = if (name.isBlank()) emptyList() else ProjectValidator.validate(candidate)
+    val nameError = masalah.firstOrNull { it.field == "name" }
+    val idError = masalah.firstOrNull { it.field == "applicationId" }
+    val masalahLain = masalah.filter { it.severity == Severity.ERROR && it.field != "name" && it.field != "applicationId" }
+    val canCreate = selected != null && name.isNotBlank() && masalah.none { it.severity == Severity.ERROR } && !busy
 
     Scaffold(containerColor = Color(KodenusaPalette.BACKGROUND)) { padding ->
         LazyColumn(
@@ -78,7 +83,21 @@ fun WizardScreen(
                 )
             }
 
-            items(templates, key = { it.id }) { template ->
+            val galatTemplate = dimuat.exceptionOrNull()
+            if (galatTemplate != null) {
+                item {
+                    Panel(Modifier.fillMaxWidth()) {
+                        Text(
+                            "Template bawaan gagal dimuat: ${galatTemplate.message ?: "sebab tidak diketahui"}. " +
+                                "Kamu masih bisa mulai dari projek kosong.",
+                            color = Color(KodenusaPalette.ERROR),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+            }
+
+            items(pilihan, key = { it.id }) { template ->
                 TemplateCard(template, selected?.id == template.id) { selected = template }
             }
 
@@ -98,9 +117,19 @@ fun WizardScreen(
                     value = appId,
                     onValueChange = { appId = it.take(60) },
                     helper = idError?.fallbackMessage
-                        ?: "Unik dan tidak bisa diubah setelah dipasang. Contoh: id.kodenusa.kasirbusri",
+                        ?: "Kosongkan untuk dibuat otomatis dari nama. Yang akan dipakai: $efektifId",
                     isError = idError != null,
                 )
+            }
+
+            if (masalahLain.isNotEmpty()) {
+                item {
+                    Panel(Modifier.fillMaxWidth()) {
+                        masalahLain.forEach { issue ->
+                            Text(issue.fallbackMessage, color = Color(KodenusaPalette.ERROR), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
             }
 
             if (failure != null) {
@@ -124,9 +153,9 @@ fun WizardScreen(
                                 val result = withContext(Dispatchers.IO) {
                                     container.templates.create(
                                         templateId = template.id,
-                                        target = container.projectStore.uniqueFolder(name),
+                                        target = container.projectStore.uniqueFolder(name.trim()),
                                         appName = name.trim(),
-                                        appId = appId.trim().ifBlank { defaultId(name) },
+                                        appId = efektifId,
                                     )
                                 }
                                 busy = false
@@ -171,3 +200,11 @@ private fun defaultId(name: String): String {
     val slug = name.lowercase().replace(Regex("[^a-z0-9]+"), "")
     return "id.kodenusa.${slug.ifBlank { "projek" }}"
 }
+
+/** Kartu terakhir di daftar: mulai dari nol tanpa template. */
+private val TemplateInfoKosong = TemplateInfo(
+    id = Templates.BLANK_ID,
+    title = "Projek kosong",
+    tagline = "Manifest, satu activity, satu layout. Semua isi ditulis sendiri dari awal.",
+    audience = "yang sudah tahu struktur projek Android",
+)

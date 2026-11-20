@@ -40,6 +40,21 @@
         "src/main/res/layout/activity_main.xml",
         "src/main/res/values/strings.xml"
       ]
+    },
+    {
+      "id": "web-katalog",
+      "title": "Web jadi APK",
+      "tagline": "Tulis HTML, CSS, dan JavaScript seperti di browser — hasilnya APK dengan WebView yang jalan tanpa internet.",
+      "audience": "yang sudah biasa membuat halaman web",
+      "files": [
+        "kodenusa.json",
+        "src/main/AndroidManifest.xml",
+        "src/main/java/app/MainActivity.java",
+        "src/main/assets/index.html",
+        "src/main/assets/gaya.css",
+        "src/main/assets/aplikasi.js",
+        "src/main/res/values/strings.xml"
+      ]
     }
   ]
 }

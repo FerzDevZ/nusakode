@@ -249,3 +249,15 @@ Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif
 **Konsekuensi:** (+) Tidak ada kunci bersama yang bocor lewat APK; tiap pemasangan punya identitas sendiri; aset APK menyusut satu berkas. (+) Tinggal satu langkah menuju "kunci milik pengguna" (pengguna bisa memasok keystore sendiri). (−) APK yang dibangun sebelum uninstall tidak bisa diperbarui setelah aplikasi dihapus dan dipasang ulang, karena kuncinya ikut hilang — perilaku ini disengaja dan harus dijelaskan di UI saat rilis.
 
 **Yang harus diingat saat mengubah kode:** `KeyPair.getPublic().encoded` **sudah** berupa `SubjectPublicKeyInfo` (SEQUENCE). Membungkusnya lagi dengan BIT STRING menghasilkan sertifikat yang ditolak JDK ("corrupt subject key") dan OpenSSL. Diuji oleh `DebugKeystoreTest` dan `OnDeviceBuildTest.keystore_dibuat_perangkat_bukan_dari_aset`.
+
+---
+
+## ADR-020 · Template web dibungkus WebView, aset dipaket pipeline Tier 0
+
+**Status:** Diterima
+
+**Konteks:** Pengguna bertanya mengapa KodeNusa hanya bisa Java. Padahal `ApkPackager` sejak awal sudah memaket folder `src/main/assets` projek ke dalam APK, dan `ProjectLoader` sudah mengumpulkan `src/main/assets` sebagai `assetDirs`. Yang belum ada hanyalah jalur "halaman web → APK": sebuah template yang menaruh HTML/CSS/JS di aset dan activity yang menampilkannya.
+
+**Keputusan:** Template `web-katalog` memakai `WebView` (`file:///android_asset/index.html`, `setJavaScriptEnabled`, `setDomStorageEnabled`, `LOAD_NO_CACHE`) di dalam `MainActivity` berpaket `app`, dengan manifest `android:name=".app.MainActivity"` mengikuti konvensi template lain. Pipeline **tidak diubah**: tidak ada langkah baru, tidak ada flag aapt2 baru. Semua berkas web hidup di `src/main/assets` projek sehingga otomatis ikut lewat `copyAssets`.
+
+**Konsekuensi:** (+) HTML/CSS/JS sekarang juga menghasilkan APK asli, offline, tanpa Gradle; pipeline tetap satu jalur sehingga template web diuji oleh `build-templates.sh` yang sama. (+) Aset yang sudah dipakai template lain tidak berubah perilakunya. (−) Halaman yang butuh server/Node tidak bisa dibangun di HP; untuk itu tetap Tier 1/2. (−) Python dan bahasa yang butuh interpreter **tidak** didukung Tier 0 dan tidak boleh dijanjikan di UI.

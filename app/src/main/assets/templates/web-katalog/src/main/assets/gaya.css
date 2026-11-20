@@ -1,0 +1,78 @@
+:root {
+  --kertas: #fbf7ef;
+  --tinta: #1d1b17;
+  --redup: #6b6558;
+  --garis: #e2dbcc;
+  --aksen: #b0581a;
+  --aksen-tinta: #fff8ef;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--kertas);
+  color: var(--tinta);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: 18px 16px 120px;
+}
+
+header { margin-bottom: 18px; }
+.penanda {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--aksen);
+}
+h1 { margin: 6px 0 4px; font-size: 26px; line-height: 1.15; }
+.ket { margin: 0; color: var(--redup); font-size: 14px; }
+
+#daftar-barang { display: grid; gap: 10px; }
+
+.barang {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--garis);
+  border-radius: 12px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  min-height: 56px;
+}
+.barang:active { transform: translateY(1px); }
+.barang[aria-pressed="true"] { border-color: var(--aksen); }
+.barang .nama { font-weight: 600; }
+.barang .harga { color: var(--redup); font-size: 14px; }
+
+footer {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  padding: 14px 16px 18px;
+  background: var(--kertas);
+  border-top: 1px solid var(--garis);
+}
+.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+#total { font-size: 20px; }
+
+#pesan {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--aksen);
+  color: var(--aksen-tinta);
+  font: 600 16px/1 inherit;
+  padding: 14px;
+}
+#pesan:disabled { background: var(--garis); color: var(--redup); }
+#pesan:active { transform: translateY(1px); }

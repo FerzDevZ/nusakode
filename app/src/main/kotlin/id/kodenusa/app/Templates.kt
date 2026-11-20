@@ -1,40 +1,35 @@
 package id.kodenusa.app
 
 import android.content.Context
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import android.util.Log
 import java.io.File
-
-@Serializable
-data class TemplateInfo(
-    val id: String,
-    val title: String,
-    val tagline: String,
-    val audience: String,
-    val appIdSuffix: String = "",
-    val files: List<String> = emptyList(),
-)
 
 /**
  * Template disimpan sebagai projek utuh di `assets/templates/<id>`, bukan sebagai potongan kode
  * yang dirakit di runtime. Konsekuensinya template bisa diuji dengan pipeline build yang sama
  * persis seperti projek buatan user — tidak ada jalur khusus yang bisa diam-diam rusak.
+ *
+ * Template juga bisa kosong ([BLANK_ID]): user yang ingin menulis semuanya sendiri tidak boleh
+ * mentok di layar "Projek baru" hanya karena tidak ada template yang cocok.
  */
 class Templates(private val context: Context) {
 
-    private val json = Json { ignoreUnknownKeys = true }
-
-    fun list(): List<TemplateInfo> = runCatching {
-        context.assets.open("templates/index.json").use { input ->
-            json.decodeFromString(kotlinx.serialization.builtins.ListSerializer(TemplateInfo.serializer()), input.readBytes().decodeToString())
+    /** Memuat daftar template beserta sebab kegagalannya, bukan daftar kosong tanpa alasan. */
+    fun load(): Result<List<TemplateInfo>> = runCatching {
+        context.assets.open(INDEX).use { input ->
+            TemplateCatalog.parse(input.readBytes().decodeToString())
         }
-    }.getOrDefault(emptyList())
+    }.onFailure { Log.e(TAG, "Daftar template gagal dibaca dari $INDEX", it) }
+
+    fun list(): List<TemplateInfo> = load().getOrElse { emptyList() }
 
     /**
      * Menyalin template ke [target] dan mengganti penanda `__APP_NAME__` serta `__APP_ID__`.
      * Gagal dengan pesan jelas kalau template tidak dikenal, bukan membuat projek setengah jadi.
      */
     fun create(templateId: String, target: File, appName: String, appId: String): Result<File> = runCatching {
+        if (templateId == BLANK_ID) return@runCatching BlankProject.create(target, appName, appId)
+
         val info = list().firstOrNull { it.id == templateId }
             ?: error("Template '$templateId' tidak ada di paket ini")
 
@@ -53,5 +48,15 @@ class Templates(private val context: Context) {
             )
         }
         target
+    }
+
+    /** Projek kosong: manifest, satu activity, satu layout. Semua isi ditulis dari sini. */
+    fun createBlank(target: File, appName: String, appId: String): Result<File> =
+        runCatching { BlankProject.create(target, appName, appId) }
+
+    companion object {
+        const val BLANK_ID = BlankProject.ID
+        private const val INDEX = "templates/index.json"
+        private const val TAG = "KodeNusaTemplates"
     }
 }

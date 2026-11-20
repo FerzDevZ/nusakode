@@ -57,6 +57,10 @@ Dibaca di awal setiap sesi. Format dari `AGENTS.md` Gate 3:
 
 - **[26-11-20 · Tier 0/aapt2]**: `error: illegal map type 'string' (22)` saat link → **Root Cause**: aapt2 2.19 bionic tidak bisa membaca `android.jar` API 35 → **Invariant Rule**: Tier 0 dipin ke `android.jar` API 34 (`DEFAULT_TARGET_SDK = 34`); menaikkan versi hanya setelah ada biner aapt2 bionic baru yang terbukti.
 
+- **[26-11-20 · UI/projek baru]**: user mengisi form "Projek baru" dengan benar tetapi tombol "Buat projek" tidak pernah bisa ditekan → **Root Cause**: `assets/templates/index.json` berbentuk objek `{"templates": [...]}` sementara `Templates.list()` men-decode sebagai array telanjang; `runCatching{}.getOrDefault(emptyList())` menelan galatnya sehingga daftar template kosong, `selected == null`, dan `canCreate` selalu false tanpa pesan apa pun → **Invariant Rule**: (1) setiap pembacaan aset wajib mengembalikan `Result` dan sebabnya ditampilkan di layar, tidak boleh `getOrDefault(emptyList())`; (2) tombol utama tidak boleh bergantung pada daftar yang bisa kosong — selalu ada pilihan terakhir "projek kosong"; (3) galat validasi untuk field yang tidak punya kotak isian wajib dirender, bukan disembunyikan. Uji: `TemplateCatalogTest`, `TemplatesDeviceTest`.
+
+- **[26-11-20 · Bahasa]**: user mengira KodeNusa hanya bisa Java → **Root Cause**: satu-satunya template yang membangun APK memakai Java; HTML/CSS/JS sebenarnya sudah bisa diedit tapi tidak ada jalur "jadi APK" → **Invariant Rule**: pipeline Tier 0 sudah memaket `src/main/assets` (`ApkPackager.copyAssets`), jadi template web cukup menaruh berkas di `src/main/assets` dan dibungkus WebView — tidak perlu mengubah pipeline. Python tetap butuh interpreter, jadi tidak boleh dijanjikan di Tier 0.
+
 ---
 
 ## Cara menambah entri
