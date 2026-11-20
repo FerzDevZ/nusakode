@@ -1,13 +1,13 @@
 # KodeNusa
 
-[![Unduh APK](https://img.shields.io/badge/Unduh-APK%2042%2C6%20MB-amber?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases/latest/download/KodeNusa-0.1.0-debug.apk)
+[![Unduh APK](https://img.shields.io/badge/Unduh-APK%2042%2C6%20MB-amber?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases/download/v0.1.0/KodeNusa-0.1.0-debug.apk)
 [![Rilis](https://img.shields.io/badge/rilis-v0.1.0-blue?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases)
 
 IDE Android native untuk mengoding **langsung di HP**, dirancang untuk perangkat kelas bawah Indonesia (2 GB RAM / 32 GB storage), bekerja offline, dan berbahasa Indonesia penuh.
 
 ## Unduh dan pasang
 
-**→ [Unduh APK terbaru (42,6 MB)](https://github.com/FerzDevZ/nusakode/releases/latest/download/KodeNusa-0.1.0-debug.apk)**
+**→ [Unduh APK KodeNusa 0.1.0 (42,6 MB)](https://github.com/FerzDevZ/nusakode/releases/download/v0.1.0/KodeNusa-0.1.0-debug.apk)** · [semua rilis](https://github.com/FerzDevZ/nusakode/releases)
 
 1. Buka tautan di atas dari HP (boleh lewat browser apa pun, tanpa login).
 2. Buka berkas `KodeNusa-0.1.0-debug.apk` dari notifikasi atau folder Unduhan.
