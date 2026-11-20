@@ -34,7 +34,11 @@ data class BuildUiState(
  * Catatan perilaku: log dibatasi [MAX_LOG_LINES] baris dan dipotong dari atas. Tanpa batas ini,
  * satu build yang gagal berulang bisa menghabiskan puluhan MB RAM hanya untuk teks.
  */
-class BuildSession(private val scope: CoroutineScope) {
+class BuildSession(
+    private val scope: CoroutineScope,
+    /** Batas baris log; diturunkan di mode hemat supaya RAM tidak habis untuk teks. */
+    private val batasLog: Int = MAX_LOG_LINES,
+) {
 
     var state: BuildUiState = BuildUiState()
         private set(value) {
@@ -77,14 +81,14 @@ class BuildSession(private val scope: CoroutineScope) {
             is BuildEvent.StepStarted -> state = state.copy(currentStep = event.step)
 
             is BuildEvent.StepSkipped -> state = state.copy(
-                log = (state.log + "${event.step.title}: dilewati (${event.reason})").takeLast(MAX_LOG_LINES),
+                log = (state.log + "${event.step.title}: dilewati (${event.reason})").takeLast(batasLog),
             )
 
             is BuildEvent.Progress -> state = state.copy(currentStep = event.step)
 
             is BuildEvent.Log -> {
                 if (event.stream == LogStream.SYSTEM) {
-                    state = state.copy(log = (state.log + event.line).takeLast(MAX_LOG_LINES))
+                    state = state.copy(log = (state.log + event.line).takeLast(batasLog))
                 }
             }
 
@@ -100,7 +104,7 @@ class BuildSession(private val scope: CoroutineScope) {
                 currentStep = null,
                 completedSteps = state.completedSteps + event.result.stepsExecuted,
                 result = event.result,
-                log = (state.log + ringkasan(event.result)).takeLast(MAX_LOG_LINES),
+                log = (state.log + ringkasan(event.result)).takeLast(batasLog),
             )
         }
     }

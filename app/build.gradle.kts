@@ -13,8 +13,8 @@ android {
         applicationId = "id.kodenusa.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 11
-        versionName = "0.8.2"
+        versionCode = 12
+        versionName = "0.9.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -23,6 +23,17 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Ditandatangani kunci debug milik mesin build: cukup untuk dibagikan lewat GitHub
+            // Releases, dan membuat APK rilis bisa langsung dipasang tanpa langkah apksigner manual.
+            // Kunci ini TIDAK boleh dipakai untuk Play Store (ADR-019).
+            signingConfig = signingConfigs.getByName("debug")
+            ndk {
+                // Rilis hanya untuk HP: aapt2 x86/x86_64 (3,3 MB) dibuang. Emulator tetap memakai debug.
+                // Jalankan dengan `-PsemuaAbi` untuk menguji kode yang sudah diminifikasi di emulator.
+                if (!project.hasProperty("semuaAbi")) {
+                    abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+                }
+            }
         }
     }
 

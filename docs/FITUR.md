@@ -112,6 +112,9 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | **Layar "Minta AI buatkan…"** dengan log per putaran & tombol Hentikan | ✅ | `AgenUiTest` (2 uji: terkunci tanpa kunci AI, aktif setelah kunci + tugas) |
 | **Papan tulis projek nyata**: ringkasan ≤ 2,4 KB, tulis berkas lewat penjaga jalur | ✅ | `AiProjectBoardTest` (6 uji: jalur luar projek, biner, batas ukuran) |
 | **Gerbang build nyata** untuk agen (galat diterjemahkan `ErrorCatalog`) | ✅ | `AiBuildGateTest` (2 uji **di HP**, API 24 & 35: build sukses, Java rusak → galat berbahasa manusia) |
+| **Mode hemat otomatis** (RAM ≤ 4,2 GB → log 600 baris, sorotan dibatasi) | ✅ | `ModeHematDeviceTest` (3 uji **di HP**, API 35) |
+| **Bersihkan hasil build** (tampilkan ukuran `build/`, hapus tanpa menyentuh sumber) | ✅ | `PenyimpananProjekTest` (5 uji) + tombol `bersihkan-build` |
+| **APK rilis 30,7 MB** (R8 + shrink + arm-only, ditandatangani) | ✅ | `:app:assembleRelease` = 32.242.759 B; kode minified diuji jalan di API 35 (`-PsemuaAbi`) |
 
 ## 4d. Git & GitHub (mesin git sudah nyata di HP)
 

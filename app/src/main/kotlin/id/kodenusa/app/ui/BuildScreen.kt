@@ -32,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import id.kodenusa.app.ModeHemat
+import id.kodenusa.app.PenyimpananProjek
 import id.kodenusa.app.ApkInstaller
 import id.kodenusa.app.AppContainer
 import id.kodenusa.app.BuildSession
@@ -62,7 +64,10 @@ fun BuildScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val session = remember(projectDir) { BuildSession(scope) }
+    val batasHemat = remember(context) { ModeHemat.untukKonteks(context) }
+    val session = remember(projectDir, batasHemat.batasLog) { BuildSession(scope, batasHemat.batasLog) }
+    var ukuranBuild by remember(projectDir) { mutableStateOf(PenyimpananProjek.ukuranBuild(projectDir)) }
+    var pesanBersih by remember(projectDir) { mutableStateOf<String?>(null) }
     var state by remember { mutableStateOf(BuildUiState()) }
     var setupMessage by remember { mutableStateOf<String?>(null) }
     var aiTerbuka by remember { mutableStateOf(false) }
@@ -125,6 +130,53 @@ fun BuildScreen(
                     state.apk != null -> Pill("APK siap", KodenusaPalette.OK)
                     state.result != null || setupMessage != null -> Pill("gagal", KodenusaPalette.ERROR)
                     else -> Pill("siap", KodenusaPalette.TEXT_DIM)
+                }
+            }
+
+            if (batasHemat.hemat) {
+                Spacer(Modifier.height(6.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Pill("mode hemat", KodenusaPalette.INFO, modifier = Modifier.testTag("mode-hemat"))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "log ${batasHemat.batasLog} baris · disesuaikan untuk RAM kecil",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(KodenusaPalette.TEXT_DIM),
+                    )
+                }
+            }
+
+            if (ukuranBuild > 0L) {
+                Panel(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                "Hasil build menumpuk",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color(KodenusaPalette.TEXT),
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                PenyimpananProjek.ringkasByte(ukuranBuild) + " di folder build/",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(KodenusaPalette.TEXT_DIM),
+                                modifier = Modifier.testTag("ukuran-build"),
+                            )
+                        }
+                        GhostButton(
+                            "Bersihkan",
+                            {
+                                val bebas = PenyimpananProjek.bersihkanBuild(projectDir)
+                                ukuranBuild = PenyimpananProjek.ukuranBuild(projectDir)
+                                pesanBersih = "${PenyimpananProjek.ringkasByte(bebas)} dibebaskan. Berkas sumber tidak disentuh."
+                            },
+                            modifier = Modifier.testTag("bersihkan-build"),
+                        )
+                    }
+                    pesanBersih?.let { pesan ->
+                        Spacer(Modifier.height(6.dp))
+                        Text(pesan, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.OK))
+                    }
                 }
             }
 

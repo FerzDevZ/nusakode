@@ -57,18 +57,18 @@ Yang masih kurang (masuk backlog P1): tombol **Ambil foto** (intent kamera), **t
 Build** otomatis dilampirkan saat "Perbaiki galat build", dan pemberitahuan jelas bila model yang
 dipilih **tidak mendukung gambar** (sebagian model murah menolak `image_url`).
 
-## 4. Anggaran HP 4 GB / 64 GB (angka nyata dari rilis 0.8.0)
+## 4. Anggaran HP 4 GB / 64 GB (angka nyata dari rilis 0.9.0)
 
 | Komponen | Ukuran terukur | Catatan |
 |---|---|---|
-| APK debug (dibagikan) | **45,9 MB** | berisi `android.jar` 26,4 MB + dex 11,9 MB + aapt2 3 ABI |
-| APK release (R8 + shrink, belum ditandatangani) | **34,3 MB** | bukti bahwa R8 memangkas ±25% |
-| dex | 11,9 MB debug | turun ke ±6 MB setelah R8 |
-| `android.jar` | 26,4 MB | **tidak bisa dipangkas** tanpa memutus kompilasi Java; ini bahan wajib Tier 0 |
-| libaapt2 per ABI | 1,7–2,1 MB | release cukup arm64 + v7a (hemat ±3,3 MB) |
-| Penyimpanan projek | 5–30 MB per projek | `build/` terbesar; perlu tombol bersih-bersih |
-| RAM saat idle (target) | **< 120 MB PSS** | belum diukur di HP asli |
-| RAM saat build | puncak dari proses `app_process` + app | perlu diukur di Redmi 9A |
+| **APK rilis (dibagikan sekarang)** | **32,2 MB (30,7 MiB)** | R8 + shrink + arm-only, ditandatangani kunci debug |
+| APK debug (untuk emulator) | 45,9 MB | + dex tanpa R8 + aapt2 x86/x86_64 |
+| dex | 11,9 MB debug → ±6 MB rilis | dipangkas R8 |
+| `android.jar` | 26,4 MB | **tidak bisa dipangkas** tanpa memutus kompilasi Java; bahan wajib Tier 0 |
+| libaapt2 | 1,7–2,1 MB per ABI | rilis hanya arm64 + v7a |
+| Penyimpanan projek | 5–30 MB per projek | sudah ada tombol **Bersihkan** di layar Build |
+| RAM idle | **66 MB PSS** (API 35, RAM 3 GB) | target < 120 MB — **terpenuhi** |
+| RAM saat build | belum diukur di HP asli | langkah R1 |
 
 Kesimpulan jujur: **ukuran APK bukan hambatan pasang** di HP 64 GB (45 MB ≈ 0,1% ruang), tetapi
 **penting untuk kuota unduh** dan kesan "aplikasi berat". Prioritas ukuran: rilis arm-only +
