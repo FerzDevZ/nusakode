@@ -56,6 +56,7 @@ fun BuildScreen(
     container: AppContainer,
     projectDir: File,
     onBack: () -> Unit,
+    onSitus: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -112,6 +113,8 @@ fun BuildScreen(
                     session.cancel()
                     onBack()
                 })
+                Spacer(Modifier.width(8.dp))
+                GhostButton("Situs", onSitus, modifier = Modifier.testTag("buka-situs"))
                 Spacer(Modifier.weight(1f))
                 when {
                     state.running -> Pill("sedang build", KodenusaPalette.INFO)

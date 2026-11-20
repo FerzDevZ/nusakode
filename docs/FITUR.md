@@ -131,13 +131,16 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 |---|---|---|
 | Template "Situs murni" di wizard (HTML/CSS/JS saja, tanpa AndroidManifest) | ✅ | `SitusDeviceTest.template_situs_murni_disusun_jadi_folder_siap_terbit` |
 | "Jadikan situs" → folder `build/situs` siap unggah | ✅ | `SitusStatisTest` (8 uji) + `SitusDeviceTest` (3 uji di HP) |
+| **Layar "Situs"** di app: tombol Susun, ringkasan berkas/ukuran, daftar berkas yang dilewati | ✅ | `SitusUiTest.menekan_susun_menampilkan_isi_situs` |
+| **Buka hasil di browser** & **bagikan situs sebagai zip** | ✅ | `SitusUiTest` + tombol `buka-situs` / `bagikan-situs` (FileProvider `${applicationId}.berkas`) |
+| Projek aplikasi biasa diberi alasan jelas, bukan tombol mati | ✅ | `SitusUiTest.projek_tanpa_situs_menampilkan_alasan_bukan_tombol_mati` |
 | Satu projek dua keluaran (situs **dan** APK) tanpa duplikasi berkas | ✅ | `SitusStatis.sumber` memilih `web/` atau `src/main/assets/` |
 | `index.html` wajib di akar situs (bukan subfolder) | ✅ | `SitusStatisTest.index_di_subfolder_ditolak` |
 | `node_modules`, `build`, `.exe`, `.psd` tidak ikut terbit | ✅ | `SitusStatisTest.node_modules_build_dan_berkas_aneh…` |
 | Sisa build lama dibersihkan sebelum terbit | ✅ | `SitusStatisTest.hasil_build_lama_dibersihkan` |
 | Terbit gratis ke GitHub Pages (`gh-pages`) + tautan otomatis | ✅ | `PagesTest` (3 uji): terbit lalu klon ulang isinya sama |
 | Bagikan lewat zip (Netlify Drop / Cloudflare Pages) | 🟡 | mesin siap; tombol berbagi zip menyusul |
-| Server lokal di HP untuk dibuka keluarga via Wi-Fi | ⛔ | rencana; cocok untuk kondisi tanpa internet |
+| Server lokal di HP untuk dibuka keluarga via Wi-Fi | ⛔ | rencana langkah S4 (`docs/06-rencana-2026.md`) |
 | PWA (manifest + service worker) agar bisa "dipasang" tanpa APK | ⛔ | rencana |
 
 ## 5. Distribusi & keamanan
