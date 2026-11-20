@@ -1,6 +1,22 @@
 # KodeNusa
 
+[![Unduh APK](https://img.shields.io/badge/Unduh-APK%2042%2C6%20MB-amber?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases/latest/download/KodeNusa-0.1.0-debug.apk)
+[![Rilis](https://img.shields.io/badge/rilis-v0.1.0-blue?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases)
+
 IDE Android native untuk mengoding **langsung di HP**, dirancang untuk perangkat kelas bawah Indonesia (2 GB RAM / 32 GB storage), bekerja offline, dan berbahasa Indonesia penuh.
+
+## Unduh dan pasang
+
+**→ [Unduh APK terbaru (42,6 MB)](https://github.com/FerzDevZ/nusakode/releases/latest/download/KodeNusa-0.1.0-debug.apk)**
+
+1. Buka tautan di atas dari HP (boleh lewat browser apa pun, tanpa login).
+2. Buka berkas `KodeNusa-0.1.0-debug.apk` dari notifikasi atau folder Unduhan.
+3. Saat muncul “Untuk keamanan, HP-mu tidak mengizinkan…”, pilih **Setelan** → aktifkan **Izinkan dari sumber ini**.
+4. Tekan **Instal**. Play Protect bisa meminta konfirmasi tambahan karena ini APK debug.
+
+Butuh Android 7.0 (API 24) atau lebih baru. Aplikasi tidak meminta izin internet — seluruh build berjalan di HP.
+
+Halaman unduhan alternatif (lewat Tailscale, dari mesin build langsung): `http://100.122.225.77:8080/` — hanya aktif selama `bash scripts/serve-apk.sh` berjalan.
 
 Repositori ini berisi **implementasi yang sudah berjalan** untuk Tier 0 (build APK tanpa Gradle)
 dan aplikasi Android-nya, bukan hanya rencana.
