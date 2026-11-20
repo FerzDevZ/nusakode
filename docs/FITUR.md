@@ -100,7 +100,7 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
   ./gradlew :core:ai:test --tests '*ChatNyataTest*'
 ```
 
-## 4c. Agen build otomatis (fondasi, belum ada layarnya)
+## 4c. Agen build otomatis
 
 | Fitur | Status | Bukti / catatan |
 |---|---|---|
@@ -109,7 +109,9 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | Loop tugas → ubah berkas → build → galat dikirim balik ke model | ✅ | `AgenBuildTest` (5 uji) |
 | Batas keras 3 putaran (jangan bakar kuota pengguna) | ✅ | `AgenBuildTest.berhenti_setelah_batas_putaran…` |
 | Build tidak dijalankan bila tak ada berkas tertulis | ✅ | `AgenBuildTest.build_tidak_dijalankan_bila_semua_berkas_ditolak…` |
-| Layar "Minta AI buatkan…" dengan log per putaran | ⛔ | pekerjaan berikutnya; mesinnya sudah siap |
+| **Layar "Minta AI buatkan…"** dengan log per putaran & tombol Hentikan | ✅ | `AgenUiTest` (2 uji: terkunci tanpa kunci AI, aktif setelah kunci + tugas) |
+| **Papan tulis projek nyata**: ringkasan ≤ 2,4 KB, tulis berkas lewat penjaga jalur | ✅ | `AiProjectBoardTest` (6 uji: jalur luar projek, biner, batas ukuran) |
+| **Gerbang build nyata** untuk agen (galat diterjemahkan `ErrorCatalog`) | ✅ | `AiBuildGateTest` (2 uji **di HP**: build sukses, Java rusak → galat berbahasa manusia) |
 
 ## 4d. Git & GitHub (mesin git sudah nyata di HP)
 

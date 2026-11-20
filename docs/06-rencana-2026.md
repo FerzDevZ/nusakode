@@ -1,8 +1,8 @@
 # Rencana Induk 2026 — KodeNusa
 
 > Dokumen ini adalah **rencana kerja yang bisa dieksekusi dingin**: setiap langkah punya berkas yang disentuh, perintah pembuktian, dan kriteria lulus. Tidak ada langkah yang berbunyi "tingkatkan kualitas" tanpa angka.
-> Status terakhir: **186 uji unit · 39 uji perangkat (API 24) · APK 45,9 MB · Tier 0 build 1,4–1,9 s.**
-> **Sesi 1–2 selesai** — layar Situs (susun, pratinjau, bagikan zip, terbit ke GitHub Pages) dan layar Git (siapkan repo, simpan, kirim, riwayat) sudah hidup dan teruji di HP.
+> Status terakhir: **198 uji unit · 46 uji perangkat (API 24) · APK 45,9 MB · Tier 0 build 1,4–1,9 s.**
+> **Sesi 1–3 selesai** — layar Situs (susun, pratinjau, bagikan zip, terbit ke GitHub Pages) dan layar Git (siapkan repo, simpan, kirim, riwayat) sudah hidup dan teruji di HP.
 
 ---
 
@@ -60,10 +60,10 @@ Setiap langkah dirancang **satu sesi kerja** (≤ 1 PR). Kolom *Paralel* menanda
 
 | # | Langkah | Berkas utama | Kriteria lulus | Paralel |
 |---|---|---|---|---|
-| A1 | **`PapanTulisProjek` nyata**: ringkasan struktur (≤ 2 KB) + tulis/hapus berkas lewat `ProjectFiles` | `app/AiProjectBoard.kt` | uji unit: ringkasan memuat jalur penting, tulis menolak jalur berbahaya | — |
-| A2 | **`GerbangBuild` nyata** di atas `Tier0BuildEngine` yang mengembalikan galat `DiagnosticParser` | `app/AiBuildGate.kt` | uji perangkat: tugas "tambah tombol" pada template `halo-dunia` → APK jadi ≤ 3 putaran | A1 |
-| A3 | **Layar Agen**: kotak tugas, tombol Hentikan, log per putaran, hasil APK | `ui/AgenScreen.kt` | uji UI: tanpa kunci AI → tombol mati; putaran tampil berurutan | A2 |
-| A4 | **Batas biaya & waktu**: maks 3 putaran, batas token per tugas, timeout total 180 s, tombol berhenti benar-benar membatalkan | `core/ai/AgenBuild.kt` | uji: pembatalan menghentikan loop sebelum putaran 2 | A3 |
+| A1 ✅ | **`PapanTulisProjek` nyata**: ringkasan struktur (≤ 2 KB) + tulis/hapus berkas lewat `ProjectFiles` | `app/AiProjectBoard.kt` | uji unit: ringkasan memuat jalur penting, tulis menolak jalur berbahaya | — |
+| A2 ✅ | **`GerbangBuild` nyata** di atas `Tier0BuildEngine` yang mengembalikan galat `DiagnosticParser` | `app/AiBuildGate.kt` | uji perangkat: tugas "tambah tombol" pada template `halo-dunia` → APK jadi ≤ 3 putaran | A1 |
+| A3 ✅ | **Layar Agen**: kotak tugas, tombol Hentikan, log per putaran, hasil APK | `ui/AgenScreen.kt` | uji UI: tanpa kunci AI → tombol mati; putaran tampil berurutan | A2 |
+| A4 ✅ | **Batas biaya & waktu**: maks 3 putaran, batas token per tugas, timeout total 180 s, tombol berhenti benar-benar membatalkan | `core/ai/AgenBuild.kt` | uji: pembatalan menghentikan loop sebelum putaran 2 | A3 |
 | A5 | **Evaluasi**: 10 tugas template terdokumentasi + hasil lulus/gagal dicatat | `docs/07-eval-agen.md` | ≥ 7/10 tugas selesai tanpa sentuh; waktu median ≤ 2 menit | A2–A4 |
 
 ### FASE 4 — Keamanan & ukuran
