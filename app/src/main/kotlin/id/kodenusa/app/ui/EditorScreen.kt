@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -29,16 +31,22 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import id.kodenusa.app.AppContainer
 import id.kodenusa.app.EditorSession
+import id.kodenusa.core.project.ProjectFiles
 import id.kodenusa.core.project.ProjectNode
 import id.kodenusa.core.project.ProjectTree
 import id.kodenusa.editor.CodeEditorView
@@ -64,9 +72,15 @@ fun EditorScreen(
     onBuild: () -> Unit,
 ) {
     val loaded = remember(projectDir) { container.projectStore.load(projectDir) }
-    val nodes = remember(projectDir) { ProjectTree.list(projectDir) }
+    // Daftar berkas adalah state, bukan nilai sekali baca: setelah menambah/menghapus berkas,
+    // panel harus langsung berubah tanpa keluar-masuk projek.
+    var nodes by remember(projectDir) { mutableStateOf(ProjectTree.list(projectDir)) }
     val session = remember(projectDir) { EditorSession(projectDir, initialFile(projectDir, nodes)) }
     val state = rememberEditorState()
+    var aksi by remember { mutableStateOf<FileAction?>(null) }
+    fun segarkan() {
+        nodes = ProjectTree.list(projectDir)
+    }
 
     val scope = rememberCoroutineScope()
     val drawer = rememberDrawerState(DrawerValue.Closed)
@@ -95,6 +109,10 @@ fun EditorScreen(
                         onBuild()
                     },
                     onBack = onBack,
+                    onNewFile = { aksi = FileAction.NewFile(folderAktif(session.active, projectDir)) },
+                    onNewFolder = { aksi = FileAction.NewFolder(folderAktif(session.active, projectDir)) },
+                    onRename = { node -> aksi = FileAction.Rename(node) },
+                    onDelete = { node -> aksi = FileAction.Delete(node) },
                     buildable = canBuild,
                 )
             }
@@ -190,6 +208,97 @@ fun EditorScreen(
     }
 
     Autosave(session)
+    FileActionHost(
+        aksi = aksi,
+        projectDir = projectDir,
+        onDismiss = { aksi = null },
+        onSelesai = { segarkan() },
+        onBuka = { file -> session.open(file); state.load(file) },
+        onTutupTab = { file -> session.close(file) },
+        session = session,
+    )
+}
+
+/** Folder tujuan untuk berkas/folder baru: folder dari berkas aktif, atau akar projek. */
+private fun folderAktif(active: File?, projectDir: File): String {
+    val parent = active?.parentFile ?: return ""
+    return runCatching {
+        val rel = parent.relativeTo(projectDir).invariantSeparatorsPath
+        if (rel.startsWith("..")) "" else rel
+    }.getOrDefault("")
+}
+
+/** Isi awal untuk berkas baru: berkas Java langsung mendapat paket dan kelas yang benar. */
+private fun starterUntuk(projectDir: File, parent: String, nama: String): String {
+    if (!nama.endsWith(".java", ignoreCase = true)) return ""
+    val kelas = nama.removeSuffix(".java").removeSuffix(".JAVA")
+    if (!kelas.matches(Regex("[A-Za-z_][A-Za-z0-9_]*"))) return ""
+    val paket = parent.removePrefix("src/main/java").trim('/').replace('/', '.')
+    return id.kodenusa.core.project.ProjectFiles.javaStarter(paket, kelas)
+}
+
+@Composable
+private fun FileActionHost(
+    aksi: FileAction?,
+    projectDir: File,
+    session: EditorSession,
+    onDismiss: () -> Unit,
+    onSelesai: () -> Unit,
+    onBuka: (File) -> Unit,
+    onTutupTab: (File) -> Unit,
+) {
+    val action = aksi ?: return
+    FileActionDialog(
+        action = action,
+        onDismiss = onDismiss,
+        onNewFile = { parent, nama ->
+            val isi = starterUntuk(projectDir, parent, nama)
+            when (val hasil = ProjectFiles.createFile(projectDir, parent, nama, isi)) {
+                is ProjectFiles.Hasil.Gagal -> hasil.pesan
+                is ProjectFiles.Hasil.Sukses -> {
+                    onSelesai()
+                    onBuka(hasil.file)
+                    null
+                }
+            }
+        },
+        onNewFolder = { parent, nama ->
+            when (val hasil = ProjectFiles.createFolder(projectDir, parent, nama)) {
+                is ProjectFiles.Hasil.Gagal -> hasil.pesan
+                is ProjectFiles.Hasil.Sukses -> {
+                    onSelesai()
+                    null
+                }
+            }
+        },
+        onRename = { node, nama ->
+            val terbuka = session.tabs.firstOrNull { it.path == node.file.path }
+            when (val hasil = ProjectFiles.rename(projectDir, node.relativePath, nama)) {
+                is ProjectFiles.Hasil.Gagal -> hasil.pesan
+                is ProjectFiles.Hasil.Sukses -> {
+                    // Tab lama harus ikut pindah, kalau tidak isi yang belum disimpan tertulis ke
+                    // path yang sudah tidak ada.
+                    if (terbuka != null) {
+                        session.save(terbuka)
+                        onTutupTab(terbuka)
+                        if (!hasil.file.isDirectory) onBuka(hasil.file)
+                    }
+                    onSelesai()
+                    null
+                }
+            }
+        },
+        onDelete = { node ->
+            when (val hasil = ProjectFiles.delete(projectDir, node.relativePath)) {
+                is ProjectFiles.Hasil.Gagal -> hasil.pesan
+                is ProjectFiles.Hasil.Sukses -> {
+                    session.tabs.filter { it.path.startsWith(node.file.path) }.forEach(onTutupTab)
+                    onSelesai()
+                    null
+                }
+            }
+        },
+    )
 }
 
 @Composable
@@ -276,6 +385,10 @@ private fun FilePanel(
     onOpen: (File) -> Unit,
     onBuild: () -> Unit,
     onBack: () -> Unit,
+    onNewFile: () -> Unit,
+    onNewFolder: () -> Unit,
+    onRename: (ProjectNode) -> Unit,
+    onDelete: (ProjectNode) -> Unit,
     buildable: Boolean,
 ) {
     val visible = ProjectTree.visible(nodes, collapsed)
@@ -294,11 +407,24 @@ private fun FilePanel(
                 modifier = Modifier.weight(1f),
             )
         }
-        LazyColumn(Modifier.weight(1f)) {
+        // Tombol tambah selalu terlihat: inilah yang dulu tidak ada sehingga projek baru terasa
+        // "kosong dan tidak bisa diapa-apakan".
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            GhostButton("+ Berkas", onNewFile, Modifier.weight(1f).testTag("berkas-baru"))
+            GhostButton("+ Folder", onNewFolder, Modifier.weight(1f).testTag("folder-baru"))
+        }
+        LazyColumn(Modifier.weight(1f).padding(top = 6.dp).testTag("daftar-berkas")) {
             items(visible, key = { it.relativePath }) { node ->
-                FileRow(node, activePath == node.relativePath, onClick = {
-                    if (node.directory) onToggle(node) else onOpen(node.file)
-                })
+                FileRow(
+                    node = node,
+                    active = activePath == node.relativePath,
+                    onClick = { if (node.directory) onToggle(node) else onOpen(node.file) },
+                    onRename = { onRename(node) },
+                    onDelete = { onDelete(node) },
+                )
             }
         }
         Box(Modifier.fillMaxWidth().padding(12.dp)) {
@@ -308,21 +434,53 @@ private fun FilePanel(
 }
 
 @Composable
-private fun FileRow(node: ProjectNode, active: Boolean, onClick: () -> Unit) {
+private fun FileRow(
+    node: ProjectNode,
+    active: Boolean,
+    onClick: () -> Unit,
+    onRename: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    var menu by remember { mutableStateOf(false) }
     Row(
         Modifier
             .fillMaxWidth()
             .background(if (active) Color(KodenusaPalette.SURFACE_RAISED) else Color.Transparent)
             .clickable(onClick = onClick)
-            .padding(start = (8 + node.depth * 12).dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
+            .padding(start = (8 + node.depth * 12).dp, top = 6.dp, bottom = 6.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            if (node.directory) (if (active) "▾" else "▸") + " " + node.name else node.name,
+            if (node.directory) ("▸ " + node.name) else node.name,
             style = MaterialTheme.typography.bodySmall,
             color = Color(if (node.directory) KodenusaPalette.TEXT else KodenusaPalette.TEXT_DIM),
             maxLines = 1,
+            modifier = Modifier.weight(1f),
         )
+        Box {
+            Text(
+                "⋯",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(KodenusaPalette.TEXT_DIM),
+                modifier = Modifier
+                    .clickable { menu = true }
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+            )
+            DropdownMenu(
+                expanded = menu,
+                onDismissRequest = { menu = false },
+                containerColor = Color(KodenusaPalette.SURFACE_RAISED),
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Ganti nama", color = Color(KodenusaPalette.TEXT)) },
+                    onClick = { menu = false; onRename() },
+                )
+                DropdownMenuItem(
+                    text = { Text("Hapus", color = Color(KodenusaPalette.ERROR)) },
+                    onClick = { menu = false; onDelete() },
+                )
+            }
+        }
     }
 }
 

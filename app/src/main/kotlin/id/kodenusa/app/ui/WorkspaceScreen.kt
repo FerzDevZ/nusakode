@@ -22,11 +22,18 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.testTag
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import id.kodenusa.app.AppContainer
+import id.kodenusa.app.ProjectArchive
 import id.kodenusa.app.ProjectSummary
 import id.kodenusa.ui.EmptyState
 import id.kodenusa.ui.GhostButton
@@ -46,7 +53,62 @@ fun WorkspaceScreen(
 ) {
     var refresh by remember { mutableIntStateOf(0) }
     var deleting by remember { mutableStateOf<ProjectSummary?>(null) }
+    var pesan by remember { mutableStateOf<String?>(null) }
+    var ekspor by remember { mutableStateOf<ProjectSummary?>(null) }
     val projects = remember(refresh) { container.projectStore.list() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val konteks = androidx.compose.ui.platform.LocalContext.current
+
+    // Menyimpan zip ke lokasi yang dipilih pengguna (Unduhan, Drive, kartu SD).
+    val pemilihEkspor = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip"),
+    ) { uri ->
+        val projek = ekspor
+        ekspor = null
+        if (uri == null || projek == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val hasil = withContext(Dispatchers.IO) {
+                runCatching {
+                    val sementara = java.io.File(container.workspaceRoot, ".ekspor.zip")
+                    val berkas = ProjectArchive.export(projek.dir, sementara).getOrThrow()
+                    konteks.contentResolver.openOutputStream(uri)?.use { keluar ->
+                        sementara.inputStream().use { it.copyTo(keluar) }
+                    } ?: throw IllegalStateException("Lokasi tujuan tidak bisa ditulis.")
+                    sementara.delete()
+                    berkas
+                }
+            }
+            pesan = hasil.fold(
+                onSuccess = { "Projek ${projek.name} tersimpan ($it berkas)." },
+                onFailure = { "Ekspor gagal: ${it.message}" },
+            )
+        }
+    }
+
+    // Membuka zip projek yang dipilih dari penyimpanan mana pun.
+    val pemilihImpor = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val hasil = withContext(Dispatchers.IO) {
+                runCatching {
+                    val sementara = java.io.File(container.workspaceRoot, ".impor.zip")
+                    konteks.contentResolver.openInputStream(uri)?.use { masuk ->
+                        sementara.outputStream().use { masuk.copyTo(it) }
+                    } ?: throw IllegalStateException("Berkas tidak bisa dibaca.")
+                    val folder = ProjectArchive.import(sementara, container.workspaceRoot).getOrThrow()
+                    sementara.delete()
+                    folder
+                }
+            }
+            hasil.onSuccess { folder ->
+                refresh += 1
+                pesan = "Projek dibuka dari zip."
+                onOpenProject(folder)
+            }.onFailure { pesan = "Impor gagal: ${it.message}" }
+        }
+    }
 
     Scaffold(containerColor = Color(KodenusaPalette.BACKGROUND)) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp)) {
@@ -58,6 +120,15 @@ fun WorkspaceScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(KodenusaPalette.TEXT_DIM),
             )
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GhostButton("Impor .zip", { pemilihImpor.launch(arrayOf("application/zip", "application/octet-stream")) })
+                GhostButton("Ekspor? pilih projek", { pesan = "Tekan \"Ekspor .zip\" pada salah satu projek di bawah." })
+            }
+            pesan?.let { teks ->
+                Spacer(Modifier.height(6.dp))
+                Text(teks, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.ACCENT))
+            }
             Spacer(Modifier.height(16.dp))
 
             if (projects.isEmpty()) {
@@ -82,6 +153,10 @@ fun WorkspaceScreen(
                                 onOpenProject(project.dir)
                             },
                             onDelete = { deleting = project },
+                            onExport = {
+                                ekspor = project
+                                pemilihEkspor.launch("${project.name.replace(Regex("[^A-Za-z0-9._-]+"), "-")}.zip")
+                            },
                         )
                     }
                 }
@@ -124,7 +199,7 @@ fun WorkspaceScreen(
 }
 
 @Composable
-private fun ProjectRow(project: ProjectSummary, onClick: () -> Unit, onDelete: () -> Unit) {
+private fun ProjectRow(project: ProjectSummary, onClick: () -> Unit, onDelete: () -> Unit, onExport: () -> Unit) {
     Panel(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Column {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -153,7 +228,10 @@ private fun ProjectRow(project: ProjectSummary, onClick: () -> Unit, onDelete: (
                 color = Color(KodenusaPalette.TEXT_DIM),
             )
             Spacer(Modifier.height(8.dp))
-            GhostButton("Hapus projek", onDelete)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GhostButton("Ekspor .zip", onExport, Modifier.testTag("ekspor-${project.name}"))
+                GhostButton("Hapus projek", onDelete)
+            }
         }
     }
 }

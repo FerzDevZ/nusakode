@@ -280,3 +280,21 @@ Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif
 - `AppProcessLauncher` memakai bentuk argumen sesuai SDK: `>= 28` mengirim `-Djava.class.path=<jar> /system/bin --nice-name=kodenusa-tool <kelas> <argumen>`; `< 28` tetap bentuk lama. `CLASSPATH` tetap dikirim lewat environment untuk Android 7.
 
 **Konsekuensi:** (+) Tier 0 kini terbukti berjalan di **API 24 dan API 34** — 22 uji perangkat hijau di keduanya, termasuk build tiga template. (+) Tidak ada perubahan pada pipeline 9 langkah; yang berubah hanya cara toolchain disiapkan. (+) `aapt2` tidak perlu diunduh saat pemasangan; Android sudah mengekstraknya. (−) `libaapt2.so` per ABI menambah ukuran APK dan wajib disertakan untuk setiap ABI yang didukung; kalau lupa, `ToolchainInstaller` mengembalikan `Missing` dan UI memberi tahu. (−) Jar read-only berarti setiap pembaruan toolchain harus menghapus folder lama lebih dulu — sudah dilakukan di `install()`.
+
+---
+
+## ADR-022 — Operasi berkas di dalam projek, dan "pilih lokasi" yang jujur
+
+**Tanggal:** 2025-11-20 · **Status:** diterima
+
+**Konteks:** Pengguna melaporkan hal yang paling mendasar: projek bisa dibuat, tetapi tidak ada cara menambah berkas, mengganti nama, menghapus, atau memilih tempat penyimpanan. Panel berkas hanya bisa dibuka-tutup folder dan membuka berkas yang sudah ada. Selain itu `ProjectTree.TEXT_EXTENSIONS` hanya memuat ekstensi Java/XML/umum, sehingga berkas HTML/CSS/JS dari template web tidak pernah muncul di panel meski ada di disk.
+
+**Keputusan:**
+- Semua operasi berkas masuk ke **`:core:project/ProjectFiles`** sebagai fungsi murni yang bisa diuji tanpa Android: `createFile`, `createFolder`, `rename`, `delete`, `safeRelative`. Nama divalidasi (bukan dibersihkan diam-diam), nama kembar ditolak, dan setiap path dihitung ulang lewat `canonicalPath` sebelum dipakai.
+- Panel berkas mendapat tombol **+ Berkas** dan **+ Folder** yang selalu terlihat, serta menu `⋯` per baris untuk **Ganti nama** dan **Hapus**. Dialog galat ditampilkan di dalam dialog yang sama supaya ketikan pengguna tidak hilang.
+- Berkas `.java` baru langsung dibuat dengan `package` dan `class` yang sesuai lokasinya, sehingga hasilnya bisa di-build tanpa diedit dulu.
+- `TEXT_EXTENSIONS` diperluas (html/css/js/ts/py/sql/yml/sh/…).
+- **"Pilih lokasi" diwujudkan sebagai ekspor/impor `.zip` lewat pemilih berkas Android** (`CreateDocument`/`OpenDocument`), bukan folder langsung. Alasannya teknis, bukan kemalasan: Android 11+ melarang aplikasi menulis ke folder sembarang tanpa izin pemilih, dan build Tier 0 butuh folder yang boleh mengeksekusi biner (`nativeLibraryDir`). Menjanjikan "pilih folder mana saja" akan menghasilkan build yang gagal di HP modern.
+- Pengimpor zip memperlakukan isi zip sebagai **masukan tidak tepercaya**: entri yang keluar folder (`../`, path absolut) ditolak dan seluruh ekstraksi dibatalkan.
+
+**Konsekuensi:** (+) Pengguna bisa mengelola berkas sendiri, dan projek bisa dipindah ke Unduhan/Drive/kartu SD sebagai satu berkas. (+) Semua aturan keamanan path teruji tanpa perangkat (`ProjectFilesTest` 12 uji, `ProjectArchiveTest` 6 uji). (+) Berkas web sekarang terlihat dan bisa diedit. (−) Menyunting projek langsung di folder luar (mis. lewat aplikasi lain) belum bisa; itu menunggu Tier 2 dengan izin SAF penuh.

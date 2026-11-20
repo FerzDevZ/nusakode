@@ -25,10 +25,14 @@ object ProjectTree {
 
     val TEXT_EXTENSIONS = setOf(
         "java", "kt", "kts", "xml", "json", "md", "txt", "gradle", "properties", "pro", "gitignore",
+        // Berkas web dan skrip wajib muncul: template "Web jadi APK" isinya HTML/CSS/JS, dan tanpa
+        // ini pengguna tidak bisa membuka atau mengedit halaman yang baru dibuatnya.
+        "html", "htm", "css", "js", "mjs", "ts", "tsx", "jsx", "svg", "yml", "yaml", "toml", "sh",
+        "py", "sql", "csv", "ini", "cfg", "env", "gitattributes", "editorconfig",
     )
 
     /** Folder yang tidak pernah ditampilkan karena isinya hasil build. */
-    private val IGNORED_DIRS = setOf("build", ".gradle", ".git", "dex", "gen", "classes", ".tools")
+    val IGNORED_DIRS = setOf("build", ".gradle", ".git", "dex", "gen", "classes", ".tools")
 
     private const val MAX_ENTRIES = 500
 
