@@ -589,3 +589,28 @@ untuk pengunduhan tema. Pagar yang membuat risikonya wajar:
 (ADR-001 tetap). Risiko sesi-sisi (MITM mengganti warna tema) diterima: dampak terburuk adalah
 tema jelek yang ditolak gerbang kontras. HTTPS tetap disarankan di pesan galat ketika HTTP
 ditolak oleh konfigurasi.
+
+### ADR-038 — AI tidak menulis tanpa izin: pratinjau tulis + cadangan undo
+
+**Tanggal.** 20 November 2026.
+
+**Konteks.** Sejak v0.12, jawaban AI berisi blok `<<<BERKAS: jalur>>>` bisa langsung ditulis ke
+projek, dan "Sisip" menimpa berkas yang terbuka. Pada HP tanpa PC, kerja pengguna hanya ada di
+satu tempat: folder projek. Satu jawaban model yang salah bisa menghapus kerja berhari-hari
+tanpa bisa dikembalikan — tidak ada Git otomatis, tidak ada sampah sistem.
+
+**Keputusan.**
+1. Setiap penulisan berkas oleh AI lewat tombol "Simpan berkas dari jawaban ini ke projek"
+   **wajib lewat dialog pratinjau** (`DialogKonfirmasiTulis`): daftar berkas yang akan dibuat
+   (warna ok) atau ditimpa (warna peringatan, ukuran lama→baru). Penulisan hanya jalan setelah
+   pengguna menekan "Simpan".
+2. Sebelum menimpa, isi lama **dicadangkan** ke `filesDir/undo-tulis/<batch>/` (`UndoTulis.kt`,
+   maks 5 batch, jalur di-URL-encode). Berkas baru ditandai marker kosong `.knb` supaya undo
+   tahu ia harus menghapusnya, bukan mengembalikan isi.
+3. Jalur "Sisip" di editor juga membuat cadangan (`ketikaSisip`), jadi kedua jalur tulis AI
+   sama-sama bisa dibatalkan lewat satu tombol "Batalkan tulisan AI".
+4. Batalkan mengembalikan isi lama persis dan menghapus berkas yang baru dibuat AI.
+
+**Konsekuensi.** Kerja pengguna tidak bisa hilang permanen karena AI. Harga yang dibayar:
+satu langkah konfirmasi tambahan, dan cadangan memakai penyimpanan internal (dibatasi 5 batch).
+Undo hanya satu tingkat (batch terakhir) — riwayat berlapis ditunda sampai Git bawaan matang.

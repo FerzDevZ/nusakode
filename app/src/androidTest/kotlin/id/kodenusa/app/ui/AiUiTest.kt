@@ -158,4 +158,66 @@ class AiUiTest {
             }
         layar.onNodeWithTag("tutup-pilih-berkas").performClick()
     }
+
+    @Test
+    fun chip_saran_baru_tampil_di_layar_ai() {
+        semaiSetelan()
+        bukaEditor()
+        layar.onNodeWithTag("buka-ai").performClick()
+        layar.waitForIdle()
+
+        // Saran baru dari saran UI/UX: pengguna HP sering bingung mau ngetik apa.
+        layar.onNodeWithText("Buat layout XML").assertExists()
+        layar.onNodeWithText("Tambah layar kedua").assertExists()
+        layar.onNodeWithText("Jelaskan berkas ini").assertExists()
+    }
+
+    @Test
+    fun berkas_sematan_maksimal_tiga_dengan_pill_dan_buang() {
+        semaiSetelan()
+        bukaEditor()
+        layar.onNodeWithTag("buka-ai").performClick()
+        layar.waitForIdle()
+
+        pin("berkas-ai-src/main/AndroidManifest.xml")
+        layar.onNodeWithTag("berkas-terpasang-AndroidManifest.xml").assertExists()
+        pin("berkas-ai-src/main/res/layout/activity_main.xml")
+        pin("berkas-ai-src/main/res/values/strings.xml")
+
+        // Sematan keempat harus ditolak dengan pesan yang jujur, bukan dibisukan diam-diam.
+        pin("berkas-ai-kodenusa.json")
+        layar.waitUntil(timeoutMillis = 5_000) {
+            layar.onAllNodesWithText("Maksimal 3 berkas sematan", substring = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Buang satu sematan: pill hilang dan slot kembali tersedia. Baris chip bisa digulir
+        // horizontal — tombol Buang paling kanan harus digulir dulu supaya sentuhannya mendarat.
+        layar.onNodeWithTag("baris-chip-ai")
+            .performScrollToNode(hasTestTag("buang-sematan-AndroidManifest.xml"))
+        layar.waitForIdle()
+        layar.onNodeWithTag("buang-sematan-AndroidManifest.xml").performClick()
+        layar.waitForIdle()
+        layar.onNodeWithTag("berkas-terpasang-AndroidManifest.xml").assertDoesNotExist()
+    }
+
+    private fun pin(testTag: String) {
+        layar.onNodeWithTag("pilih-berkas-ai").performClick()
+        layar.waitForIdle()
+        // Pohon berkas memakai LazyColumn: berkas di bawah layar harus digulir dulu.
+        layar.onNodeWithTag("daftar-berkas-ai").performScrollToNode(hasTestTag(testTag))
+        layar.waitForIdle()
+        layar.onNodeWithTag(testTag).performClick()
+        layar.waitForIdle()
+    }
+
+    private fun semaiSetelan() {
+        InstrumentationRegistry.getInstrumentation().targetContext
+            .getSharedPreferences("ai", android.content.Context.MODE_PRIVATE)
+            .edit()
+            .putString("endpoint", "https://api.crown.ai.id/v1")
+            .putString("kunci", "kunci-uji-panjang")
+            .putString("model", "model-uji")
+            .commit()
+    }
 }

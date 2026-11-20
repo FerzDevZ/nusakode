@@ -53,6 +53,24 @@ object PromptBuilder {
     }
 
     /**
+     * Berkas yang disematkan pengguna (maksimal 3) dikirim utuh — bukan ringkasan 2.400 karakter.
+     * Ringkasan memotong bagian penting berkas panjang; sematan memberi model isi aslinya.
+     */
+    fun untukBerkasSematan(
+        permintaan: String,
+        berkas: List<Pair<String, String>>,
+    ): List<ChatMessage> = buildList {
+        add(pesanSistem())
+        val konteks = StringBuilder("Berkas yang disematkan pengguna (isi utuh):\n")
+        berkas.forEach { (jalur, isi) ->
+            konteks.append("\n--- ").append(jalur).append(" ---\n")
+            konteks.append(potong(isi, BATAS_KONTEKS)).append('\n')
+        }
+        konteks.append("\nPermintaan pengguna: ").append(permintaan.trim())
+        add(ChatMessage(ChatMessage.Peran.PENGGUNA, konteks.toString()))
+    }
+
+    /**
      * Perintah untuk agen yang boleh mengubah beberapa berkas lalu di-build.
      *
      * Format penanda ditulis eksplisit karena model yang lebih kecil sering lupa memberi nama

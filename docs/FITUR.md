@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.13.0** (`versionCode 25`) · **234 uji unit · 102 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.14.0** (`versionCode 26`) · **238 uji unit · 104 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -114,6 +114,11 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | **AI bisa membuat berkas BARU di sub-folder** (bukan cuma mengedit yang ada) | ✅ | prompt `ATURAN_AGEN` eksplisit mengizinkan berkas baru; tombol `buat-berkas-dari-kode` di tiap blok kode membuka dialog jalur bebas — sub-folder dibuat otomatis (`ProjectFiles.createFile` diperbaiki: folder tujuan yang belum ada ikut dibuat, jalur `../` tetap ditolak). Uji: `ProjectFilesTest.berkas_baru_dibuat_di_sub_folder_yang_belum_ada`, `AiBuatBerkasTest` (2 uji perangkat) |
 | **Pemilih berkas AI berupa pohon folder + pencarian** (bukan daftar datar) | ✅ | dialog "Pilih berkas projek" menampilkan `▸ folder` yang bisa dibuka, berkas menjorok per kedalaman, dan kolom "Cari nama berkas…" (`cari-berkas-ai`); uji `AiUiTest.pemilih_berkas_ai_menampilkan_pohon_dan_pencarian_sub_folder` |
 | Lampirkan gambar/screenshot galat (vision) | ✅ | `GambarUntukAi` (≤1024 px, ≤700 KB) + `GambarVisionTest`, `GambarAiDeviceTest` |
+| **Pratinjau sebelum AI menulis berkas** — daftar berkas baru/timpa + ukuran lama→baru, pengguna setuju dulu | ✅ | `DialogKonfirmasiTulis` di `AiScreen.kt` (tag `rencana-<jalur>`, `tulis-setuju`/`tulis-batal`); timpa ditandai warna peringatan, berkas baru warna ok |
+| **Batalkan tulisan AI (undo)** — isi lama dikembalikan, berkas baru dihapus | ✅ | `UndoTulis.kt` (`filesDir/undo-tulis/`, maks 5 batch); jalur "Simpan berkas" DAN "Sisip" sama-sama membuat cadangan; tombol `batalkan-tulis` di layar AI. Uji: `UndoTulisTest` (4 uji) |
+| **Berkas sematan — AI membaca berkas utuh pilihan pengguna** (maks 3) | ✅ | pohon berkas memilih berkas → pill `berkas-terpasang-<nama>` + tombol Buang; lebih dari 3 ditolak dengan pesan jujur; dikirim utuh via `PromptBuilder.untukBerkasSematan` (uji `PromptBuilderTest.berkas_sematan_dikirim_utuh_bukan_ringkasan`) |
+| **Chip perintah cepat baru** — "Buat layout XML", "Tambah layar kedua", "Jelaskan berkas ini", dst. | ✅ | satu baris gulir horizontal di `ChatAiPanel`; uji `AiUiTest.chip_saran_baru_tampil_di_layar_ai` |
+| **Indikator karakter terkirim ke endpoint AI** | ✅ | "terkirim: N karakter ke endpoint" (`indikator-karakter`), dihitung per projek via `AiSettingsStore.tambahKarakter`, di-nol-kan lewat "Bersihkan" |
 
 **Bukti ke endpoint sungguhan** (dijalankan terhadap endpoint milik pengguna):
 model terbaca `zai-org/GLM-5.3-Flash`, `deepseek-ai/DeepSeek-V4-Flash-0731`, `MiniMaxAI/MiniMax-M2.7`;

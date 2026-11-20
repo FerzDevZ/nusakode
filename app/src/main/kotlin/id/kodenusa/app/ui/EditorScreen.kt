@@ -452,7 +452,7 @@ fun EditorScreen(
             akarProjek = projectDir,
             onDismiss = { aiTerbuka = false },
             onSisip = { kode, bahasa ->
-                val pesan = ketikaSisip(aktif, session, state.editor, kode, bahasa)
+                val pesan = ketikaSisip(aktif, session, state.editor, kode, bahasa, projectDir, container.undoTulis)
                 state.toast = pesan
                 aiTerbuka = false
                 null
@@ -498,12 +498,20 @@ private fun ketikaSisip(
     editor: id.kodenusa.editor.CodeEditorView?,
     kode: String,
     bahasa: String,
+    akarProjek: File,
+    undo: id.kodenusa.app.UndoTulis,
 ): String {
     if (aktif == null) return "Belum ada berkas yang dibuka. Pilih satu berkas dulu di panel, lalu tekan sisip lagi."
     val teks = aktif.name.substringAfterLast('.', "").lowercase()
     if (teks !in setOf("java", "xml", "html", "htm", "css", "js", "json", "md", "txt", "py", "sql")) {
         return "Kode tidak dimasukkan: ${aktif.name} bukan berkas teks."
     }
+    // Cadangkan isi lama dulu: satu jawaban model yang salah tidak boleh menghapus kerja
+    // pengguna selamanya. Tombol "Batalkan tulisan AI" di layar AI mengembalikannya.
+    val batch = undo.siapkanBatch()
+    val jalurRelatif = runCatching { aktif.relativeTo(akarProjek).invariantSeparatorsPath }
+        .getOrDefault(aktif.name)
+    undo.simpanLama(batch, jalurRelatif, aktif)
     // Tiga hal harus terjadi sekaligus, dulu hanya dua: teks di memori, berkas di disk, DAN isi
     // editor yang terlihat. Tanpa yang ketiga, pengguna menekan sisip tetapi layar tidak berubah.
     session.update(aktif, kode)

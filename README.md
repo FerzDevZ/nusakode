@@ -1,14 +1,14 @@
 # KodeNusa
 
-[![Unduh APK](https://img.shields.io/badge/Unduh-APK%200.13.0-amber?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases/download/v0.13.0/KodeNusa-0.13.0.apk)
-[![Rilis](https://img.shields.io/badge/rilis-v0.13.0-blue?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases)
+[![Unduh APK](https://img.shields.io/badge/Unduh-APK%200.14.0-amber?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases/download/v0.14.0/KodeNusa-0.14.0.apk)
+[![Rilis](https://img.shields.io/badge/rilis-v0.14.0-blue?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases)
 [![Uji](https://img.shields.io/badge/uji-252%20unit%20%C2%B7%2077%20perangkat-brightgreen?style=flat-square)](docs/FITUR.md)
 
 **IDE Android yang menulis kode dan membangun APK sendiri di dalam HP — tanpa PC, tanpa Gradle, tanpa internet.**
 
 Dibuat untuk HP yang paling banyak dipakai di Indonesia: RAM 2–4 GB, penyimpanan 32–64 GB, jaringan yang sering putus. Aplikasi ini tidak mengasumsikan Anda punya laptop, Android Studio, atau koneksi stabil.
 
-**→ [Unduh APK KodeNusa 0.13.0](https://github.com/FerzDevZ/nusakode/releases/download/v0.13.0/KodeNusa-0.13.0.apk)** · [semua rilis](https://github.com/FerzDevZ/nusakode/releases) · [daftar fitur](docs/FITUR.md)
+**→ [Unduh APK KodeNusa 0.14.0](https://github.com/FerzDevZ/nusakode/releases/download/v0.14.0/KodeNusa-0.14.0.apk)** · [semua rilis](https://github.com/FerzDevZ/nusakode/releases) · [daftar fitur](docs/FITUR.md)
 
 ## Pasang
 

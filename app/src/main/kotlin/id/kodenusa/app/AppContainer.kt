@@ -26,6 +26,9 @@ class AppContainer(context: Context) {
     /** Pilihan tema pengguna (bawaan, ikut sistem, atau .kntema kustom). */
     val temaStore = TemaStore(context)
 
+    /** Cadangan sebelum AI menimpa berkas; dipakai layar AI dan editor (jalur sisip). */
+    val undoTulis = UndoTulis(File(context.filesDir, "undo-tulis"))
+
     fun newEngine(toolchain: Toolchain): BuildEngine = Tier0BuildEngine(toolchain)
 
     private companion object {

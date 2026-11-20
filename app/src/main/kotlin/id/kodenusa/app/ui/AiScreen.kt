@@ -52,6 +52,7 @@ import id.kodenusa.core.ai.AiGagal
 import id.kodenusa.core.ai.AiModel
 import androidx.core.content.FileProvider
 import id.kodenusa.app.GambarUntukAi
+import id.kodenusa.app.UndoTulis
 import id.kodenusa.core.ai.ChatMessage
 import id.kodenusa.core.ai.CodeBlocks
 import id.kodenusa.core.ai.OpenAiCompatClient
@@ -126,10 +127,14 @@ fun AiScreen(
     var pakaiKonteksProjek by remember { mutableStateOf(false) }
     var buatBerkasTerbuka by remember { mutableStateOf(false) }
     var cariBerkas by remember { mutableStateOf("") }
-    var berkasKonteks by remember { mutableStateOf<String?>(null) }
+    var berkasSematan by remember { mutableStateOf(listOf<String>()) }
     var pilihBerkas by remember { mutableStateOf(false) }
     var hasilTulis by remember { mutableStateOf<String?>(null) }
+    var rencanaTulis by remember { mutableStateOf<List<RencanaTulis>?>(null) }
+    var adaBatchUndo by remember { mutableStateOf(false) }
+    var karakter by remember { mutableStateOf(store.karakterTerkirim(kunciProjek)) }
     val ctx = androidx.compose.ui.platform.LocalContext.current
+    val undo = remember(akarProjek) { UndoTulis(File(ctx.filesDir, "undo-tulis")) }
     // Dibuat sebagai lambda (bukan fungsi lokal) supaya bisa dipakai launcher di bawah dan tetap
     // ringkas: satu tempat untuk "ubah uri jadi data URL", dipakai galeri maupun kamera.
     val muatGambar: (Uri) -> Unit = { uri ->
@@ -164,12 +169,12 @@ fun AiScreen(
     }.getOrNull()
 
     fun pesanUntuk(teks: String): List<ChatMessage> {
-        val dipilih = berkasKonteks
+        val sematan = berkasSematan.mapNotNull { jalur -> isiBerkas(jalur)?.let { jalur to it } }
         val dasar = when {
             // Konteks projek dipakai lebih dulu: model perlu tahu struktur folder sebelum
             // menulis berkas baru, dan hanya prompt agen yang mengajarkan format <<<BERKAS: …>>>.
             pakaiKonteksProjek -> PromptBuilder.untukAgen(teks, papan.konteks(), "")
-            dipilih != null -> PromptBuilder.untukBerkas(teks, dipilih, isiBerkas(dipilih).orEmpty())
+            sematan.isNotEmpty() -> PromptBuilder.untukBerkasSematan(teks, sematan)
             konteks.galat != null ->
                 PromptBuilder.untukGalat(konteks.galat.orEmpty(), konteks.jalur, konteks.isi)
             konteks.jalur != null && konteks.isi != null ->
@@ -205,6 +210,10 @@ fun AiScreen(
                             daftar.last().copy(gambar = listOf(lampiran))
                     }
                     gambar = null
+                    // Indikator biaya jujur: hitung karakter yang benar-benar dikirim ke endpoint.
+                    val terkirim = pesan.sumOf { it.isi.length }
+                    karakter += terkirim
+                    store.tambahKarakter(kunciProjek, terkirim)
                     klien.bicara(
                         config = config,
                         pesan = pesan,
@@ -237,27 +246,50 @@ fun AiScreen(
     }
 
     /**
-     * Menulis semua blok `<<<BERKAS: jalur>>>` dari jawaban model langsung ke folder projek.
-     * Ini yang membuat AI bisa membuat berkas baru (mis. `web/index.html`) tanpa dibuka dulu.
+     * Menyiapkan rencana tulis dari jawaban model: berkas mana yang BARU dan mana yang akan
+     * DITIMPA (dengan ukuran lamanya). Tulisan tidak langsung jalan — pengguna melihat dulu,
+     * lalu menyetujui. Berkas yang ditimpa dicadangkan dulu supaya bisa dibatalkan.
      */
-    fun tulisKeProjek(jawabanModel: String) {
+    fun siapkanTulis(jawabanModel: String) {
         val edits = UbahanBerkas.ambil(jawabanModel)
         if (edits.isEmpty()) {
             galat = "Jawaban ini tidak berisi penanda <<<BERKAS: jalur>>>. Pakai tombol Konteks projek " +
                 "supaya AI menulis berkas lengkap, atau tekan Sisip untuk berkas yang sedang terbuka."
             return
         }
+        rencanaTulis = edits.map { edit ->
+            val aman = id.kodenusa.core.project.ProjectFiles.safeRelative(akarProjek, edit.jalur.trim())
+            val lama = aman?.let { File(akarProjek, it) }
+            RencanaTulis(edit, lama?.isFile == true, lama?.length() ?: 0L)
+        }
+    }
+
+    fun jalankanTulis(rencana: List<RencanaTulis>) {
+        val batch = undo.siapkanBatch()
         var ditulis = 0
         val ditolak = ArrayList<String>()
-        edits.forEach { edit ->
-            if (papan.tulis(edit) == null) ditulis++ else ditolak += edit.jalur
+        rencana.forEach { satu ->
+            val aman = id.kodenusa.core.project.ProjectFiles.safeRelative(akarProjek, satu.edit.jalur.trim())
+            if (aman == null) {
+                ditolak += satu.edit.jalur
+                return@forEach
+            }
+            val target = File(akarProjek, aman)
+            if (target.isFile) {
+                undo.simpanLama(batch, aman, target)
+            } else {
+                undo.tandaiBaru(batch, aman)
+            }
+            if (papan.tulis(satu.edit) == null) ditulis++ else ditolak += satu.edit.jalur
         }
         galat = null
+        rencanaTulis = null
         hasilTulis = buildString {
             append("$ditulis berkas disimpan di projek")
             if (ditolak.isNotEmpty()) append(". Ditolak: ").append(ditolak.joinToString(", "))
-            append('.')
+            append(". Tekan Batalkan untuk mengembalikan isi lama.")
         }
+        adaBatchUndo = undo.batchTerakhir() != null
     }
 
     Dialog(
@@ -337,10 +369,19 @@ fun AiScreen(
                         onHentikan = { pekerjaan?.cancel(); sibuk = false },
                         onBersihkan = {
                             store.bersihkanPercakapan(kunciProjek)
+                            store.nolkanKarakter(kunciProjek)
+                            karakter = 0
                             riwayat = emptyList()
                             galat = null
                         },
-                        onSisip = { kode, bahasa -> onSisip(kode, bahasa)?.let { galat = it } },
+                        onSisip = { kode, bahasa ->
+                            val pesan = onSisip(kode, bahasa)
+                            if (pesan != null) galat = pesan
+                            // Sisip yang berhasil juga membuat batch cadangan di EditorScreen —
+                            // tombol Batalkan mengembalikan batch terakhir, apa pun jalurnya.
+                            adaBatchUndo = undo.batchTerakhir() != null
+                            null
+                        },
                         adaGambar = gambar != null,
                         memuatGambar = memuatGambar,
                         onLampirkan = {
@@ -369,16 +410,32 @@ fun AiScreen(
                         },
                         onBuangGambar = { gambar = null },
                         adaKonteksProjek = pakaiKonteksProjek,
-                        berkasKonteks = berkasKonteks,
+                        berkasSematan = berkasSematan,
                         hasilTulis = hasilTulis,
+                        karakter = karakter,
                         onKonteksProjek = {
                             pakaiKonteksProjek = !pakaiKonteksProjek
-                            if (pakaiKonteksProjek) berkasKonteks = null
+                            if (pakaiKonteksProjek) berkasSematan = emptyList()
                             hasilTulis = null
                         },
                         onPilihBerkas = { pilihBerkas = true },
-                        onBuangBerkas = { berkasKonteks = null },
-                        onTulisProjek = { tulisKeProjek(jawaban.ifEmpty { riwayat.lastOrNull()?.second.orEmpty() }) },
+                        onBuangSematan = { jalur -> berkasSematan = berkasSematan - jalur },
+                        onTulisProjek = { siapkanTulis(jawaban.ifEmpty { riwayat.lastOrNull()?.second.orEmpty() }) },
+                        onBatalkanTulis = {
+                            val batch = undo.batchTerakhir()
+                            if (batch == null) {
+                                hasilTulis = "Tidak ada tulisan AI yang bisa dibatalkan."
+                            } else {
+                                val berubah = undo.batalkan(batch, akarProjek)
+                                hasilTulis = if (berubah.isEmpty()) {
+                                    "Tidak ada yang bisa dikembalikan."
+                                } else {
+                                    "${berubah.size} berkas dikembalikan ke isi sebelumnya."
+                                }
+                            }
+                            adaBatchUndo = undo.batchTerakhir() != null
+                        },
+                        adaTulisanBisaDibatalkan = adaBatchUndo,
                         onBuatBerkasBaru = { buatBerkasTerbuka = true },
                     )
                 }
@@ -398,6 +455,14 @@ fun AiScreen(
             )
         }
 
+        if (rencanaTulis != null) {
+            DialogKonfirmasiTulis(
+                rencana = rencanaTulis.orEmpty(),
+                onBatal = { rencanaTulis = null },
+                onSetuju = { jalankanTulis(rencanaTulis.orEmpty()) },
+            )
+        }
+
         if (pilihBerkas) {
             Dialog(onDismissRequest = { pilihBerkas = false }) {
                 Surface(
@@ -412,7 +477,8 @@ fun AiScreen(
                             color = Kode.text,
                         )
                         Text(
-                            "Isi berkas ini dikirim sebagai konteks, hanya ke endpoint AI milikmu.",
+                            "Isi berkas yang dipilih dikirim utuh sebagai konteks (maksimal 3), " +
+                                "hanya ke endpoint AI milikmu.",
                             style = MaterialTheme.typography.labelSmall,
                             color = Kode.textDim,
                         )
@@ -445,7 +511,7 @@ fun AiScreen(
                                 color = Kode.textDim,
                             )
                         }
-                        LazyColumn(Modifier.weight(1f, fill = false)) {
+                        LazyColumn(Modifier.weight(1f, fill = false).testTag("daftar-berkas-ai")) {
                             items(tampil) { node ->
                                 val menjorok = Modifier.padding(
                                     start = (8 + node.depth * 14).dp,
@@ -471,7 +537,14 @@ fun AiScreen(
                                             .fillMaxWidth()
                                             .then(menjorok)
                                             .clickable {
-                                                berkasKonteks = node.relativePath
+                                                val sudahAda = node.relativePath in berkasSematan
+                                                if (!sudahAda && berkasSematan.size >= 3) {
+                                                    galat = "Maksimal 3 berkas sematan. Buang salah satu dulu dengan tombol Buang."
+                                                } else {
+                                                    berkasSematan =
+                                                        (berkasSematan + node.relativePath).distinct().take(3)
+                                                    galat = null
+                                                }
                                                 pakaiKonteksProjek = false
                                                 pilihBerkas = false
                                                 hasilTulis = null
@@ -706,12 +779,15 @@ private fun ChatAiPanel(
     onFoto: () -> Unit = {},
     onBuangGambar: () -> Unit = {},
     adaKonteksProjek: Boolean = false,
-    berkasKonteks: String? = null,
+    berkasSematan: List<String> = emptyList(),
     hasilTulis: String? = null,
+    karakter: Int = 0,
     onKonteksProjek: () -> Unit = {},
     onPilihBerkas: () -> Unit = {},
-    onBuangBerkas: () -> Unit = {},
+    onBuangSematan: (String) -> Unit = {},
     onTulisProjek: () -> Unit = {},
+    onBatalkanTulis: () -> Unit = {},
+    adaTulisanBisaDibatalkan: Boolean = false,
     onBuatBerkasBaru: () -> Unit = {},
 ) {
     val daftar = rememberLazyListState()
@@ -727,19 +803,34 @@ private fun ChatAiPanel(
 
     Column(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "model: $model",
-                style = MaterialTheme.typography.labelSmall,
-                color = Kode.textDim,
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
-            )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "model: $model",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Kode.textDim,
+                    maxLines = 1,
+                )
+                // Indikator biaya jujur: pengguna membayar kuncinya sendiri, jadi jumlah karakter
+                // yang sudah dikirim ditampilkan — bukan token yang dikarang, tapi angka nyata.
+                if (karakter > 0) {
+                    Text(
+                        "terkirim: $karakter karakter ke endpoint",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Kode.textDim,
+                        modifier = Modifier.testTag("indikator-karakter"),
+                    )
+                }
+            }
             if (riwayat.isNotEmpty()) GhostButton("Bersihkan", onBersihkan)
         }
 
         if (riwayat.isEmpty() && jawaban.isEmpty()) {
             Spacer(Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Satu baris saran yang bisa digulir: pengguna HP sering bingung mau ngetik apa.
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
                 if (adaGalat) {
                     GhostButton("Perbaiki galat build", {
                         onCepat("Jelaskan penyebab galat build ini, lalu beri isi berkas yang sudah diperbaiki lengkap.")
@@ -749,12 +840,18 @@ private fun ChatAiPanel(
                     GhostButton("Perbaiki berkas ini", {
                         onCepat("Perbaiki berkas ini dan jelaskan dalam satu kalimat apa yang salah.")
                     })
+                    GhostButton("Jelaskan berkas ini", {
+                        onCepat("Jelaskan isi berkas ini baris demi baris dalam bahasa Indonesia sederhana.")
+                    })
                 }
-            }
-            Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 GhostButton("Buat Activity", {
                     onCepat("Buat Activity Android baru lengkap dengan layout XML untuk Java 8 tanpa AndroidX.")
+                })
+                GhostButton("Buat layout XML", {
+                    onCepat("Buat berkas layout XML baru bernama activity_layar.xml: satu LinearLayout berisi judul dan tombol, untuk Java 8 tanpa AndroidX.")
+                })
+                GhostButton("Tambah layar kedua", {
+                    onCepat("Tambahkan layar kedua: buat berkas LayarKedua.java beserta layout XML-nya, dan tunjukkan cara membukanya dari MainActivity.")
                 })
                 GhostButton("Bantu itu apa", { onCepat("Apa saja yang bisa kamu bantu di KodeNusa?") })
             }
@@ -801,6 +898,15 @@ private fun ChatAiPanel(
             Spacer(Modifier.height(6.dp))
         }
 
+        if (adaTulisanBisaDibatalkan) {
+            GhostButton(
+                "Batalkan tulisan AI",
+                onBatalkanTulis,
+                modifier = Modifier.fillMaxWidth().testTag("batalkan-tulis"),
+            )
+            Spacer(Modifier.height(6.dp))
+        }
+
         hasilTulis?.let { pesan ->
             Text(
                 pesan,
@@ -814,7 +920,7 @@ private fun ChatAiPanel(
         // Satu baris chip yang bisa digulir: menghemat dua baris vertikal di layar 5 inci,
         // dan urutannya tetap konteks dulu, lalu gambar — sama seperti alur berpikir pengguna.
         Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).testTag("baris-chip-ai"),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
@@ -828,13 +934,14 @@ private fun ChatAiPanel(
                 onPilihBerkas,
                 modifier = Modifier.testTag("pilih-berkas-ai"),
             )
-            berkasKonteks?.let { jalur ->
+            berkasSematan.forEach { jalur ->
+                val nama = jalur.substringAfterLast('/')
                 Pill(
-                    jalur.substringAfterLast('/'),
+                    nama,
                     Kode.info,
-                    modifier = Modifier.testTag("berkas-terpasang"),
+                    modifier = Modifier.testTag("berkas-terpasang-$nama"),
                 )
-                GhostButton("Buang", onBuangBerkas)
+                GhostButton("Buang", { onBuangSematan(jalur) }, Modifier.testTag("buang-sematan-$nama"))
             }
             GhostButton(
                 if (memuatGambar) "Menyiapkan gambar…" else "Lampirkan gambar",
@@ -903,6 +1010,77 @@ private fun PesanAi(peran: String, isi: String) {
                 style = MaterialTheme.typography.bodySmall,
                 color = Kode.text,
             )
+        }
+    }
+}
+
+/** Satu berkas yang akan ditulis AI: apakah berkas baru, atau menimpa yang sudah ada. */
+private data class RencanaTulis(
+    val edit: id.kodenusa.core.ai.BerkasEdit,
+    val timpa: Boolean,
+    val ukuranLama: Long,
+)
+
+/**
+ * Pratinjau sebelum AI menulis berkas: pengguna melihat berkas mana yang baru dan mana yang
+ * akan ditimpa (dengan ukuran lamanya), lalu memutuskan. Berkas yang ditimpa tetap
+ * dicadangkan otomatis dan bisa dibatalkan lewat tombol "Batalkan tulisan AI".
+ */
+@Composable
+private fun DialogKonfirmasiTulis(
+    rencana: List<RencanaTulis>,
+    onBatal: () -> Unit,
+    onSetuju: () -> Unit,
+) {
+    Dialog(onDismissRequest = onBatal) {
+        Surface(
+            color = Kode.surface,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    "AI akan menulis ${rencana.size} berkas",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Kode.text,
+                )
+                Text(
+                    "Berkas yang ditimpa dicadangkan dulu dan bisa dibatalkan.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Kode.textDim,
+                )
+                Spacer(Modifier.height(8.dp))
+                rencana.forEach { satu ->
+                    Text(
+                        buildString {
+                            append(if (satu.timpa) "timpa " else "baru  ")
+                            append(satu.edit.jalur)
+                            if (satu.timpa) {
+                                append(" (")
+                                append(satu.ukuranLama)
+                                append(" B → ")
+                                append(satu.edit.isi.toByteArray().size)
+                                append(" B)")
+                            }
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (satu.timpa) Kode.warn else Kode.ok,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp)
+                            .testTag("rencana-" + satu.edit.jalur),
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    GhostButton("Batal", onBatal, Modifier.testTag("tulis-batal"))
+                    PrimaryButton(
+                        "Simpan",
+                        onSetuju,
+                        modifier = Modifier.weight(1f).testTag("tulis-setuju"),
+                    )
+                }
+            }
         }
     }
 }

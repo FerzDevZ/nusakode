@@ -133,3 +133,37 @@ class CodeBlocksTest {
             "aturan agen harus menjelaskan folder dibuat otomatis",
         )
     }
+
+    @Test
+    fun berkas_sematan_dikirim_utuh_bukan_ringkasan() {
+        // Saran pengguna: berkas yang disematkan harus dikirim utuh, bukan ringkasan 2.400 karakter
+        // yang memotong bagian penting berkas panjang.
+        val isiPanjang = buildString { repeat(300) { appendLine("baris ke-$it") } }
+        val pesan = PromptBuilder.untukBerkasSematan(
+            "jelaskan kelas ini",
+            listOf("src/main/java/app/DatabaseKasir.java" to isiPanjang),
+        )
+
+        val isi = pesan.last().isi
+        assertTrue(isi.contains("src/main/java/app/DatabaseKasir.java"))
+        assertTrue(isi.contains("baris ke-299"), "isi berkas harus sampai baris terakhir")
+        assertTrue(isi.contains("jelaskan kelas ini"))
+    }
+
+    @Test
+    fun berkas_sematan_lebih_dari_satu_semua_tercantum() {
+        val pesan = PromptBuilder.untukBerkasSematan(
+            "bandingkan",
+            listOf(
+                "a.java" to "isi A",
+                "b.java" to "isi B",
+                "c.java" to "isi C",
+            ),
+        )
+
+        val isi = pesan.last().isi
+        assertTrue(isi.contains("--- a.java ---"))
+        assertTrue(isi.contains("--- b.java ---"))
+        assertTrue(isi.contains("--- c.java ---"))
+        assertTrue(isi.contains("isi A") && isi.contains("isi B") && isi.contains("isi C"))
+    }

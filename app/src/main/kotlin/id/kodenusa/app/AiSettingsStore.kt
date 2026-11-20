@@ -115,11 +115,24 @@ class AiSettingsStore(
         prefs.edit().remove(KUNCI_PERCAKAPAN + kunciProjek).apply()
     }
 
+    /** Jumlah karakter yang sudah dikirim ke AI untuk projek ini (indikator biaya jujur). */
+    fun karakterTerkirim(kunciProjek: String): Int =
+        prefs.getInt(KUNCI_KARAKTER + kunciProjek, 0)
+
+    fun tambahKarakter(kunciProjek: String, jumlah: Int) {
+        prefs.edit().putInt(KUNCI_KARAKTER + kunciProjek, karakterTerkirim(kunciProjek) + jumlah).apply()
+    }
+
+    fun nolkanKarakter(kunciProjek: String) {
+        prefs.edit().remove(KUNCI_KARAKTER + kunciProjek).apply()
+    }
+
     private companion object {
         const val KUNCI_ENDPOINT = "endpoint"
         const val KUNCI_RAHASIA = "kunci"
         const val KUNCI_MODEL = "model"
         const val KUNCI_DAFTAR = "daftar_model"
         const val KUNCI_PERCAKAPAN = "percakapan_"
+        const val KUNCI_KARAKTER = "karakter_"
     }
 }

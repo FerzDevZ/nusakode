@@ -49,17 +49,17 @@ bukan karena mesinnya tak sanggup, tapi karena **prompt dan tombolnya tidak menu
 > "Penyedia AI sedang bermasalah (503)" tampil jujur di layar. Sisa verifikasi end-to-end
 > AI nyata dikerjakan saat penyedia sudah pulih.
 
-## 3. Saran lanjutan (belum dikerjakan, urut nilai)
+## 3. Saran lanjutan — STATUS v0.14.0: butir 1–5 SELESAI, 6–7 belum
 
-| # | Saran | Kenapa layak | Risiko |
+| # | Saran | Status | Catatan |
 |---|---|---|---|
-| 1 | **Pratinjau diff sebelum AI menimpa berkas** — tampilkan lama vs baru, pengguna setuju dulu | Menimpa berkas sekarang langsung jalan; satu salah jawaban model bisa menghapus kerja pengguna | UI diff di layar kecil sulit; mulai dari "tampilkan berkas yang akan ditimpa + ukurannya" |
-| 2 | **Undo satu langkah agen** — simpan salinan berkas sebelum ditimpa (`filesDir/undo/`) | Sekali model salah, kerja hilang permanen; undo murah dan jujur | Penyimpanan; batas 12 berkas × 200 KB sudah wajar |
-| 3 | **Daftar perintah cepat baru di chat**: "buat layout XML", "tambah layar kedua", "jelaskan berkas ini" | Pengguna HP sering blank mau ngetik apa; 4 chip ada, tambah yang sering dipakai | Kosmetik saja |
-| 4 | **Agen bisa membaca berkas yang dipilih pengguna** (bukan hanya ringkasan 2.400 karakter) | Ringkasan memotong isi berkas penting; biarkan pengguna menyematkan berkas wajib-baca | Kuota token naik; batasi 3 berkas sematan |
-| 5 | **Indikator biaya/kuota per percakapan** (jumlah karakter terkirim) | Pengguna bayar kunci sendiri; angka membuat mereka percaya | Kecil |
-| 6 | **Riwayat agen yang bisa dibuka ulang** (tugas → hasil → berkas yang berubah) | Setelah layar ditutup, jejak agen hilang | Penyimpanan kecil, mudah |
-| 7 | **Template prompt per template projek** (kasir warung, katalog) | Model langsung tahu struktur projek tipikal | Perlu menjaga agar tidak berbohong soal kemampuan |
+| 1 | **Pratinjau diff sebelum AI menimpa berkas** | ✅ v0.14.0 | `DialogKonfirmasiTulis`: daftar berkas baru/timpa + ukuran lama→baru; timpa berwarna peringatan |
+| 2 | **Undo satu langkah agen** | ✅ v0.14.0 | `UndoTulis.kt`, `filesDir/undo-tulis/`, maks 5 batch; jalur Sisip juga tercadangkan; tombol "Batalkan tulisan AI" |
+| 3 | **Daftar perintah cepat baru di chat** | ✅ v0.14.0 | chip "Buat layout XML", "Tambah layar kedua", "Jelaskan berkas ini", "Perbaiki galat build", "Perbaiki berkas ini", "Buat Activity", "Bantu itu apa" |
+| 4 | **Agen bisa membaca berkas yang dipilih pengguna** | ✅ v0.14.0 | berkas sematan maks 3, dikirim utuh via `untukBerkasSematan`; lebih dari 3 ditolak dengan pesan jujur |
+| 5 | **Indikator biaya/kuota per percakapan** | ✅ v0.14.0 | "terkirim: N karakter ke endpoint" per projek, di-nol-kan lewat "Bersihkan" |
+| 6 | **Riwayat agen yang bisa dibuka ulang** | ⛔ belum | kandidat v0.15 |
+| 7 | **Template prompt per template projek** | ⛔ belum | kandidat v0.15 |
 
 ## 4. Saran UI/UX umum yang sudah dipenuhi sebelumnya (catatan)
 

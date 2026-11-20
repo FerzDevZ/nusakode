@@ -79,6 +79,21 @@ Sama seperti `.py`: saat pengguna membuka `.kt`, jelaskan bahwa Tier 0 hanya Jav
 Rencana v0.12 dan kandidat setelahnya disusun terpisah: lihat [`11-rencana-v0.12.md`](11-rencana-v0.12.md).
 
 
+## v0.14.0 — AI yang tidak merusak: pratinjau, undo, berkas sematan (20 November 2026)
+
+Lima saran teratas dari [`12-saran-ui-ux-ai.md`](12-saran-ui-ux-ai.md) dikerjakan sekaligus:
+
+- **Pratinjau sebelum menulis**: jawaban AI yang berisi `<<<BERKAS:>>>` tidak langsung ditulis —
+  dialog menampilkan daftar berkas (baru / timpa + ukuran lama→baru) dan pengguna menyetujuinya dulu.
+- **Undo**: sebelum menimpa, isi lama dicadangkan di `filesDir/undo-tulis/` (maks 5 batch);
+  jalur "Sisip" di editor juga ikut dicadangkan. Tombol "Batalkan tulisan AI" mengembalikan semuanya.
+- **Berkas sematan**: pengguna bisa menyematkan maksimal 3 berkas yang dikirim utuh ke AI
+  (bukan ringkasan 2.400 karakter) — pill + tombol Buang di baris chip.
+- **Chip perintah cepat baru**: "Buat layout XML", "Tambah layar kedua", "Jelaskan berkas ini", dst.
+- **Indikator karakter terkirim**: "terkirim: N karakter ke endpoint" per projek.
+- 238 uji unit · 104 uji perangkat · detekt 0.
+
+
 ## v0.13.0 — AI bisa membuat berkas baru & pemilih berkas jadi pohon (20 November 2026)
 
 - **Bug nyata diperbaiki:** `ProjectFiles.createFile` menolak folder tujuan yang belum ada — inilah akar keluhan "AI ga bisa bikin berkas di sub-folder". Kini sub-folder dibuat otomatis; jalur `../` tetap ditolak.
