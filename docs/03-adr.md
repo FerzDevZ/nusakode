@@ -261,3 +261,22 @@ Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif
 **Keputusan:** Template `web-katalog` memakai `WebView` (`file:///android_asset/index.html`, `setJavaScriptEnabled`, `setDomStorageEnabled`, `LOAD_NO_CACHE`) di dalam `MainActivity` berpaket `app`, dengan manifest `android:name=".app.MainActivity"` mengikuti konvensi template lain. Pipeline **tidak diubah**: tidak ada langkah baru, tidak ada flag aapt2 baru. Semua berkas web hidup di `src/main/assets` projek sehingga otomatis ikut lewat `copyAssets`.
 
 **Konsekuensi:** (+) HTML/CSS/JS sekarang juga menghasilkan APK asli, offline, tanpa Gradle; pipeline tetap satu jalur sehingga template web diuji oleh `build-templates.sh` yang sama. (+) Aset yang sudah dipakai template lain tidak berubah perilakunya. (−) Halaman yang butuh server/Node tidak bisa dibangun di HP; untuk itu tetap Tier 1/2. (−) Python dan bahasa yang butuh interpreter **tidak** didukung Tier 0 dan tidak boleh dijanjikan di UI.
+
+---
+
+## ADR-021 — Biner dan jar toolchain di Android 10+: `nativeLibraryDir` dan jar read-only
+
+**Tanggal:** 2025-11-20 · **Status:** diterima · **Konteks aturan:** keamanan platform Android 10–14 (W^X dan larangan dex writable)
+
+**Konteks:** Kebijakan W^X sudah tertulis di daftar risiko, tetapi belum pernah diuji: semua bukti build sebelumnya berasal dari emulator API 24. Uji langsung di emulator **API 34** (`ExecPolicyDeviceTest`) menunjukkan dua kegagalan nyata, bukan teoretis:
+
+1. `aapt2` dari `filesDir` maupun `cacheDir` ditolak OS: `IOException: Cannot run program … error=13, Permission denied`. SELinux melabeli folder data aplikasi sebagai tidak boleh dieksekusi, jadi menyalin biner dan `chmod +x` tidak akan pernah cukup di Android 10+.
+2. Setelah `aapt2` dipindah, jar masih gagal: ART menolak dex dari berkas yang bisa ditulis — `SecurityException: Writable dex file '/data/user/0/id.kodenusa.app/files/tool/apk.jar' is not allowed`. Jadi "mengeksekusi app_process" bukan satu-satunya syarat; keberadaan berkas jar itu sendiri ikut diperiksa.
+3. `app_process` juga berubah bentuk argumen sejak API 28: bentuk lama `app_process /system/bin <kelas> <argumen>` dibaca sebagai `--nice-name`, sehingga proses mencetak `dalvikvm: [options] class [argument ...]` lalu keluar kode 1.
+
+**Keputusan:**
+- `aapt2` **tidak** lagi berada di `assets`. Binernya dikemas sebagai `jniLibs/<abi>/libaapt2.so` dengan `packaging.jniLibs.useLegacyPackaging = true`, sehingga Android mengekstraknya ke `applicationInfo.nativeLibraryDir` yang boleh dieksekusi di semua versi. `ToolchainInstaller` mengambil biner dari sana, bukan dari `filesDir`.
+- Jar toolchain (`ecj.jar`, `dx.jar`, `apksigner.jar`, `android.jar`) tetap diekstrak ke `filesDir/toolchain/<abi>` tetapi **wajib ditandai `setReadOnly()`** setelah SHA-256 diverifikasi. Tanpa ini ART 10+ menolak memuat dex.
+- `AppProcessLauncher` memakai bentuk argumen sesuai SDK: `>= 28` mengirim `-Djava.class.path=<jar> /system/bin --nice-name=kodenusa-tool <kelas> <argumen>`; `< 28` tetap bentuk lama. `CLASSPATH` tetap dikirim lewat environment untuk Android 7.
+
+**Konsekuensi:** (+) Tier 0 kini terbukti berjalan di **API 24 dan API 34** — 22 uji perangkat hijau di keduanya, termasuk build tiga template. (+) Tidak ada perubahan pada pipeline 9 langkah; yang berubah hanya cara toolchain disiapkan. (+) `aapt2` tidak perlu diunduh saat pemasangan; Android sudah mengekstraknya. (−) `libaapt2.so` per ABI menambah ukuran APK dan wajib disertakan untuk setiap ABI yang didukung; kalau lupa, `ToolchainInstaller` mengembalikan `Missing` dan UI memberi tahu. (−) Jar read-only berarti setiap pembaruan toolchain harus menghapus folder lama lebih dulu — sudah dilakukan di `install()`.

@@ -124,5 +124,22 @@ open(os.path.join(root, "toolchain.json"), "w").write(json.dumps({"files": files
 print("  entri:", ", ".join(f["name"] for f in files))
 PY
 
+echo "==> Menyalin biner aapt2 ke jniLibs"
+# aapt2 TIDAK boleh berada di assets: Android 10+ melarang eksekusi berkas dari folder data
+# aplikasi (error=13). Dikemas sebagai libaapt2.so supaya diekstrak ke nativeLibraryDir yang
+# boleh dieksekusi di semua versi. Lihat ADR-021.
+JNI="$AKAR/app/src/main/jniLibs"
+for abi in arm64-v8a armeabi-v7a x86_64; do
+  sumber="$CACHE/aapt2/$abi/aapt2"
+  if [ -f "$sumber" ]; then
+    mkdir -p "$JNI/$abi"
+    install -m 644 "$sumber" "$JNI/$abi/libaapt2.so"
+    echo "  $abi/libaapt2.so $(stat -c%s "$JNI/$abi/libaapt2.so") byte"
+  else
+    echo "  PERINGATAN: $sumber tidak ada, $abi dilewati" >&2
+  fi
+done
+
 echo "==> Ukuran aset"
 du -sh "$ASSETS"/* | sed 's/^/  /'
+ls -l "$JNI"/*/libaapt2.so 2>/dev/null | awk '{print "  jniLibs: " $NF, $5 " byte"}'

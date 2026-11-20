@@ -69,3 +69,6 @@ Dibaca di awal setiap sesi. Format dari `AGENTS.md` Gate 3:
 2. Tiga bagian wajib: gejala (yang terlihat user), root cause (teknis, spesifik), invariant rule (bisa diuji).
 3. Kalau root cause belum pasti, **jangan** tulis invariant — tulis dulu di catatan investigasi.
 4. Invariant yang bisa diuji harus punya test; sebut nama test-nya kalau ada.
+
+- **[25-11-20 · Toolchain/Android 10+]**: build yang lulus di API 24 gagal total di API 34 → **Root Cause**: (1) SELinux melarang eksekusi biner dari folder data aplikasi (`error=13 Permission denied`), (2) ART menolak `dex` dari berkas writable (`SecurityException: Writable dex file is not allowed`), (3) `app_process` sejak API 28 membaca token ketiga sebagai `--nice-name`, bukan folder kelas → **Invariant Rule**: biner native hanya boleh dijalankan dari `nativeLibraryDir` (kemas sebagai `lib*.so` + `useLegacyPackaging=true`); jar wajib `setReadOnly()` setelah verifikasi SHA-256; `AppProcessLauncher` memilih argv lama/modern berdasarkan `Build.VERSION.SDK_INT`. Diuji oleh `ExecPolicyDeviceTest` dan seluruh `OnDeviceBuildTest` di API 24 **dan** API 34.
+

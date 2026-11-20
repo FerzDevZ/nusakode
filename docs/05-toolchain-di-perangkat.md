@@ -67,3 +67,29 @@ adalah 80 MB, jadi masih ada ruang, tetapi `android.jar` tetap kandidat pertama 
 2. Ganti keystore bundel dengan generasi perangkat.
 3. Ukur di HP fisik 4 GB: waktu build, RAM diam, ukuran APK.
 4. Pangkas `android.jar` dan ukur ulang bundel.
+## Bukti lintas versi Android (API 24 → API 34)
+
+Toolchain tidak cukup dibuktikan di satu versi Android. Emulator **API 34** dipakai karena di
+sanalah kebijakan terbaru berlaku, dan hasilnya memang berbeda dari API 24:
+
+| Yang diuji | API 24 (Android 7) | API 34 (Android 14) |
+|---|---|---|
+| `aapt2` dari `filesDir` | jalan (kode 0) | **ditolak** `error=13 Permission denied` |
+| `aapt2` dari `cacheDir` | jalan (kode 0) | **ditolak** `error=13 Permission denied` |
+| `aapt2` dari `nativeLibraryDir` (`libaapt2.so`) | jalan (kode 0) | **jalan** (kode 0) |
+| `app_process` bentuk lama `<folder> <kelas>` | jalan | **gagal** (keluar kode 1, mencetak bantuan dalvikvm) |
+| `app_process -Djava.class.path=… --nice-name=…` | jalan | jalan |
+| jar mode `644` (writable) | jalan | **ditolak** `Writable dex file … is not allowed` |
+| jar mode `444` (read-only) | jalan | **jalan** (apksigner 0.8 mencetak `0.8`) |
+| Build 3 template dari HP | lulus | lulus |
+
+Perintah pembuktian ulang:
+
+```bash
+# jalankan suite perangkat pada emulator yang sedang aktif (API 24 atau API 34)
+./gradlew :app:connectedDebugAndroidTest
+```
+
+Hasil terakhir: **22 uji perangkat hijau di API 24 dan 22 uji hijau di API 34**, termasuk
+`ExecPolicyDeviceTest` yang menguji ketiga lokasi eksekusi dan `OnDeviceBuildTest` yang
+membangun ketiga template sampai APK bertanda tangan.

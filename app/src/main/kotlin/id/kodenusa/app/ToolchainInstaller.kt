@@ -15,6 +15,12 @@ import java.security.MessageDigest
  *   satu berkas yang tertukar menjadi eksekusi kode asing.
  * - Berkas diekstrak ke `filesDir` (bukan sdcard) lalu di-set executable. Folder sdcard memakai
  *   mount noexec sehingga tidak bisa dipakai untuk menjalankan biner.
+ * - **aapt2 diambil dari `nativeLibraryDir`, bukan dari `assets`.** Sejak Android 10 ada kebijakan
+ *   W^X: berkas yang bisa ditulis aplikasi tidak boleh dieksekusi, jadi `aapt2` dari `filesDir`
+ *   ditolak `error=13 Permission denied` (dibuktikan di API 34, lihat ADR-021). Biner native yang
+ *   dikemas sebagai `libaapt2.so` diekstrak Android ke `nativeLibraryDir` yang boleh dieksekusi di
+ *   semua versi Android. Jar tetap lewat `app_process` karena `/system/bin/app_process` adalah
+ *   biner sistem yang selalu boleh dijalankan.
  * - Kalau aset tidak ada, hasilnya [Status.Missing] dengan nama berkas yang kurang — bukan
  *   exception tanpa pesan dan bukan build yang gagal misterius.
  * - **Keystore tidak dibundel.** Kunci tanda tangan dibuat di perangkat ini sekali dan disimpan di
@@ -40,11 +46,13 @@ class ToolchainInstaller(private val context: Context) {
         // aapt2 berbeda per arsitektur; jar hasil dex, android.jar, dan keystore sama untuk semua.
         val manifest = readManifest()
         val required = REQUIRED
-        val available = (manifest.files.map { it.name } + listOfNotNull(abiAsset(abi))).toSet()
+        val available = manifest.files.map { it.name }.toSet()
         val missing = required.filterNot { it in available }
 
-        if (missing.size == required.size) {
-            return Status.Missing(names = missing, abi = abi, bundled = false)
+        // Biner native tidak datang dari aset; Android mengekstraknya sendiri saat pemasangan.
+        val binerAapt2 = File(context.applicationInfo.nativeLibraryDir, NATIVE_AAPT2)
+        if (!binerAapt2.isFile) {
+            return Status.Missing(names = listOf(NATIVE_AAPT2), abi = abi, bundled = false)
         }
         if (missing.isNotEmpty()) {
             return Status.Missing(names = missing, abi = abi, bundled = true)
@@ -56,12 +64,14 @@ class ToolchainInstaller(private val context: Context) {
         }
         root.mkdirs()
 
+        // ART 10+ menolak memuat dex dari berkas yang bisa ditulis (ADR-021), jadi jar ditandai
+        // read-only setelah diverifikasi. Tanpa ini apksigner mati dengan SecurityException
+        // "Writable dex file is not allowed" di HP Android 10 ke atas.
         val expected = manifest.files.associateBy { it.name }
         for (name in required) {
             val target = File(root, name)
             target.parentFile?.mkdirs()
-            val assetPath = if (name == AAPT2) "toolchain/$abi/$name" else "toolchain/shared/$name"
-            context.assets.open(assetPath).use { input ->
+            context.assets.open("toolchain/shared/$name").use { input ->
                 target.outputStream().use { output -> input.copyTo(output) }
             }
             val entry = expected[name]
@@ -72,10 +82,8 @@ class ToolchainInstaller(private val context: Context) {
                     return Status.Broken(name, "Checksum tidak cocok. Berkas mungkin rusak saat unduh.")
                 }
             }
-            if (entry?.executable == true || name == AAPT2) {
-                if (!target.setExecutable(true, false)) {
-                    return Status.Broken(name, "Tidak bisa menjadikan berkas dapat dieksekusi")
-                }
+            if (!target.setReadOnly()) {
+                return Status.Broken(name, "Tidak bisa menjadikan berkas hanya-baca")
             }
         }
 
@@ -86,8 +94,8 @@ class ToolchainInstaller(private val context: Context) {
             }
         val toolchain = id.kodenusa.build.tier0.Toolchain.fromRoot(
             root,
-            id.kodenusa.build.tier0.AppProcessLauncher(),
-        ).copy(debugKeystore = kunci)
+            id.kodenusa.build.tier0.AppProcessLauncher(sdkInt = Build.VERSION.SDK_INT),
+        ).copy(aapt2 = binerAapt2, debugKeystore = kunci)
         val stillMissing = toolchain.missing()
         return if (stillMissing.isEmpty()) {
             Status.Ready(toolchain)
@@ -98,9 +106,6 @@ class ToolchainInstaller(private val context: Context) {
 
     /** Keystore per pemasangan, dibuat sekali lalu dipakai ulang lintas instal toolchain. */
     fun keystoreFile(): File = File(context.filesDir, "keys/debug.keystore")
-
-    private fun abiAsset(abi: String): String? =
-        runCatching { context.assets.list("toolchain/$abi")?.firstOrNull { it == AAPT2 } }.getOrNull()
 
     private fun readManifest(): Manifest = runCatching {
         context.assets.open("toolchain/shared/toolchain.json").use { input ->
@@ -123,14 +128,14 @@ class ToolchainInstaller(private val context: Context) {
     }
 
     private companion object {
-        const val AAPT2 = "aapt2"
+        /** Nama berkas biner di `nativeLibraryDir`; aset aslinya `aapt2` dari build-tools. */
+        const val NATIVE_AAPT2 = "libaapt2.so"
 
         /**
-         * Harus sama dengan urutan di Toolchain.fromRoot; UI memakai daftar ini untuk pesan.
-         * `debug.keystore` tidak ada di sini karena dibuat di perangkat, bukan diambil dari aset.
+         * Berkas yang masih datang dari `assets/toolchain/shared`. `aapt2` tidak ada di sini karena
+         * diambil dari `nativeLibraryDir`, dan `debug.keystore` dibuat di perangkat (ADR-019).
          */
         val REQUIRED = listOf(
-            AAPT2,
             "ecj.jar",
             "dx.jar",
             "apksigner.jar",

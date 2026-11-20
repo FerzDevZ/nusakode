@@ -36,3 +36,4 @@ dist/
 # Aset toolchain biner (android.jar 25 MB, aapt2 per ABI, jar hasil dex).
 # Semua bisa dibuat ulang: bash scripts/toolchain/build-android-toolchain.sh
 app/src/main/assets/toolchain/
+app/src/main/jniLibs/*/libaapt2.so

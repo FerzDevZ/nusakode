@@ -13,8 +13,8 @@ android {
         applicationId = "id.kodenusa.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.2.1"
+        versionCode = 4
+        versionName = "0.3.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -36,6 +36,10 @@ android {
 
     packaging {
         resources.excludes += setOf("/META-INF/{AL2.0,LGPL2.1}", "DebugProbesKt.bin")
+        // aapt2 dikemas sebagai libaapt2.so supaya Android mengekstraknya ke nativeLibraryDir,
+        // satu-satunya folder yang boleh dieksekusi di Android 10+ (ADR-021). Tanpa legacy
+        // packaging, pustaka dibiarkan terkompresi di dalam APK dan tidak pernah diekstrak.
+        jniLibs.useLegacyPackaging = true
     }
 }
 
