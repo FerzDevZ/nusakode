@@ -1,5 +1,7 @@
 package id.kodenusa.app.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,6 +49,7 @@ import id.kodenusa.app.AiProjectBoard
 import id.kodenusa.app.AiSettingsStore
 import id.kodenusa.core.ai.AiGagal
 import id.kodenusa.core.ai.AiModel
+import androidx.core.content.FileProvider
 import id.kodenusa.app.GambarUntukAi
 import id.kodenusa.core.ai.ChatMessage
 import id.kodenusa.core.ai.CodeBlocks
@@ -127,16 +130,29 @@ fun AiScreen(
     var pilihBerkas by remember { mutableStateOf(false) }
     var hasilTulis by remember { mutableStateOf<String?>(null) }
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    val pemilihGambar = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        memuatGambar = true
+    // Dibuat sebagai lambda (bukan fungsi lokal) supaya bisa dipakai launcher di bawah dan tetap
+    // ringkas: satu tempat untuk "ubah uri jadi data URL", dipakai galeri maupun kamera.
+    val muatGambar: (Uri) -> Unit = { uri ->
         scope.launch {
+            memuatGambar = true
             gambar = withContext(Dispatchers.IO) { GambarUntukAi.dataUrl(ctx, uri) }
             memuatGambar = false
             if (gambar == null) {
                 galat = "Gambar tidak bisa dibaca. Coba pilih berkas JPG atau PNG lain."
             }
         }
+    }
+    val pemilihGambar = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        muatGambar(uri)
+    }
+    // Kamera: banyak pengguna lebih cepat memotret layar galat daripada mencari berkasnya di galeri.
+    // Foto ditulis dulu ke cache lewat FileProvider supaya aplikasi kamera punya tujuan tulis.
+    var tujuanKamera by remember { mutableStateOf<Uri?>(null) }
+    val kamera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { jadi ->
+        val uri = tujuanKamera
+        if (!jadi || uri == null) return@rememberLauncherForActivityResult
+        muatGambar(uri)
     }
 
     fun simpanDraf() = store.simpanDraf(endpoint, kunci)
@@ -331,6 +347,25 @@ fun AiScreen(
                             pemilihGambar.launch(
                                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                             )
+                        },
+                        onFoto = {
+                            // HP murah kadang tidak punya aplikasi kamera sama sekali. Tanpa
+                            // pemeriksaan ini, ActivityNotFoundException akan mematikan aplikasi
+                            // hanya karena satu tombol ditekan.
+                            val niat = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
+                            if (niat.resolveActivity(ctx.packageManager) == null) {
+                                galat = "Tidak ada aplikasi kamera di HP ini. Pakai \"Lampirkan gambar\" saja."
+                            } else {
+                                val berkas = File(ctx.cacheDir, "kamera-ai.jpg")
+                                if (berkas.exists()) berkas.delete()
+                                val tujuan = FileProvider.getUriForFile(
+                                    ctx,
+                                    "${ctx.packageName}.berkas",
+                                    berkas,
+                                )
+                                tujuanKamera = tujuan
+                                kamera.launch(tujuan)
+                            }
                         },
                         onBuangGambar = { gambar = null },
                         adaKonteksProjek = pakaiKonteksProjek,
@@ -533,6 +568,7 @@ private fun ChatAiPanel(
     adaGambar: Boolean = false,
     memuatGambar: Boolean = false,
     onLampirkan: () -> Unit = {},
+    onFoto: () -> Unit = {},
     onBuangGambar: () -> Unit = {},
     adaKonteksProjek: Boolean = false,
     berkasKonteks: String? = null,
@@ -663,6 +699,14 @@ private fun ChatAiPanel(
                 if (memuatGambar) "Menyiapkan gambar…" else "Lampirkan gambar",
                 onLampirkan,
                 modifier = Modifier.testTag("lampirkan-gambar"),
+                enabled = !memuatGambar,
+            )
+            Spacer(Modifier.width(6.dp))
+            GhostButton(
+                "Foto",
+                onFoto,
+                modifier = Modifier.testTag("foto-kamera"),
+                enabled = !memuatGambar,
             )
             if (adaGambar) {
                 Spacer(Modifier.width(6.dp))

@@ -74,6 +74,8 @@ class AiGagal(
         JARINGAN,
         /** Balasan penyedia tidak bisa dibaca (bukan JSON yang diharapkan). */
         BALASAN_ANEH,
+        /** Model yang dipilih menolak lampiran gambar. */
+        GAMBAR_TIDAK_DIDUKUNG,
         /** Pengguna membatalkan. */
         DIBATALKAN,
     }
@@ -114,6 +116,18 @@ class AiGagal(
             Jenis.BALASAN_ANEH,
             "Balasan penyedia tidak bisa dibaca.",
             "Pastikan endpoint memakai format OpenAI (/chat/completions). Detail: ${detail.take(200)}",
+        )
+
+        /**
+         * 400 yang menyebut gambar: modelnya tidak menerima `image_url`. Model murah (teks saja)
+         * memang menolak permintaan bergambar, dan tanpa pesan khusus pengguna akan mengira
+         * aplikasinya rusak.
+         */
+        fun gambarTidakDidukung(isi: String): AiGagal = AiGagal(
+            Jenis.GAMBAR_TIDAK_DIDUKUNG,
+            "Model yang dipilih tidak bisa membaca gambar.",
+            "Kirim pertanyaannya tanpa gambar, atau pilih model yang mendukung gambar " +
+                "(mis. gpt-4o, gemini, qwen-vl). Jawaban penyedia: ${isi.take(160)}",
         )
 
         fun belumDiatur(): AiGagal = AiGagal(

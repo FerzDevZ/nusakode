@@ -288,12 +288,19 @@ class OpenAiCompatClient(
         aliran?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
     }.getOrDefault("")
 
-    private fun dariStatus(kode: Int, url: String, isi: String): AiGagal = when (kode) {
-        401, 403 -> AiGagal.kunciSalah()
-        404 -> AiGagal.alamatSalah(url)
-        429 -> AiGagal.kuota()
-        in 500..599 -> AiGagal.penyedia(kode, pesanGalat(isi))
+    private fun dariStatus(kode: Int, url: String, isi: String): AiGagal = when {
+        // Ditaruh paling depan: penyedia memakai 400 untuk banyak hal, dan hanya kalimat yang
+        // menyebut gambar yang berarti "model ini tidak bisa melihat".
+        kode == 400 && menyebutGambar(isi) -> AiGagal.gambarTidakDidukung(isi)
+        kode == 401 || kode == 403 -> AiGagal.kunciSalah()
+        kode == 404 -> AiGagal.alamatSalah(url)
+        kode == 429 -> AiGagal.kuota()
         else -> AiGagal.penyedia(kode, pesanGalat(isi))
+    }
+
+    private fun menyebutGambar(isi: String): Boolean {
+        val kecil = isi.lowercase()
+        return kecil.contains("image") || kecil.contains("vision") || kecil.contains("multimodal")
     }
 
     private fun pesanGalat(isi: String): String = runCatching {

@@ -26,6 +26,9 @@ class EditorState {
     /** false = cari di berkas aktif, true = cari di seluruh berkas projek. */
     var findProjek by mutableStateOf(false)
     var hasilProjek by mutableStateOf(emptyList<id.kodenusa.core.project.HasilCari>())
+    var pengganti by mutableStateOf("")
+    /** Hasil "ganti semua" terakhir; ditampilkan di panel, bukan toast, karena panel menutupinya. */
+    var pesanGanti by mutableStateOf<String?>(null)
     var wrap by mutableStateOf(false)
     var toast by mutableStateOf<String?>(null)
 

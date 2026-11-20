@@ -50,6 +50,21 @@ Kotlin), karena kemampuan itulah yang dijanjikan aplikasi.
 - Model murah sering menolak permintaan panjang; kalau satu tugas gagal karena batas konteks, catat
   sebagai kegagalan model, bukan kegagalan agen — dan tulis nama modelnya.
 
+## Yang sudah terbukti tanpa kunci API
+
+`EvalAgenJalurTest` (JVM, jalan di CI) menjalankan **10 tugas yang sama** lewat loop `AgenBuild`
+dengan model tiruan yang "sudah tahu" jawabannya. Tujuannya bukan mengukur kecerdasan model, tetapi
+membuktikan jaringannya tidak putus:
+
+- 10 dari 10 tugas benar-benar selesai lewat loop agen (bukan diketik manual di uji),
+- berkas yang ditulis model mendarat di jalur yang diminta,
+- gerbang build dipanggil setiap putaran,
+- galat build sungguhan memicu putaran perbaikan, lalu berhenti jujur saat batas putaran habis,
+- model yang menulis `../keluar.java` ditolak tanpa menyentuh disk.
+
+Yang tetap **belum** terbukti sampai `AI_EVAL=1` dijalankan dengan kunci asli: kecerdasan model
+sungguhan, waktu, dan jumlah putaran. Kolom itu masih kosong di bawah — memang belum diukur.
+
 ## Hasil terakhir
 
 | Tanggal | Model | Lulus | Median waktu | Catatan |

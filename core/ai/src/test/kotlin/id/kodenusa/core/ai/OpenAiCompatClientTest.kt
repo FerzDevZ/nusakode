@@ -192,4 +192,32 @@ class OpenAiCompatClientTest {
         assertEquals(AiGagal.Jenis.DIBATALKAN, gagal.jenis)
         assertTrue(dihitung < 10)
     }
+
+    @Test
+    fun model_tanpa_dukungan_gambar_dijelaskan_bukan_disebut_galat_penyedia() = runTest {
+        // Bentuk balasan nyata dari penyedia yang modelnya hanya teks.
+        balasan = { ex ->
+            kirimJson(
+                ex,
+                400,
+                """{"error":{"message":"Invalid content type. image_url is only supported by certain models."}}""",
+            )
+        }
+
+        val gagal = runCatching { klien.daftarModel(config()) }.exceptionOrNull() as AiGagal
+
+        assertEquals(AiGagal.Jenis.GAMBAR_TIDAK_DIDUKUNG, gagal.jenis)
+        assertTrue(gagal.pesan.contains("tidak bisa membaca gambar"))
+        assertTrue(gagal.saran.contains("gpt-4o"))
+    }
+
+    @Test
+    fun galat_400_lain_tetap_disebut_galat_penyedia() = runTest {
+        balasan = { ex -> kirimJson(ex, 400, """{"error":{"message":"max tokens too large"}}""") }
+
+        val gagal = runCatching { klien.daftarModel(config()) }.exceptionOrNull() as AiGagal
+
+        assertEquals(AiGagal.Jenis.PENYEDIA, gagal.jenis)
+        assertTrue(gagal.saran.contains("max tokens too large"))
+    }
 }

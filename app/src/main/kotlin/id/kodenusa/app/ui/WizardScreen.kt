@@ -109,34 +109,54 @@ fun WizardScreen(
         // terakhir LazyColumn sehingga tertutup keyboard dan user tidak bisa menekannya.
         bottomBar = {
             Surface(color = Color(KodenusaPalette.BACKGROUND)) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    GhostButton("Batal", onCancel, Modifier.weight(1f))
-                    PrimaryButton(
-                        text = "Buat projek",
-                        onClick = {
-                            val template = selected ?: return@PrimaryButton
-                            busy = true
-                            failure = null
-                            scope.launch {
-                                val result = withContext(Dispatchers.IO) {
-                                    container.templates.create(
-                                        templateId = template.id,
-                                        target = container.projectStore.uniqueFolder(name.trim()),
-                                        appName = name.trim(),
-                                        appId = efektifId,
-                                    )
+                Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
+                    // Alasan tombol mati WAJIB terlihat. Tanpa ini, tombol "Buat projek" yang
+                    // disabled terlihat seperti tombol rusak: ditekan berkali-kali, tidak ada
+                    // reaksi, tidak ada penjelasan — persis keluhan "tombolnya tidak bisa ditekan".
+                    val alasan = when {
+                        busy -> null
+                        name.isBlank() -> "Isi nama projek dulu untuk mengaktifkan tombol ini."
+                        selected == null -> "Pilih salah satu template di atas."
+                        masalahLain.isNotEmpty() -> masalahLain.first().fallbackMessage
+                        else -> null
+                    }
+                    if (alasan != null) {
+                        Text(
+                            alasan,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(KodenusaPalette.WARN),
+                            modifier = Modifier.padding(bottom = 6.dp).testTag("alasan-buat"),
+                        )
+                    }
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        GhostButton("Batal", onCancel, Modifier.weight(1f))
+                        PrimaryButton(
+                            text = "Buat projek",
+                            onClick = {
+                                val template = selected ?: return@PrimaryButton
+                                busy = true
+                                failure = null
+                                scope.launch {
+                                    val result = withContext(Dispatchers.IO) {
+                                        container.templates.create(
+                                            templateId = template.id,
+                                            target = container.projectStore.uniqueFolder(name.trim()),
+                                            appName = name.trim(),
+                                            appId = efektifId,
+                                        )
+                                    }
+                                    busy = false
+                                    result.onSuccess(onCreated).onFailure { failure = it.message }
                                 }
-                                busy = false
-                                result.onSuccess(onCreated).onFailure { failure = it.message }
-                            }
-                        },
-                        modifier = Modifier.weight(1.4f).testTag("tombol-buat"),
-                        enabled = canCreate,
-                        loading = busy,
-                    )
+                            },
+                            modifier = Modifier.weight(1.4f).testTag("tombol-buat"),
+                            enabled = canCreate,
+                            loading = busy,
+                        )
+                    }
                 }
             }
         },

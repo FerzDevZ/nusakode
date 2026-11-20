@@ -1,6 +1,7 @@
 package id.kodenusa.app
 
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -134,5 +135,24 @@ class WizardUiTest {
             .maxByOrNull { java.io.File(it, "kodenusa.json").lastModified() }
         requireNotNull(kandidat) { "tidak ada projek yang dibuat" }
         return kandidat
+    }
+
+    @Test
+    fun tombol_mati_menjelaskan_alasannya() {
+        bukaFormProjekBaru()
+
+        // Tombol "Buat projek" mati selama nama kosong. Sebelum ini, menekannya tidak memberi
+        // reaksi apa pun sehingga terlihat seperti tombol rusak (keluhan "tidak bisa ditekan").
+        // Tombol ada di bilah bawah, bukan di dalam daftar, jadi tidak perlu digulir.
+        layar.onNodeWithTag("tombol-buat").assertIsNotEnabled()
+        layar.onNodeWithTag("alasan-buat").assertExists()
+        layar.onNodeWithText("Isi nama projek dulu untuk mengaktifkan tombol ini.").assertExists()
+
+        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasSetTextAction())
+        layar.onAllNodes(hasSetTextAction())[0].performTextReplacement("Projek Alasan")
+        layar.waitForIdle()
+
+        layar.onNodeWithTag("alasan-buat").assertDoesNotExist()
+        layar.onNodeWithTag("tombol-buat").assertIsEnabled()
     }
 }

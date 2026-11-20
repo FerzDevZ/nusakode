@@ -19,7 +19,16 @@ nilai tengahnya.
 
 | Tanggal | HP | Android | RAM dilaporkan | PSS diam | PSS puncak | Build template | Uji OK | Suhu |
 |---|---|---|---|---|---|---|---|---|
-| _(belum diukur)_ | | | | | | | | |
+| 2026-11-20-1309 | `sdk_gphone64_x86_64` (**emulator**, bukan HP) | API 35 | 2,9 GB | 67 MB | 102 MB | 21,4 s | 1 | 25,0 °C |
+| _(belum diukur di HP 4 GB sungguhan)_ | | | | | | | | |
+
+Baris emulator di atas **bukan** angka HP sungguhan dan jangan dipakai untuk klaim marketing:
+
+- PSS 67 MB menganggur memang wajar (emulator berbagi memori host), sedangkan build 21,4 s **bukan**
+  waktu kompilasi — itu waktu uji perangkat yang di dalamnya ada penyalinan `android.jar` 26 MB ke
+  penyimpanan internal pada instalasi baru. Build template hangat sendiri 1,4–1,9 s.
+- Yang dibuktikan baris itu: skrip `scripts/ukur-hp.sh` jalan dari awal sampai akhir, membaca RAM
+  yang **dilaporkan sistem**, mengukur PSS saat build, membaca suhu, dan mencetak baris tabel.
 
 ## Yang dianggap lulus
 

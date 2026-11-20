@@ -42,6 +42,11 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="application/vnd.android.package-archive" />
         </intent>
+        <!-- Kamera dipakai tombol "Foto" di layar AI. Tanpa deklarasi ini, resolveActivity
+             mengembalikan null di Android 11+ dan tombolnya akan terlihat mati. -->
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
     </queries>
 
     <!--

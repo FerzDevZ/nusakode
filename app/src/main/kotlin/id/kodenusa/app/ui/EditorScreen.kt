@@ -256,6 +256,29 @@ fun EditorScreen(
                             state.wrap = !state.wrap
                             state.editor?.setWordWrap(state.wrap)
                         },
+                        pengganti = state.pengganti,
+                        onPengganti = { state.pengganti = it; state.pesanGanti = null },
+                        pesanGanti = state.pesanGanti,
+                        onGantiSemua = {
+                            val ringkas = ProjectSearch.ganti(projectDir, state.query, state.pengganti)
+                            state.pesanGanti = if (ringkas.total == 0) {
+                                "Tidak ada yang diganti."
+                            } else {
+                                "${ringkas.total} potongan di ${ringkas.file} berkas diganti."
+                            }
+                            // Berkas aktif bisa jadi salah satu yang berubah: muat ulang supaya
+                            // yang terlihat di editor sama dengan yang ada di disk.
+                            state.hasilProjek = ProjectSearch.cari(projectDir, state.query)
+                            val aktif = state.loadedPath?.let { File(it) }
+                            if (aktif != null && aktif.isFile) {
+                                val jalurAktif = runCatching { aktif.relativeTo(projectDir).invariantSeparatorsPath }
+                                    .getOrNull()
+                                if (ringkas.berkas.any { it.jalur == jalurAktif }) {
+                                    session.open(aktif)
+                                    state.load(aktif)
+                                }
+                            }
+                        },
                     )
                 }
 
@@ -740,6 +763,10 @@ private fun FindBar(
     onQuery: (String) -> Unit,
     matches: Int,
     index: Int,
+    pengganti: String = "",
+    onPengganti: (String) -> Unit = {},
+    pesanGanti: String? = null,
+    onGantiSemua: () -> Unit = {},
     modeProjek: Boolean,
     onMode: () -> Unit,
     onNext: () -> Unit,
@@ -783,6 +810,44 @@ private fun FindBar(
         GhostButton("↑", onPrev)
         GhostButton("↓", onNext)
         GhostButton(if (wrap) "wrap on" else "wrap off", onWrap)
+    }
+    if (modeProjek) {
+        // Baris kedua hanya muncul untuk pencarian se-projek: mengganti di berkas aktif sudah
+        // bisa dilakukan langsung di editor, jadi tombolnya tidak perlu ditumpuk di sana.
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            TextField(
+                value = pengganti,
+                onValueChange = onPengganti,
+                singleLine = true,
+                placeholder = { Text("ganti dengan…", style = MaterialTheme.typography.bodySmall) },
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
+                    unfocusedContainerColor = Color(KodenusaPalette.SURFACE_RAISED),
+                    focusedTextColor = Color(KodenusaPalette.TEXT),
+                    unfocusedTextColor = Color(KodenusaPalette.TEXT),
+                ),
+                modifier = Modifier.weight(1f).testTag("isi-pengganti"),
+            )
+            GhostButton(
+                "Ganti semua",
+                onGantiSemua,
+                Modifier.testTag("ganti-semua"),
+                enabled = query.isNotBlank() && matches > 0,
+            )
+        }
+        if (pesanGanti != null) {
+            Text(
+                pesanGanti,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(KodenusaPalette.OK),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp)
+                    .testTag("pesan-ganti"),
+            )
+        }
     }
 }
 

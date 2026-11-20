@@ -17,6 +17,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -86,6 +87,7 @@ fun WorkspaceScreen(
     }
 
     // Membuka zip projek yang dipilih dari penyimpanan mana pun.
+    var mintaImpor by remember { mutableStateOf(false) }
     val pemilihImpor = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
     ) { uri ->
@@ -110,6 +112,13 @@ fun WorkspaceScreen(
         }
     }
 
+    LaunchedEffect(mintaImpor) {
+        if (mintaImpor) {
+            mintaImpor = false
+            pemilihImpor.launch(arrayOf("application/zip", "application/octet-stream"))
+        }
+    }
+
     Scaffold(containerColor = Color(KodenusaPalette.BACKGROUND)) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp)) {
             Spacer(Modifier.height(20.dp))
@@ -122,7 +131,15 @@ fun WorkspaceScreen(
             )
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GhostButton("Impor .zip", { pemilihImpor.launch(arrayOf("application/zip", "application/octet-stream")) })
+                // Peluncur pemilih berkas TIDAK dipanggil langsung di dalam onClick: di Android 11+,
+                // peluncuran intent di tengah pembongkaran koneksi aksesibilitas Compose membuat
+                // main thread menunggu Binder dan berakhir ANR ("KodeNusa isn't responding").
+                // Bendera state dipakai supaya peluncuran terjadi setelah bingkai ini selesai.
+                GhostButton(
+                    "Impor .zip",
+                    { mintaImpor = true },
+                    Modifier.testTag("impor-zip"),
+                )
                 GhostButton("Ekspor? pilih projek", { pesan = "Tekan \"Ekspor .zip\" pada salah satu projek di bawah." })
             }
             Spacer(Modifier.height(4.dp))
