@@ -1,10 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Dipakai hanya untuk membuka pemasang APK setelah build sukses. -->
     <!-- AI memakai endpoint + kunci milik pengguna sendiri. Tanpa setelan AI, aplikasi tetap 100% offline. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <!--
+        Gambar untuk AI.
+        Foto dipilih lewat Photo Picker sistem, jadi TIDAK butuh izin apa pun di Android 11+
+        (dan Android 13+ malah tidak menampilkan dialog izin sama sekali). Dua izin di bawah hanya
+        jaring pengaman untuk perangkat lama/rom yang tidak punya Photo Picker.
+    -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
+    <!--
+        Akses semua berkas: SENGAJA dideklarasikan tetapi hanya diminta lewat layar setelan
+        (tombol "Folder di mana saja"), bukan saat aplikasi dibuka. Tanpa ini, folder projek di
+        luar folder aplikasi tetap bisa dipakai lewat SAF; izin ini hanya menghilangkan langkah
+        memilih folder setiap kali membuka projek lama.
+    -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
 
     <application
         android:allowBackup="false"

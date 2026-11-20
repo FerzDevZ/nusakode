@@ -1,0 +1,120 @@
+# Rencana v2 — Android 11+ & HP minimum 4 GB / 64 GB
+
+> Dokumen ini menjawab tiga hal yang paling sering ditanya: **kenapa KodeNusa tidak muncul di
+> "data" HP**, **izin apa yang sebenarnya dibutuhkan** (karena AI sekarang bisa melihat gambar),
+> dan **fitur apa yang layak dibangun berikutnya** kalau patokannya HP 4 GB / 64 GB.
+
+## 1. "NusaKode tidak ada di data" — penjelasan
+
+| Pertanyaan | Jawaban |
+|---|---|
+| Nama paket aplikasi | **`id.kodenusa.app`** (bukan `nusakode`). Nama repo GitHub memang `nusakode`, nama aplikasi di layar HP **KodeNusa**. |
+| Di mana datanya | `/data/data/id.kodenusa.app/` → di dalamnya `files/projek/` (projek pengguna), `files/keys/` (keystore debug), `shared_prefs/ai.xml`, `shared_prefs/git.xml`. |
+| Kenapa tidak terlihat | Sejak **Android 11** folder `/data/data` **ditutup total** untuk aplikasi lain dan untuk pengelola berkas, bahkan lewat kabel USB. Yang bisa dilihat hanya `Android/data/` — dan folder itu **baru dibuat** kalau aplikasi menulis berkas ke penyimpanan luar. KodeNusa sekarang **tidak** menulis ke luar, jadi `Android/data/id.kodenusa.app` memang tidak ada. Ini bukan bug, ini scoped storage. |
+| Kalau aplikasi tidak terpasang | Setelah `connectedAndroidTest`, Gradle **mencopot** aplikasi dari emulator. Jadi `pm list packages | grep kodenusa` kosong sesudah uji, dan itu normal. |
+
+Konsekuensi desain yang disengaja: data pengguna tinggal di dalam sandbox aplikasi, sehingga
+**tidak bisa diintip pengelola berkas atau aplikasi lain**, dan ikut terhapus kalau aplikasi
+di-uninstall. Karena itu ada **Ekspor zip** (SAF) — satu-satunya jalur keluar data yang resmi.
+
+## 2. Izin: apa yang benar-benar diminta
+
+Prinsipnya: **minta paling sedikit yang cukup**, dan izin besar hanya lewat tombol yang dijelaskan.
+
+| Kebutuhan | Izin | Kapan diminta | Catatan |
+|---|---|---|---|
+| Unduh/serve AI (BYOK) | `INTERNET` | otomatis | tanpa kunci AI tidak ada lalu lintas jaringan sama sekali |
+| Pasang APK hasil build | `REQUEST_INSTALL_PACKAGES` | saat menekan Pasang | sistem tetap menampilkan dialog setuju |
+| Pilih foto untuk AI (Android 13+) | **tidak ada** | — | **Photo Picker** sistem, tanpa dialog izin |
+| Pilih foto (Android 11–12 / ROM lama) | `READ_MEDIA_IMAGES` / `READ_EXTERNAL_STORAGE` (maxSdk 32) | hanya bila Photo Picker tidak ada | deklarasi sudah ada, permintaan runtime menyusul |
+| "Folder di mana saja" (opsional) | `MANAGE_EXTERNAL_STORAGE` | lewat layar Setelan, **bukan** saat buka app | dideklarasikan sekarang, tombolnya menyusul; tanpa ini SAF tetap bekerja |
+| Ambil foto langsung | **tidak ada** | — | memakai aplikasi kamera lewat intent `ACTION_IMAGE_CAPTURE` + FileProvider |
+
+**Tidak dideklarasikan, disengaja:** `CAMERA` (tidak perlu kalau memakai intent kamera), kontak,
+lokasi, mikrofon, `QUERY_ALL_PACKAGES`.
+
+> Catatan penting: `MANAGE_EXTERNAL_STORAGE` membuat aplikasi **tidak bisa masuk Play Store**
+> tanpa justifikasi khusus. KodeNusa dibagikan lewat GitHub Releases, jadi aman — tetapi tombolnya
+> tetap dibuat manual dan dijelaskan, bukan diminta di awal.
+
+## 3. AI bisa melihat gambar (dasar sudah jalan)
+
+Alur yang dipakai, semuanya **tanpa server perantara**:
+
+```
+Photo Picker / galeri → GambarUntukAi.dataUrl()
+   → dikecilkan ke sisi ≤ 1024 px (pangkat dua, dua tahap decode)
+   → JPEG mutu 80 → turun bertahap sampai ≤ 700 KB
+   → data:image/jpeg;base64,… → ChatMessage(gambar = [...])
+   → OpenAiCompatClient kirim content array: [{type:text},{type:image_url}]
+```
+
+Batas yang mengikat di HP 4/64: foto 2400×1600 (≈ 4 MB) berakhir **≤ 700 KB** dan ≤ 1024 px —
+diuji di HP (`GambarAiDeviceTest`, 2 uji). Tanpa pengecilan, satu foto kamera membuat permintaan
+5–6 MB: kuota pengguna habis dan model menolak.
+
+Yang masih kurang (masuk backlog P1): tombol **Ambil foto** (intent kamera), **tangkapan layar
+Build** otomatis dilampirkan saat "Perbaiki galat build", dan pemberitahuan jelas bila model yang
+dipilih **tidak mendukung gambar** (sebagian model murah menolak `image_url`).
+
+## 4. Anggaran HP 4 GB / 64 GB (angka nyata dari rilis 0.8.0)
+
+| Komponen | Ukuran terukur | Catatan |
+|---|---|---|
+| APK debug (dibagikan) | **45,9 MB** | berisi `android.jar` 26,4 MB + dex 11,9 MB + aapt2 3 ABI |
+| APK release (R8 + shrink, belum ditandatangani) | **34,3 MB** | bukti bahwa R8 memangkas ±25% |
+| dex | 11,9 MB debug | turun ke ±6 MB setelah R8 |
+| `android.jar` | 26,4 MB | **tidak bisa dipangkas** tanpa memutus kompilasi Java; ini bahan wajib Tier 0 |
+| libaapt2 per ABI | 1,7–2,1 MB | release cukup arm64 + v7a (hemat ±3,3 MB) |
+| Penyimpanan projek | 5–30 MB per projek | `build/` terbesar; perlu tombol bersih-bersih |
+| RAM saat idle (target) | **< 120 MB PSS** | belum diukur di HP asli |
+| RAM saat build | puncak dari proses `app_process` + app | perlu diukur di Redmi 9A |
+
+Kesimpulan jujur: **ukuran APK bukan hambatan pasang** di HP 64 GB (45 MB ≈ 0,1% ruang), tetapi
+**penting untuk kuota unduh** dan kesan "aplikasi berat". Prioritas ukuran: rilis arm-only +
+minify → **±30 MB**.
+
+## 5. Fitur yang layak dibangun berikutnya (urut nilai untuk 4/64)
+
+### P0 — wajib sebelum disebut "siap HP kentang"
+1. **Rilis arm-only + minify, ditandatangani** (±30 MB) — `splits.abi` + `ndk.abiFilters` + keystore rilis.
+2. **Mode Hemat otomatis** (`ActivityManager.isLowRamDevice` atau RAM ≤ 3 GB): log build 2.000 → 600 baris, sorotan sintaks dimatikan untuk berkas > 200 KB, undo dibatasi 50 langkah, satu proses build pada satu waktu.
+3. **Bersihkan hasil build**: tombol yang menampilkan "build/ 18,4 MB" lalu menghapusnya (satu projek atau semua).
+4. **Ukur di HP asli**: waktu build template, PSS idle, PSS puncak, suhu 10 build berturut-turut (R1–R3).
+
+### P1 — AI yang benar-benar berguna
+5. **Ambil foto** + lampirkan tangkapan galat build otomatis ke percakapan.
+6. **Beri tahu model tanpa dukungan gambar** (deteksi penolakan `image_url`, sarankan model lain).
+7. **Evaluasi 10 tugas** (`docs/07-eval-agen.md`): ≥ 7/10 tanpa disentuh, median ≤ 2 menit.
+8. **Agen membaca galat build sendiri** setelah 3 putaran → tampilkan "coba lagi dengan saran ini".
+
+### P2 — projek & penyimpanan
+9. **Folder projek di luar sandbox** (SAF persisted tree) supaya projek tidak hilang saat uninstall.
+10. **Cadangkan otomatis** harian ke zip di `cacheDir` (maks 2 salinan, dibersihkan sendiri).
+11. **Buka projek dari GitHub** (clone) dan **buat repo** dari app (G3–G5).
+
+### P3 — situs & distribusi
+12. **PWA otomatis** (`manifest.json` + service worker) untuk projek `web-murni`.
+13. **Server lokal Wi-Fi** (`com.sun.net.httpserver`) supaya keluarga bisa membuka situs dari HP.
+14. **Pratinjau situs dalam app** — sadar biaya: WebView +40 MB RAM, jadi **opsional** dan hanya di mode normal.
+
+### Yang sengaja TIDAK dikerjakan
+- **Tier 2 (proot + JDK + Gradle)**: butuh ≥ 2 GB RAM bebas; di HP 4 GB ini bunuh diri.
+- **Model AI di perangkat**: 400–900 MB, 2–8 token/detik → tidak realistis.
+- **Python**: hanya mungkin lewat Tier 2, jadi tidak dijanjikan di UI.
+
+## 6. Definisi selesai untuk "fokus 4/64"
+
+Rilis berikutnya baru boleh disebut "optimal untuk HP 4/64" kalau semua ini terpenuhi dan
+angkanya ditempel di `docs/FITUR.md`:
+
+```bash
+# 1. ukuran
+ls -l app/build/outputs/apk/release/*.apk      # ≤ 30 MB
+# 2. memori & waktu (HP asli)
+adb shell dumpsys meminfo id.kodenusa.app | grep TOTAL PSS   # idle ≤ 120 MB
+# 3. build template di HP asli
+#    halo-dunia ≤ 20 s, kasir-warung ≤ 30 s, 10 build berturut tanpa ANR
+# 4. penyimpanan
+#    setelah 3 build: build/ ≤ 30 MB per projek, tombol bersih-bersih bekerja
+```

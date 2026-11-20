@@ -242,7 +242,30 @@ class OpenAiCompatClient(
                 add(
                     buildJsonObject {
                         put("role", m.peran.kode)
-                        put("content", m.isi)
+                        if (m.gambar.isEmpty()) {
+                            put("content", m.isi)
+                        } else {
+                            // Bentuk multimodal OpenAI-compatible: teks dan gambar dalam satu array.
+                            put(
+                                "content",
+                                buildJsonArray {
+                                    add(
+                                        buildJsonObject {
+                                            put("type", "text")
+                                            put("text", m.isi)
+                                        },
+                                    )
+                                    m.gambar.forEach { gambar ->
+                                        add(
+                                            buildJsonObject {
+                                                put("type", "image_url")
+                                                put("image_url", buildJsonObject { put("url", gambar) })
+                                            },
+                                        )
+                                    }
+                                },
+                            )
+                        }
                     },
                 )
             }

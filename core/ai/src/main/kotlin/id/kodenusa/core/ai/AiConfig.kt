@@ -34,7 +34,17 @@ data class AiModel(val id: String, val pemilik: String = "") {
 }
 
 /** Satu pesan dalam percakapan. */
-data class ChatMessage(val peran: Peran, val isi: String) {
+data class ChatMessage(
+    val peran: Peran,
+    val isi: String,
+    /**
+     * Gambar untuk model yang bisa melihat (vision), berupa data URL `data:image/...;base64,...`.
+     *
+     * Kenapa data URL dan bukan unggahan terpisah: permintaan tetap satu berkas JSON, dan gambar
+     * pengguna tidak pernah singgah di server pihak ketiga mana pun selain endpoint pilihannya.
+     */
+    val gambar: List<String> = emptyList(),
+) {
     enum class Peran(val kode: String) { SISTEM("system"), PENGGUNA("user"), ASISTEN("assistant") }
 }
 

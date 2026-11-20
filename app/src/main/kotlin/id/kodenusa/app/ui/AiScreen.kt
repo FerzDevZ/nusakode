@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -31,6 +32,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -40,6 +44,7 @@ import androidx.compose.ui.window.DialogProperties
 import id.kodenusa.app.AiSettingsStore
 import id.kodenusa.core.ai.AiGagal
 import id.kodenusa.core.ai.AiModel
+import id.kodenusa.app.GambarUntukAi
 import id.kodenusa.core.ai.ChatMessage
 import id.kodenusa.core.ai.CodeBlocks
 import id.kodenusa.core.ai.OpenAiCompatClient
@@ -47,6 +52,7 @@ import id.kodenusa.core.ai.PromptBuilder
 import id.kodenusa.ui.GhostButton
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
+import id.kodenusa.ui.Pill
 import id.kodenusa.ui.PrimaryButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -97,6 +103,20 @@ fun AiScreen(
     var sibuk by remember { mutableStateOf(false) }
     var galat by remember { mutableStateOf<String?>(null) }
     var pekerjaan by remember { mutableStateOf<Job?>(null) }
+    var gambar by remember { mutableStateOf<String?>(null) }
+    var memuatGambar by remember { mutableStateOf(false) }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val pemilihGambar = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        memuatGambar = true
+        scope.launch {
+            gambar = withContext(Dispatchers.IO) { GambarUntukAi.dataUrl(ctx, uri) }
+            memuatGambar = false
+            if (gambar == null) {
+                galat = "Gambar tidak bisa dibaca. Coba pilih berkas JPG atau PNG lain."
+            }
+        }
+    }
 
     fun simpanDraf() = store.simpanDraf(endpoint, kunci)
 
@@ -131,9 +151,15 @@ fun AiScreen(
         pekerjaan = scope.launch {
             try {
                 val hasil = withContext(Dispatchers.IO) {
+                    val lampiran = gambar
+                    val pesan = pesanUntuk(teks).let { daftar ->
+                        if (lampiran == null) daftar else daftar.dropLast(1) +
+                            daftar.last().copy(gambar = listOf(lampiran))
+                    }
+                    gambar = null
                     klien.bicara(
                         config = config,
-                        pesan = pesanUntuk(teks),
+                        pesan = pesan,
                         onReasoning = { berpikir = true },
                         onDelta = { potongan -> jawaban += potongan },
                     )
@@ -243,6 +269,14 @@ fun AiScreen(
                             galat = null
                         },
                         onSisip = { kode, bahasa -> onSisip(kode, bahasa)?.let { galat = it } },
+                        adaGambar = gambar != null,
+                        memuatGambar = memuatGambar,
+                        onLampirkan = {
+                            pemilihGambar.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                            )
+                        },
+                        onBuangGambar = { gambar = null },
                     )
                 }
             }
@@ -377,6 +411,10 @@ private fun ChatAiPanel(
     onHentikan: () -> Unit,
     onBersihkan: () -> Unit,
     onSisip: (String, String) -> Unit,
+    adaGambar: Boolean = false,
+    memuatGambar: Boolean = false,
+    onLampirkan: () -> Unit = {},
+    onBuangGambar: () -> Unit = {},
 ) {
     val daftar = rememberLazyListState()
     val terakhir = jawaban.ifBlank { riwayat.lastOrNull { it.first == "assistant" }?.second.orEmpty() }
@@ -449,6 +487,23 @@ private fun ChatAiPanel(
             )
             Spacer(Modifier.height(6.dp))
         }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            GhostButton(
+                if (memuatGambar) "Menyiapkan gambar…" else "Lampirkan gambar",
+                onLampirkan,
+                modifier = Modifier.testTag("lampirkan-gambar"),
+            )
+            if (adaGambar) {
+                Spacer(Modifier.width(6.dp))
+                Pill(
+                    "1 gambar siap",
+                    KodenusaPalette.OK,
+                    modifier = Modifier.testTag("gambar-terpasang"),
+                )
+                GhostButton("Buang", onBuangGambar)
+            }
+        }
+        Spacer(Modifier.height(6.dp))
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
