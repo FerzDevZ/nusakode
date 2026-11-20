@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Hanya folder hasil build yang boleh dibagikan ke pemasang APK. -->
+    <files-path name="projek" path="projek/" />
+    <cache-path name="sementara" path="." />
+</paths>

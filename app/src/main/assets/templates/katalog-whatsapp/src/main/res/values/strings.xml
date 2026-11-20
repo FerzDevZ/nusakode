@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">__APP_NAME__</string>
+    <string name="judul">Katalog produk</string>
+    <string name="petunjuk">Ketuk produk untuk memesan lewat WhatsApp.</string>
+    <string name="nomor_admin">6281234567890</string>
+</resources>

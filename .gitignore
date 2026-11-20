@@ -1,0 +1,38 @@
+# Hasil build — selalu bisa dibangun ulang, jangan masuk riwayat git.
+build/
+*/build/
+app/build/
+.gradle/
+.kotlin/
+local.properties
+captures/
+*.hprof
+
+# Toolchain host hasil unduhan/skrip (jar ECJ, dx, apksigner, keystore host).
+.tools/
+
+# Paket unduhan lokal untuk HP (APK 43 MB) — dipublikasikan lewat rilis, bukan commit.
+dist/
+
+# Kunci tanda tangan: tidak boleh masuk repositori dalam bentuk apa pun.
+*.keystore
+*.jks
+!scripts/toolchain/**/*.md
+
+# Perkakas agent lokal (16 MB) — bukan bagian dari kode produk.
+.agents/
+.freebuff/
+.claude/
+.cursor/
+.windsurf/
+
+# Berkas sistem dan IDE.
+.DS_Store
+*.iml
+.idea/
+.vscode/
+*.log
+
+# Aset toolchain biner (android.jar 25 MB, aapt2 per ABI, jar hasil dex).
+# Semua bisa dibuat ulang: bash scripts/toolchain/build-android-toolchain.sh
+app/src/main/assets/toolchain/

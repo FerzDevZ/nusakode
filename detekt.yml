@@ -1,0 +1,58 @@
+build:
+  maxIssues: 0
+
+# Ambang di bawah ini sengaja lebih longgar dari bawaan detekt untuk tiga berkas pipeline
+# (Tier0Planner, Tier0BuildEngine, DiagnosticParser). Ketiganya memang berupa urutan panjang
+# dengan banyak cabang kecil; memecahnya menjadi fungsi-fungsi pendek akan menyembunyikan
+# urutan langkah build yang justru harus terbaca berurutan. Batas tetap ada supaya
+# kompleksitas tidak tumbuh tanpa kendali.
+complexity:
+  LongMethod:
+    threshold: 130
+  LongParameterList:
+    functionThreshold: 9
+    constructorThreshold: 9
+  CyclomaticComplexMethod:
+    threshold: 30
+  NestedBlockDepth:
+    threshold: 4
+  TooManyFunctions:
+    thresholdInFiles: 20
+    thresholdInClasses: 20
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
+  SwallowedException:
+    active: true
+
+style:
+  ThrowsCount:
+    max: 4
+  MaxLineLength:
+    maxLineLength: 130
+    excludeCommentStatements: true
+  MagicNumber:
+    active: false
+  ReturnCount:
+    max: 12
+  LoopWithTooManyJumpStatements:
+    active: false
+  UnusedPrivateMember:
+    active: true
+  ForbiddenComment:
+    active: false
+  MaxChainedCallsOnSameLine:
+    active: false
+
+naming:
+  FunctionNaming:
+    excludes: ['**/test/**', '**/androidTest/**']
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Z][_A-Za-z0-9]*'
+
+comments:
+  UndocumentedPublicClass:
+    active: false
+  UndocumentedPublicFunction:
+    active: false

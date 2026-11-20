@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">__APP_NAME__</string>
+    <string name="judul_total">Total hari ini</string>
+    <string name="petunjuk_nama">Nama barang</string>
+    <string name="petunjuk_harga">Harga (Rp)</string>
+    <string name="tombol_tambah">Tambah</string>
+    <string name="kosong">Belum ada transaksi. Isi nama dan harga, lalu tekan Tambah.</string>
+    <string name="format_rupiah">Rp %1$d</string>
+</resources>

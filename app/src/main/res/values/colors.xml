@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sama dengan id.kodenusa.ui.KodenusaPalette; dijaga oleh ContrastTest. -->
+    <color name="kodenusa_bg">#FF0E1217</color>
+    <color name="kodenusa_accent">#FFF7AD30</color>
+</resources>

@@ -1,0 +1,45 @@
+{
+  "templates": [
+    {
+      "id": "halo-dunia",
+      "title": "Halo Dunia",
+      "tagline": "Satu tombol, satu pesan. Titik awal paling cepat untuk melihat APK sendiri jalan di HP.",
+      "audience": "pemula yang baru pertama kali membuat aplikasi",
+      "files": [
+        "kodenusa.json",
+        "src/main/AndroidManifest.xml",
+        "src/main/java/app/MainActivity.java",
+        "src/main/res/layout/activity_main.xml",
+        "src/main/res/values/strings.xml"
+      ]
+    },
+    {
+      "id": "kasir-warung",
+      "title": "Kasir Warung",
+      "tagline": "Catat barang, hitung total, simpan transaksi ke database HP. Jalan tanpa internet.",
+      "audience": "pemilik warung dan toko kelontong",
+      "files": [
+        "kodenusa.json",
+        "src/main/AndroidManifest.xml",
+        "src/main/java/app/MainActivity.java",
+        "src/main/java/app/Produk.java",
+        "src/main/java/app/DatabaseKasir.java",
+        "src/main/res/layout/activity_main.xml",
+        "src/main/res/values/strings.xml"
+      ]
+    },
+    {
+      "id": "katalog-whatsapp",
+      "title": "Katalog WhatsApp",
+      "tagline": "Daftar produk dengan harga, sekali ketuk langsung membuka chat WhatsApp pembeli.",
+      "audience": "penjual online yang berjualan lewat WhatsApp",
+      "files": [
+        "kodenusa.json",
+        "src/main/AndroidManifest.xml",
+        "src/main/java/app/MainActivity.java",
+        "src/main/res/layout/activity_main.xml",
+        "src/main/res/values/strings.xml"
+      ]
+    }
+  ]
+}

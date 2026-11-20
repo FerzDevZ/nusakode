@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">__APP_NAME__</string>
+    <string name="sapaan">Halo, ini aplikasi pertama saya.</string>
+    <string name="tombol">Ketuk saya</string>
+</resources>
