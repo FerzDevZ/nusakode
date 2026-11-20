@@ -111,6 +111,20 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | Build tidak dijalankan bila tak ada berkas tertulis | ✅ | `AgenBuildTest.build_tidak_dijalankan_bila_semua_berkas_ditolak…` |
 | Layar "Minta AI buatkan…" dengan log per putaran | ⛔ | pekerjaan berikutnya; mesinnya sudah siap |
 
+## 4d. Git & GitHub (mesin git sudah nyata di HP)
+
+| Fitur | Status | Bukti / catatan |
+|---|---|---|
+| Commit offline (tanpa internet) di dalam HP | ✅ | `RepoGitTest` + `GitDeviceTest.git_bisa_commit_dan_push_di_dalam_hp` (API 24) |
+| Status perubahan (ditambah/diubah/dihapus) | ✅ | `RepoGit.keadaan` + 8 uji JVM |
+| Riwayat commit terbaca | ✅ | `GitDeviceTest.hasil_build_diabaikan_dan_riwayat_terbaca` |
+| Push ke remote HTTPS dengan token pengguna | ✅ | `RepoGit.dorong`; token **tidak** ditulis ke `.git/config` (diuji) |
+| Unduh (klon) repo jadi projek | ✅ | `RepoGit.klon`; klon kosong dilaporkan sebagai galat, bukan folder hampa |
+| `build/`, `*.apk`, keystore otomatis diabaikan | ✅ | `.gitignore` bawaan + uji |
+| Jalan di Android 7 (API 24) | ✅ | JGit 3.7.1; ADR-024. JGit 5.x/4.11 **gagal** (`java.nio.file`) |
+| Layar GitHub di aplikasi (token, commit, push, riwayat) | ⛔ | pekerjaan berikutnya; mesin + ujinya sudah ada |
+| Buat repo otomatis & unggah APK ke Releases | ⛔ | butuh GitHub REST, ditambahkan terpisah |
+
 ## 5. Distribusi & keamanan
 
 | Fitur | Status | Bukti / catatan |

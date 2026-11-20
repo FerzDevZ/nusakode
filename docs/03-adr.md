@@ -318,3 +318,24 @@ Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif
 - Uji: 17 uji unit dengan **server HTTP sungguhan di localhost** (bukan mock), plus `ChatNyataTest` yang memanggil endpoint asli dan otomatis dilewati bila variabel lingkungan tidak diisi.
 
 **Konsekuensi:** (+) Fitur AI berguna tanpa biaya server dan tanpa membesarkan APK berarti (+0,0–0,1 MB). (+) Privasi tetap jujur: AI opsional, semua fitur lain 100% offline. (+) Mesin bisa ditukar: kalau nanti model di perangkat dipakai, ia tinggal mengimplementasi antarmuka yang sama. (−) Pengguna harus punya endpoint + kunci sendiri; ini dinyatakan terus terang di layar AI, bukan disembunyikan. (−) Kunci disimpan di `SharedPreferences` privat aplikasi (tidak bisa dibaca aplikasi lain tanpa root); enkripsi dengan Android Keystore bisa ditambahkan kemudian.
+
+---
+
+## ADR-024 — Git sungguhan di dalam HP: JGit 3.7.1 (bukan 5.x), Apache HttpClient dibuang
+
+**Konteks:** Pengguna meminta GitHub tersambung seperti repo: commit, push, unduh projek. Dua pilihan: GitHub REST API, atau git sungguhan di perangkat.
+
+**Keputusan:**
+- **JGit** (git sungguhan: commit offline, status, riwayat, branch, push/pull), bukan hanya REST. Alasan: janji "offline dulu" tidak boleh dilanggar — commit harus bisa dilakukan tanpa sinyal. REST tetap dipakai nanti hanya untuk dua hal yang JGit tak bisa lakukan: membuat repo di GitHub dan mengunggah APK ke Releases.
+- Versi **3.7.1.201504261725-r**, bukan 5.x. Bukti dari pengukuran isi jar: **5.13 memakai `java.nio.file.Paths`, 4.11 memakai `File.toPath()`, sedangkan 3.7.1 nol referensi `java.nio.file`**. Percobaan nyata di emulator **API 24** membuktikan 5.13 gagal `NoClassDefFoundError: Ljava/nio/file/Paths;` dan 4.11 gagal `NoSuchMethodError: File.toPath()`. `java.nio.file` baru ada di API 26 dan tidak bisa di-desugar, jadi versi 3.7.1 satu-satunya yang jujur untuk `minSdk 24`.
+- **`org.apache.httpcomponents` dikeluarkan** dari dependensi: HttpClient bawaan JGit bertabrakan dengan `org.apache.http` milik Android (dan hilang sejak API 28). Tanpa itu, JGit memakai `HttpURLConnection` platform. Tanpa pengecualian ini build gagal: `2 files found with path 'META-INF/DEPENDENCIES'`.
+- JGit 3.x belum `Closeable`, jadi `RepoGit` menutup repo lewat helper `denganGit` + `try/finally`.
+- **Token tidak pernah ditulis ke `.git/config`**; ia hanya dipakai sebagai kata sandi HTTPS saat push (`UsernamePasswordCredentialsProvider("x-access-token", token)`). Diuji: `token_tidak_pernah_ditulis_ke_konfigurasi_git`.
+- Remote hanya menerima `https://`, `file://`, atau jalur lokal; alamat SSH (`git@…`) ditolak dengan kalimat jelas.
+- `.gitignore` bawaan menutup `build/`, `dist/`, `gen/`, `*.apk`, `*.jks` — hasil build tidak boleh masuk repo (diuji).
+- Nama cabang diganti ke `main` **setelah commit pertama**, karena JGit menolak rename pada repo tanpa commit.
+- `klon` memeriksa hasil akhir: kalau repo terunduh tetapi tidak ada berkas yang keluar, ia mengembalikan galat yang menjelaskan, bukan folder kosong tanpa sebab.
+
+**Bukti:** 8 uji JVM (`RepoGitTest`, termasuk push ke remote bare lokal lalu klon ulang), 2 uji **di HP** (API 24: `git_bisa_commit_dan_push_di_dalam_hp`, `hasil_build_diabaikan_dan_riwayat_terbaca`). APK +1,0 MB (44,77 → 45,77 MB).
+
+**Konsekuensi:** (+) Commit, riwayat, dan push bekerja penuh offline di Android 7 ke atas. (+) Tanpa library tambahan untuk HTTP. (−) JGit 3.7.1 (2015) lebih tua: belum ada dukungan protokol git terbaru (mis. partial clone) dan kita harus menutup repo manual. (−) Tombol "buat repo di GitHub" dan "unggah APK ke Releases" tetap butuh REST — akan ditambahkan sebagai langkah terpisah.

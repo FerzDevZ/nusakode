@@ -35,7 +35,7 @@ android {
     }
 
     packaging {
-        resources.excludes += setOf("/META-INF/{AL2.0,LGPL2.1}", "DebugProbesKt.bin")
+        resources.excludes += setOf("/META-INF/{AL2.0,LGPL2.1,DEPENDENCIES,NOTICE*,LICENSE*}", "DebugProbesKt.bin")
         // aapt2 dikemas sebagai libaapt2.so supaya Android mengekstraknya ke nativeLibraryDir,
         // satu-satunya folder yang boleh dieksekusi di Android 10+ (ADR-021). Tanpa legacy
         // packaging, pustaka dibiarkan terkompresi di dalam APK dan tidak pernah diekstrak.
@@ -53,6 +53,7 @@ dependencies {
     implementation(project(":core:build"))
     implementation(project(":core:project"))
     implementation(project(":core:ai"))
+    implementation(project(":core:git"))
     implementation(project(":core:diagnose"))
     implementation(project(":build:tier0"))
     implementation(project(":core:ui"))
