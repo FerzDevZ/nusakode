@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Warung Bu Sri</title>
+  <link rel="stylesheet" href="gaya.css">
+</head>
+<body>
+  <header class="kepala">
+    <p class="label">Situs murni — tanpa APK</p>
+    <h1>Warung Bu Sri</h1>
+    <p class="tagline">Buka dari HP siapa pun, tanpa memasang aplikasi.</p>
+  </header>
+
+  <main class="isi">
+    <section class="kartu" aria-labelledby="judul-produk">
+      <h2 id="judul-produk">Daftar barang</h2>
+      <ul class="daftar" id="daftar-barang">
+        <!-- Diisi oleh aplikasi.js supaya mudah diubah -->
+      </ul>
+      <p class="total">Total: <strong id="total">Rp0</strong></p>
+    </section>
+
+    <section class="kartu" aria-labelledby="judul-pesan">
+      <h2 id="judul-pesan">Pesan lewat WhatsApp</h2>
+      <label for="nama">Nama pembeli</label>
+      <input id="nama" type="text" placeholder="Contoh: Rina" autocomplete="name">
+      <button id="pesan" type="button">Kirim pesanan</button>
+      <p class="bantuan" id="bantuan">Pesanan akan dibuka di WhatsApp dengan teks yang sudah terisi.</p>
+    </section>
+  </main>
+
+  <footer class="kaki">
+    <p>Dibuat dengan KodeNusa di HP.</p>
+  </footer>
+
+  <script src="aplikasi.js"></script>
+</body>
+</html>

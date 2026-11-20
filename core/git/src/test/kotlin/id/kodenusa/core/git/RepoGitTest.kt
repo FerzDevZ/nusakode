@@ -137,3 +137,46 @@ class RepoGitTest {
         assertFalse(config.contains("x-access-token"))
     }
 }
+
+class PagesTest {
+
+    private fun remoteBare(akar: File): File =
+        File(akar, "remote.git").also { Git.init().setBare(true).setDirectory(it).call().close() }
+
+    @Test
+    fun situs_terbit_ke_cabang_gh_pages(@TempDir sementara: File) {
+        val situs = File(sementara, "situs").apply { mkdirs() }
+        File(situs, "index.html").writeText("<h1>Toko</h1>")
+        File(situs, "css").mkdirs()
+        File(situs, "css/gaya.css").writeText("body{}")
+        val remote = remoteBare(sementara)
+
+        val hasil = RepoGit.terbitkanSitus(situs, "file://${remote.absolutePath}", token = "", pesan = "terbit")
+
+        assertTrue(hasil is Hasil.Sukses, "terbit harus berhasil: $hasil")
+        val cek = File(sementara, "cek")
+        Git.cloneRepository().setURI("file://${remote.absolutePath}").setDirectory(cek)
+            .setBranch("gh-pages").call().close()
+        assertTrue(File(cek, "index.html").isFile)
+        assertEquals("<h1>Toko</h1>", File(cek, "index.html").readText())
+        assertTrue(File(cek, "css/gaya.css").isFile)
+    }
+
+    @Test
+    fun situs_tanpa_index_ditolak(@TempDir sementara: File) {
+        val situs = File(sementara, "situs").apply { mkdirs() }
+
+        val hasil = RepoGit.terbitkanSitus(situs, "https://github.com/a/b.git", "", "x")
+
+        assertTrue(hasil is Hasil.Gagal)
+        assertTrue((hasil as Hasil.Gagal).pesan.contains("index.html"))
+    }
+
+    @Test
+    fun tautan_github_pages_dihitung_dari_alamat_repo() {
+        assertEquals("https://ferdi.github.io/warung/", RepoGit.halamanGitHub("https://github.com/ferdi/warung.git"))
+        assertEquals("https://ferdi.github.io/warung/", RepoGit.halamanGitHub("https://github.com/ferdi/warung/"))
+        assertEquals("https://ferdi.github.io/", RepoGit.halamanGitHub("https://github.com/ferdi/ferdi.github.io"))
+        assertEquals(null, RepoGit.halamanGitHub("https://gitlab.com/ferdi/warung"))
+    }
+}

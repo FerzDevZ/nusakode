@@ -339,3 +339,21 @@ Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif
 **Bukti:** 8 uji JVM (`RepoGitTest`, termasuk push ke remote bare lokal lalu klon ulang), 2 uji **di HP** (API 24: `git_bisa_commit_dan_push_di_dalam_hp`, `hasil_build_diabaikan_dan_riwayat_terbaca`). APK +1,0 MB (44,77 → 45,77 MB).
 
 **Konsekuensi:** (+) Commit, riwayat, dan push bekerja penuh offline di Android 7 ke atas. (+) Tanpa library tambahan untuk HTTP. (−) JGit 3.7.1 (2015) lebih tua: belum ada dukungan protokol git terbaru (mis. partial clone) dan kita harus menutup repo manual. (−) Tombol "buat repo di GitHub" dan "unggah APK ke Releases" tetap butuh REST — akan ditambahkan sebagai langkah terpisah.
+
+---
+
+## ADR-025 — Situs murni (tanpa APK, tanpa WebView): satu projek dua keluaran
+
+**Konteks:** Tidak semua orang butuh APK. Sebagian hanya ingin **website** yang bisa dibuka siapa pun lewat tautan, atau ingin memasangnya sebagai PWA tanpa Play Store. Memaksa semuanya jadi APK membuat kita menyelesaikan masalah yang tidak mereka punya.
+
+**Keputusan:**
+- Jenis projek baru **`web-murni`** (`web/index.html` + `web/gaya.css` + `web/aplikasi.js`, tanpa `AndroidManifest.xml`). Template `situs-murni` tersedia di wizard.
+- `:core:build` mendapat **`SitusStatis`**: menyusun folder situs ke `build/situs`. Sumber diambil dari `web/` bila ada, kalau tidak dari `src/main/assets/` — jadi satu projek bisa punya **dua keluaran** (situs dan APK) tanpa menduplikasi berkas.
+- Aturan yang ditegakkan dengan galat berbahasa Indonesia: **`index.html` wajib di akar situs** (bukan subfolder, karena itu merusak alamat), folder hasil tidak boleh berada di dalam sumber, dan sisa build lama dibersihkan supaya berkas usang tidak ikut terbit.
+- Folder yang tidak pernah ikut terbit: `.git`, `build`, `dist`, `gen`, `node_modules`, `.gradle`, `.idea`, `.tools`, `dex`; berkas dengan ekstensi tak dikenal (mis. `.exe`, `.psd`) dilewati dan **dilaporkan**, tidak disembunyikan.
+- **Terbit gratis lewat GitHub Pages** memakai mesin git yang sudah ada (ADR-024): `RepoGit.terbitkanSitus` mengirim folder situs ke cabang `gh-pages` dari repo sementara (bukan dari repo projek — supaya kode Java tidak ikut tampil di tautan publik), lalu `RepoGit.halamanGitHub` menghitung tautan `https://<pemilik>.github.io/<repo>/` (dan bentuk khusus `<pemilik>.github.io`).
+- Karena keluaran situs hanyalah berkas statis, jalur lain tetap terbuka tanpa kode tambahan: unggah zip ke Netlify Drop / Cloudflare Pages, atau bagikan lewat server lokal di HP.
+
+**Bukti:** 8 uji `SitusStatisTest` (termasuk `node_modules`/build diabaikan, index di subfolder ditolak, sisa build dibersihkan), 3 uji `PagesTest` (terbit ke `gh-pages` lalu diklon ulang isinya sama; tautan GitHub Pages dihitung benar), dan 3 uji **di HP** (`SitusDeviceTest`: template situs murni tersusun tanpa APK, template `web-katalog` juga bisa terbit, projek aplikasi biasa ditolak dengan pesan jelas).
+
+**Konsekuensi:** (+) Pengguna web tidak lagi dipaksa membuat APK. (+) Publikasi gratis tanpa server KodeNusa, tanpa biaya. (+) Tidak ada berkas biner baru: situs hanyalah salinan aset projek. (−) GitHub Pages hanya `https`, tidak bisa untuk situs dengan backend/database — untuk itu jalur lain (VPS/hosting pengguna) tetap di luar lingkup. (−) Layar "Jadikan situs" + tombol "Terbitkan" belum ada; mesin dan ujinya sudah siap.

@@ -190,6 +190,87 @@ object RepoGit {
 
     private fun sandi(token: String) = UsernamePasswordCredentialsProvider("x-access-token", token)
 
+    /**
+     * Menerbitkan folder situs ke GitHub Pages.
+     *
+     * Situs statis dikirim ke cabang `gh-pages` lewat repo sementara, bukan dari repo projek.
+     * Alasannya: isi `gh-pages` harus **folder situs saja**, sedangkan repo projek berisi
+     * kode Java/Android. Kalau dicampur, tautan publik akan menampilkan sumber, bukan situs.
+     */
+    fun terbitkanSitus(
+        folderSitus: File,
+        urlRepo: String,
+        token: String,
+        pesan: String,
+        cabang: String = "gh-pages",
+        nama: String = "KodeNusa",
+        email: String = "kodenusa@localhost",
+    ): Hasil<Unit> = jalankan {
+        if (!File(folderSitus, "index.html").isFile) {
+            return@jalankan Hasil.Gagal("Folder situs belum punya index.html. Susun situs dulu.")
+        }
+        val bersih = urlRepo.trim()
+        if (!bersih.startsWith("https://") && !bersih.startsWith("file://")) {
+            return@jalankan Hasil.Gagal("Alamat repo harus diawali https://.")
+        }
+        val sementara = File(System.getProperty("java.io.tmpdir"), "kodenusa-pages-${System.nanoTime()}")
+        try {
+            sementara.mkdirs()
+            val git = Git.init().setDirectory(sementara).call()
+            denganGit(git) {
+                salinSitus(folderSitus, sementara)
+                it.add().addFilepattern(".").call()
+                it.commit()
+                    .setMessage(pesan.ifBlank { "Terbitkan situs dari KodeNusa" })
+                    .setAuthor(nama, email)
+                    .setCommitter(nama, email)
+                    .call()
+                var dorong = it.push()
+                    .setRemote(bersih)
+                    .add("HEAD:refs/heads/$cabang")
+                    .setForce(true)
+                if (token.isNotBlank()) dorong = dorong.setCredentialsProvider(sandi(token))
+                val hasil = dorong.call()
+                val ditolak = hasil.any { satu ->
+                    satu.remoteUpdates.any { it.status != RemoteRefUpdate.Status.OK }
+                }
+                if (ditolak) {
+                    Hasil.Gagal("GitHub menolak terbit situs. Periksa token dan izin repo.")
+                } else {
+                    Hasil.Sukses(Unit)
+                }
+            }
+        } finally {
+            sementara.deleteRecursively()
+        }
+    }
+
+    /** Tautan publik GitHub Pages dari alamat repo, atau null bila bukan github.com. */
+    fun halamanGitHub(urlRepo: String): String? {
+        val bersih = urlRepo.trim().removeSuffix("/").removeSuffix(".git")
+        val bagian = bersih.removePrefix("https://").removePrefix("http://").split('/')
+        if (bagian.size < 3 || bagian[0] != "github.com") return null
+        val pemilik = bagian[1]
+        val repo = bagian[2]
+        if (pemilik.isBlank() || repo.isBlank()) return null
+        // Repo bernama <pemilik>.github.io dipublikasikan di akar, bukan di subfolder.
+        return if (repo.equals("$pemilik.github.io", ignoreCase = true)) {
+            "https://$pemilik.github.io/"
+        } else {
+            "https://$pemilik.github.io/$repo/"
+        }
+    }
+
+    private fun salinSitus(dari: File, ke: File) {
+        dari.walkTopDown()
+            .filter { it.isFile && !it.path.contains("${File.separator}.git${File.separator}") }
+            .forEach { berkas ->
+                val tujuan = File(ke, berkas.absolutePath.removePrefix(dari.absolutePath + File.separator))
+                tujuan.parentFile?.mkdirs()
+                berkas.copyTo(tujuan, overwrite = true)
+            }
+    }
+
     private fun tulisGitignore(akar: File) {
         val berkas = File(akar, ".gitignore")
         if (!berkas.exists()) berkas.writeText(GITIGNORE)

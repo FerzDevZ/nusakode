@@ -1,0 +1,144 @@
+:root {
+  --latar: oklch(0.21 0.02 70);
+  --permukaan: oklch(0.26 0.02 70);
+  --garis: oklch(0.36 0.02 70);
+  --teks: oklch(0.96 0.01 80);
+  --teks-lemah: oklch(0.76 0.02 80);
+  --aksen: oklch(0.79 0.16 78);
+  --aksen-teks: oklch(0.24 0.06 70);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--latar);
+  color: var(--teks);
+  line-height: 1.6;
+}
+
+.kepala {
+  padding: 2.5rem 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--garis);
+}
+
+.label {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--aksen);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 7vw, 2.75rem);
+  line-height: 1.1;
+}
+
+.tagline {
+  margin: 0.75rem 0 0;
+  color: var(--teks-lemah);
+  max-width: 34ch;
+}
+
+.isi {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem 1.25rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .isi { grid-template-columns: 1.4fr 1fr; align-items: start; }
+}
+
+.kartu {
+  background: var(--permukaan);
+  border: 1px solid var(--garis);
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+.kartu h2 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.daftar {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.daftar li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--garis);
+}
+
+.daftar li:last-child { border-bottom: 0; }
+
+.total {
+  margin: 1rem 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.total strong { color: var(--aksen); }
+
+label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--teks-lemah);
+}
+
+input {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--garis);
+  background: var(--latar);
+  color: var(--teks);
+  font: inherit;
+}
+
+input:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--aksen);
+  outline-offset: 2px;
+}
+
+button {
+  width: 100%;
+  margin-top: 0.85rem;
+  padding: 0.8rem 1rem;
+  min-height: 48px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--aksen);
+  color: var(--aksen-teks);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover { filter: brightness(1.05); }
+button:active { transform: translateY(1px); }
+
+.bantuan {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--teks-lemah);
+}
+
+.kaki {
+  padding: 1.5rem 1.25rem 2.5rem;
+  color: var(--teks-lemah);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--garis);
+}
