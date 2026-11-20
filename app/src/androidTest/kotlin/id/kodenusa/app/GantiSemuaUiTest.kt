@@ -61,6 +61,7 @@ class GantiSemuaUiTest {
         layar.onNodeWithTag("cari-projek").performClick()
         // Urutan penting: mode se-projek dulu, baru kata kuncinya. Kalau dibalik, jumlah kecocokan
         // dihitung untuk berkas aktif saja sehingga tombolnya tidak pernah aktif.
+        // Nama projek kini selalu terlihat di bilah bawah wizard — tidak perlu digulir.
         layar.onAllNodes(hasSetTextAction())[0].performTextReplacement("totalHarga")
         layar.waitUntil(timeoutMillis = 10_000) {
             layar.onAllNodes(hasText("ganti dengan…")).fetchSemanticsNodes().isNotEmpty()
@@ -92,7 +93,6 @@ class GantiSemuaUiTest {
         layar.onNodeWithTag("jenis-kosong").performClick()
         layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasText("Projek kosong"))
         layar.onNodeWithText("Projek kosong").performClick()
-        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasSetTextAction())
         layar.onAllNodes(hasSetTextAction())[0].performTextReplacement(nama)
         layar.waitForIdle()
         layar.onNodeWithTag("tombol-buat").performClick()

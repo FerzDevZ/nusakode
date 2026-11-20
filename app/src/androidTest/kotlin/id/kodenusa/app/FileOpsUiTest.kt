@@ -148,7 +148,7 @@ class FileOpsUiTest {
         layar.onNodeWithTag("jenis-kosong").performClick()
         layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasText("Projek kosong"))
         layar.onNodeWithText("Projek kosong").performClick()
-        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasSetTextAction())
+        // Nama projek kini selalu terlihat di bilah bawah wizard — tidak perlu digulir.
         layar.onAllNodes(hasSetTextAction())[0].performTextReplacement(nama)
         layar.waitForIdle()
         layar.onNodeWithTag("tombol-buat").assertIsEnabled().performClick()

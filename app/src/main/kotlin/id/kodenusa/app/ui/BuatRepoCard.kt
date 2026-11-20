@@ -55,7 +55,8 @@ fun BuatRepoCard(projectDir: File, setelan: GitSettingsStore, onSelesai: () -> U
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "Buat repo baru di akun GitHub Anda, lalu alamatnya dipasang otomatis ke projek ini.",
+                "Buat repo baru di akun GitHub Anda (butuh internet), lalu alamatnya dipasang " +
+                    "otomatis ke projek ini.",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(KodenusaPalette.TEXT_DIM),
             )

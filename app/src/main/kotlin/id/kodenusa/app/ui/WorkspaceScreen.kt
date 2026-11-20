@@ -132,7 +132,24 @@ fun WorkspaceScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(KodenusaPalette.TEXT_DIM),
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(16.dp))
+
+            // Laporan galat dari proses yang mati sebelumnya. Ditempatkan paling atas supaya
+            // terlihat sebelum pengguna mulai bekerja, dan hilang begitu dihapus.
+            LaporanGalatCard(onHapus = { refresh += 1 })
+
+            if (projects.isEmpty()) {
+                // Keadaan kosong mendapat panggung utama: CTA besar di tengah, tanpa pesaing.
+                Panel(Modifier.fillMaxWidth()) {
+                    EmptyState(
+                        title = "Belum ada projek",
+                        body = "Mulai dari template kasir, katalog, atau aplikasi halo dunia. Tidak perlu koneksi internet.",
+                        action = { PrimaryButton("Buat projek pertama", onNewProject) },
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 // Peluncur pemilih berkas TIDAK dipanggil langsung di dalam onClick: di Android 11+,
                 // peluncuran intent di tengah pembongkaran koneksi aksesibilitas Compose membuat
@@ -144,12 +161,11 @@ fun WorkspaceScreen(
                     Modifier.testTag("impor-zip"),
                 )
                 GhostButton("Dari GitHub", { klon = true }, Modifier.testTag("buka-klon"))
-                GhostButton("Ekspor? pilih projek", { pesan = "Tekan \"Ekspor .zip\" pada salah satu projek di bawah." })
             }
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
-                "Tidak perlu izin penyimpanan: setiap ambil/simpan berkas lewat pemilih bawaan Android, " +
-                    "jadi yang bisa diakses hanya berkas yang Anda pilih sendiri.",
+                "Ekspor projek ada di menu ⋯ pada tiap baris. Tidak perlu izin penyimpanan: berkas " +
+                    "diakses lewat pemilih bawaan Android.",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color(KodenusaPalette.TEXT_DIM),
                 modifier = Modifier.testTag("catatan-izin"),
@@ -160,19 +176,7 @@ fun WorkspaceScreen(
             }
             Spacer(Modifier.height(16.dp))
 
-            // Laporan galat dari proses yang mati sebelumnya. Ditempatkan paling atas supaya
-            // terlihat sebelum pengguna mulai bekerja, dan hilang begitu dihapus.
-            LaporanGalatCard(onHapus = { refresh += 1 })
-
-            if (projects.isEmpty()) {
-                Panel(Modifier.fillMaxWidth()) {
-                    EmptyState(
-                        title = "Belum ada projek",
-                        body = "Mulai dari template kasir, katalog, atau aplikasi halo dunia. Tidak perlu koneksi internet.",
-                        action = { PrimaryButton("Buat projek pertama", onNewProject) },
-                    )
-                }
-            } else {
+            if (projects.isNotEmpty()) {
                 LazyColumn(
                     Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(10.dp),

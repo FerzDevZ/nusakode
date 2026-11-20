@@ -1,6 +1,6 @@
 # Roadmap dan riwayat rilis
 
-Versi terakhir: **0.9.8** (`versionCode 20`), dirilis 20 November 2026.
+Versi terakhir: **0.9.9** (`versionCode 21`), dirilis 20 November 2026.
 
 ## Fase
 
@@ -37,8 +37,9 @@ Versi terakhir: **0.9.8** (`versionCode 20`), dirilis 20 November 2026.
 | 0.9.6 | Palet perintah, progres unggah bertahap, catatan jujur soal Python |
 | **0.9.7** | Janji "build di server" dihapus dari UI; seluruh dokumentasi ditulis ulang agar cocok dengan kenyataan |
 | **0.9.8** | Laporan galat offline + tombol bagikan (ADR-032); klon repo GitHub dari layar projek; buat repo baru dari layar Git; catatan jujur untuk berkas `.kt` |
+| **0.9.9** | Perapatan tampilan (ADR-033): tombol sekunder berwujud, kolom nama wizard selalu terlihat di bilah bawah, kelompok pilihan diberi judul, Git menyuruh siapkan repo dulu |
 
-Artefak 0.9.8: `KodeNusa-0.9.8.apk`, **32.305.731 bita**, sha256 `6d57ca553cb88e287f084a2714f341fd84c63e34523db230897dd3f5e33ad458`.
+Artefak 0.9.9: `KodeNusa-0.9.9.apk`, **32.306.187 bita**, sha256 `abd510ca1c27e9c955bc675cc4c11e0763a97d6840ccc9762cb39c22c2061c01`.
 
 ## Berikutnya, berurutan menurut risiko yang dihilangkan
 

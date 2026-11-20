@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,12 +25,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -78,11 +79,27 @@ fun GhostButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    TextButton(onClick = onClick, enabled = enabled, modifier = modifier.height(48.dp)) {
+    // Tombol sekunder PUNYA wujud: latar naik satu tingkat + garis tepi. Dulu ini TextButton
+    // polos sehingga "Impor .zip", "AI", "Simpan" terlihat seperti teks biasa — pengguna tidak
+    // tahu bahwa baris itu bisa ditekan (temuan audit UX 0.9.8).
+    Box(
+        modifier
+            .height(48.dp)
+            .background(Color(KodenusaPalette.SURFACE_RAISED), RoundedCornerShape(KodenusaPalette.RADIUS_SMALL.dp))
+            .border(
+                BorderStroke(1.dp, Color(if (enabled) KodenusaPalette.BORDER_STRONG else KodenusaPalette.BORDER)),
+                RoundedCornerShape(KodenusaPalette.RADIUS_SMALL.dp),
+            )
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
         Text(
             text,
             style = MaterialTheme.typography.labelLarge,
             color = if (enabled) Color(KodenusaPalette.TEXT) else Color(KodenusaPalette.TEXT_DIM),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 14.dp),
         )
     }
 }
@@ -112,7 +129,7 @@ fun Pill(text: String, color: Int, modifier: Modifier = Modifier) {
     ) {
         Box(Modifier.size(6.dp).background(Color(color), CircleShape))
         Spacer(Modifier.width(6.dp))
-        Text(text, style = MaterialTheme.typography.labelMedium, color = Color(color))
+        Text(text, style = MaterialTheme.typography.labelMedium, color = Color(color), maxLines = 1)
     }
 }
 
@@ -179,6 +196,7 @@ fun EmptyState(
             color = Color(KodenusaPalette.TEXT_DIM),
             maxLines = 4,
             overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
         )
         action?.invoke()
     }

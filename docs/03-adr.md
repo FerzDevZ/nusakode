@@ -475,3 +475,25 @@ Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif
 **Penyaringan rahasia:** sebelum ditulis, isi laporan disaring: pola `ghp_…`, `github_pat_…`, `sk-…`, `AIza…`, `crown-…`, `x-access-token:…`, dan `token/kunci/api_key/password/sandi = nilai` diganti `<disembunyikan>`. Alasannya sederhana: jejak tumpukan bisa memuat URL push yang menyisipkan token.
 
 **Konsekuensi:** (+) Kerusakan di HP pengguna jadi bisa didiagnosis tanpa melanggar privasi. (+) Uji: `LaporanGalatTest` (5 uji JVM: penyaringan, pemotongan jejak) + `LaporanKlonUiTest` (kartu muncul/hilang di perangkat). (−) Laporan hilang kalau pengguna menghapus data aplikasi; hanya satu laporan terakhir disimpan — pilihan sadar, bukan kekurangan.
+
+### ADR-033 — Tombol sekunder harus berwujud; masukan utama dekat tombolnya
+**Tanggal:** 2026-11-20 · **Status:** diterima (iterasi UX 0.9.9)
+
+**Konteks.** Audit visual 0.9.8 (screencap + uiautomator + tinjauan model penglihatan) menemukan
+pola yang sama di banyak layar: `TextButton` tanpa latar membuat aksi sekunder (AI/Cari/Simpan,
+Situs/Git/Agen) tampak seperti teks biasa; kolom nama wizard tersembunyi di bawah lipatan sementara
+bilah bawah menyuruh "Isi nama projek dulu"; dua kelompok pilihan wizard memakai gaya radio yang
+sama sehingga dua hal tampak terpilih sekaligus; layar Git berjudul "Simpan perubahan" padahal
+repo belum ada.
+
+**Keputusan.**
+1. `GhostButton` berubah menjadi kotak berlatar SURFACE_RAISED + garis BORDER_STRONG, tinggi 48dp,
+   satu baris dengan elipsis. Tombol sekunder tetap jelas lebih tenang dari `PrimaryButton`.
+2. Masukan yang mengaktifkan tombol utama ditempatkan di bilah bawah yang sama dengan tombol itu.
+3. Kelompok pilihan diberi judul sendiri ("Jenis projek", "Pilih titik awal") dan status terpilih
+   ditandai garis aksen ACCENT, bukan hanya titik radio.
+4. Judul kartu mengikuti tugas layar saat itu (Git: "Siapkan repo dulu" sebelum repo ada).
+5. Baris navigasi build dipecah: Kembali + status pill, lalu tiga tujuan nav sama lebar.
+
+**Konsekuensi.** `Pill` dibatasi satu baris; pengujian wizard tidak lagi menggulir ke kolom nama
+(kini selalu terlihat). Semua kontras tetap dijaga oleh `ContrastTest`.

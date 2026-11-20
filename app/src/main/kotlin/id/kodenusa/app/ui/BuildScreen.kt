@@ -115,15 +115,14 @@ fun BuildScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Spacer(Modifier.height(4.dp))
+            // Dua baris dengan tugas jelas: atas = keluar + status, bawah = tujuan nav se-lebar
+            // layar. Dulu empat tombol + pill status berdesakan dalam satu baris sehingga pill
+            // "sedang build" melipat dua baris (temuan audit UX 0.9.8).
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 GhostButton("Kembali", {
                     session.cancel()
                     onBack()
                 })
-                Spacer(Modifier.width(8.dp))
-                GhostButton("Situs", onSitus, modifier = Modifier.testTag("buka-situs"))
-                GhostButton("Git", onGit, modifier = Modifier.testTag("buka-git"))
-                GhostButton("Agen", onAgen, modifier = Modifier.testTag("buka-agen"))
                 Spacer(Modifier.weight(1f))
                 when {
                     state.running -> Pill("sedang build", KodenusaPalette.INFO)
@@ -131,6 +130,12 @@ fun BuildScreen(
                     state.result != null || setupMessage != null -> Pill("gagal", KodenusaPalette.ERROR)
                     else -> Pill("siap", KodenusaPalette.TEXT_DIM)
                 }
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GhostButton("Situs", onSitus, Modifier.weight(1f).testTag("buka-situs"))
+                GhostButton("Git", onGit, Modifier.weight(1f).testTag("buka-git"))
+                GhostButton("Agen", onAgen, Modifier.weight(1f).testTag("buka-agen"))
             }
 
             if (batasHemat.hemat) {

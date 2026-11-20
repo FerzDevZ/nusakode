@@ -68,7 +68,7 @@ class WizardUiTest {
         layar.onNodeWithText("Web jadi APK").assertExists()
 
         // Isi nama aplikasi (kolom teks pertama di form), lalu tekan tombol yang dulu mati.
-        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasSetTextAction())
+        // Nama projek kini selalu terlihat di bilah bawah wizard — tidak perlu digulir.
         layar.onAllNodes(hasSetTextAction())[0].performTextInput("Warung Bu Sri")
         layar.waitForIdle()
 
@@ -86,7 +86,6 @@ class WizardUiTest {
         layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasText("Projek kosong"))
         layar.onNodeWithText("Projek kosong").performClick()
 
-        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasSetTextAction())
         layar.onAllNodes(hasSetTextAction())[0].performTextInput("Projek Dari Nol")
         layar.waitForIdle()
 
@@ -105,7 +104,6 @@ class WizardUiTest {
         layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasTestTag("catatan-web-murni"))
         layar.onNodeWithTag("catatan-web-murni").assertExists()
 
-        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasSetTextAction())
         layar.onAllNodes(hasSetTextAction())[0].performTextReplacement("Toko Bu Sri")
         layar.waitForIdle()
 
@@ -148,7 +146,6 @@ class WizardUiTest {
         layar.onNodeWithTag("alasan-buat").assertExists()
         layar.onNodeWithText("Isi nama projek dulu untuk mengaktifkan tombol ini.").assertExists()
 
-        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasSetTextAction())
         layar.onAllNodes(hasSetTextAction())[0].performTextReplacement("Projek Alasan")
         layar.waitForIdle()
 

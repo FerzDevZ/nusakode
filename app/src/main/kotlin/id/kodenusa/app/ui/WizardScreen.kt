@@ -1,5 +1,7 @@
 package id.kodenusa.app.ui
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -110,6 +113,19 @@ fun WizardScreen(
         bottomBar = {
             Surface(color = Color(KodenusaPalette.BACKGROUND)) {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
+                    // Nama projek ADA di bilah bawah, dekat tombolnya. Dulu field ini item terakhir
+                    // LazyColumn: di layar pertama ia tersembunyi di bawah lipatan, sementara pesan
+                    // alasan justru menyuruh "Isi nama projek dulu" — perintah untuk kolom yang
+                    // tidak terlihat (temuan audit UX 0.9.8).
+                    KodeField(
+                        label = jenis.contohNama,
+                        value = name,
+                        onValueChange = { name = it.take(50) },
+                        helper = nameError?.fallbackMessage,
+                        isError = nameError != null,
+                        modifier = Modifier.testTag("nama-projek"),
+                    )
+                    Spacer(Modifier.height(8.dp))
                     // Alasan tombol mati WAJIB terlihat. Tanpa ini, tombol "Buat projek" yang
                     // disabled terlihat seperti tombol rusak: ditekan berkali-kali, tidak ada
                     // reaksi, tidak ada penjelasan — persis keluhan "tombolnya tidak bisa ditekan".
@@ -181,16 +197,32 @@ fun WizardScreen(
                 )
             }
 
+            // Dua kelompok pilihan diberi judul sendiri. Dulu keduanya tampil memakai gaya radio
+            // yang sama sehingga "Aplikasi Android" dan "Halo Dunia" terlihat sama-sama terpilih
+            // padahal beda pertanyaan (temuan audit UX 0.9.8).
+            item {
+                Text(
+                    "Jenis projek",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color(KodenusaPalette.TEXT_DIM),
+                )
+            }
+
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Jenis.entries.forEach { opsi ->
                         val aktif = jenis == opsi
                         Surface(
+                            shape = RoundedCornerShape(KodenusaPalette.RADIUS_SMALL.dp),
                             color = Color(
                                 if (aktif) KodenusaPalette.SURFACE_RAISED else KodenusaPalette.SURFACE,
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .border(
+                                    BorderStroke(1.dp, Color(if (aktif) KodenusaPalette.ACCENT else KodenusaPalette.BORDER)),
+                                    RoundedCornerShape(KodenusaPalette.RADIUS_SMALL.dp),
+                                )
                                 .clickable {
                                     if (jenis != opsi) {
                                         jenis = opsi
@@ -216,23 +248,19 @@ fun WizardScreen(
                                     fontWeight = if (aktif) FontWeight.SemiBold else FontWeight.Normal,
                                     modifier = Modifier.weight(1f),
                                 )
-                                TextButton(
-                                    onClick = {
-                                        if (jenis != opsi) {
-                                            jenis = opsi
-                                            appId = ""
-                                        }
-                                    },
-                                ) {
-                                    Text(
-                                        if (aktif) "dipilih" else "pilih",
-                                        color = Color(KodenusaPalette.TEXT_DIM),
-                                    )
-                                }
                             }
                         }
                     }
                 }
+            }
+
+            // Header kelompok kedua supaya kartu template tidak tercampur dengan pilihan jenis.
+            item {
+                Text(
+                    "Pilih titik awal",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color(KodenusaPalette.TEXT_DIM),
+                )
             }
 
             val galatTemplate = dimuat.exceptionOrNull()
@@ -259,22 +287,7 @@ fun WizardScreen(
             }
 
             item {
-                KodeField(
-                    label = jenis.contohNama,
-                    value = name,
-                    onValueChange = { name = it.take(50) },
-                    helper = nameError?.fallbackMessage ?: when (jenis) {
-                        Jenis.WEB -> "Judul halaman web-mu. Contoh: Katalog Toko Bu Sri"
-                        Jenis.WEBVIEW -> "Muncul di layar utama HP. Contoh: Katalog Toko"
-                        Jenis.KOSONG -> "Nama folder projek. Contoh: Percobaan Pertama"
-                        Jenis.APLIKASI -> "Muncul di layar utama HP. Contoh: Kasir Warung Bu Sri"
-                    },
-                    isError = nameError != null,
-                )
-            }
-
-            if (masalahLain.isNotEmpty()) {
-                item {
+                if (jenis == Jenis.WEB) {
                     Panel(Modifier.fillMaxWidth()) {
                         masalahLain.forEach { issue ->
                             Text(
@@ -344,7 +357,19 @@ fun WizardScreen(
 @Composable
 private fun TemplateCard(template: TemplateInfo, selected: Boolean, onClick: () -> Unit) {
     Panel(
-        Modifier.fillMaxWidth().testTag("template-${template.id}"),
+        Modifier.fillMaxWidth()
+            .testTag("template-${template.id}")
+            // Kartu terpilih diberi garis aksen supaya statusnya terbaca tanpa mencari titik radio.
+            .then(
+                if (selected) {
+                    Modifier.border(
+                        BorderStroke(1.dp, Color(KodenusaPalette.ACCENT)),
+                        RoundedCornerShape(KodenusaPalette.RADIUS_MEDIUM.dp),
+                    )
+                } else {
+                    Modifier
+                },
+            ),
     ) {
         Column(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {

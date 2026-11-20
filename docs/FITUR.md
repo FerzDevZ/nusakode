@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.9.8** (`versionCode 20`) · **236 uji unit · 84 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.9.9** (`versionCode 21`) · **236 uji unit · 84 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -201,10 +201,10 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | # | Pekerjaan | Kenapa sekarang | Ukuran |
 |---|---|---|---|
 | 1 | ~~Hapus janji "build di server"~~ ✅ | Teks itu menyebut server yang tidak ada | Selesai |
-| 2 | ~~Penangkap crash + "Bagikan laporan" (offline)~~ ✅ | Selesai di 0.9.8: `LaporanGalat` + kartu di layar projek (ADR-032) | Selesai |
-| 3 | ~~Klon projek dari GitHub~~ ✅ | Selesai di 0.9.8: `KlonProjekDialog` tersambung ke `RepoGit.klon` | Selesai |
-| 4 | ~~Catatan "Kotlin belum didukung" saat membuka `.kt`~~ ✅ | Selesai di 0.9.8: `catatan-kotlin`, sejajar catatan Python | Selesai |
-| 5 | ~~Tombol "buat repo" di layar Git~~ ✅ | Selesai di 0.9.8: `BuatRepoCard` tersambung ke `GitHubRilis.buatRepo` | Selesai |
+| 2 | ~~Penangkap crash + "Bagikan laporan" (offline)~~ ✅ | Selesai di 0.9.9: `LaporanGalat` + kartu di layar projek (ADR-032) | Selesai |
+| 3 | ~~Klon projek dari GitHub~~ ✅ | Selesai di 0.9.9: `KlonProjekDialog` tersambung ke `RepoGit.klon` | Selesai |
+| 4 | ~~Catatan "Kotlin belum didukung" saat membuka `.kt`~~ ✅ | Selesai di 0.9.9: `catatan-kotlin`, sejajar catatan Python | Selesai |
+| 5 | ~~Tombol "buat repo" di layar Git~~ ✅ | Selesai di 0.9.9: `BuatRepoCard` tersambung ke `GitHubRilis.buatRepo` | Selesai |
 | 6 | Ukur di HP 4 GB fisik + `AI_EVAL=1` | Satu-satunya angka yang belum bisa saya ukur sendiri | Butuh perangkat/kunci pengguna |
 
 Yang **tidak** akan dikerjakan tanpa bukti kebutuhan nyata: Kotlin di perangkat (ADR-003), Tier 1

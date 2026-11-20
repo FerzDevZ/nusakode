@@ -124,31 +124,41 @@ fun GitScreen(
                 item {
                     Panel(Modifier.fillMaxWidth()) {
                         Column {
-                            Text("Simpan perubahan", style = MaterialTheme.typography.titleMedium, color = Color(KodenusaPalette.TEXT))
+                            // Judul mengikuti keadaan: sebelum repo ada, tugas layar ini adalah
+                            // menyiapkan repo — bukan "Simpan perubahan" (temuan audit UX 0.9.8:
+                            // kartu menyuruh menyimpan padahal repo belum ada).
+                            Text(
+                                if (adalahRepo) "Simpan perubahan" else "Siapkan repo dulu",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color(KodenusaPalette.TEXT),
+                            )
                             Spacer(Modifier.height(6.dp))
                             Text(
-                                if (perubahan.kosong) "Tidak ada berkas yang berubah." else
-                                    "${perubahan.jumlah} berkas berubah · +${perubahan.ditambah.size} " +
-                                        "~${perubahan.diubah.size} -${perubahan.dihapus.size}",
+                                if (!adalahRepo) "Repo git dibuat di dalam folder projek, tanpa internet."
+                                else if (perubahan.kosong) "Tidak ada berkas yang berubah."
+                                else "${perubahan.jumlah} berkas berubah · +${perubahan.ditambah.size} " +
+                                    "~${perubahan.diubah.size} -${perubahan.dihapus.size}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color(KodenusaPalette.TEXT_DIM),
                                 modifier = Modifier.testTag("ringkasan-git"),
                             )
-                            if (!perubahan.kosong) {
+                            if (adalahRepo && !perubahan.kosong) {
                                 Spacer(Modifier.height(6.dp))
                                 (perubahan.ditambah + perubahan.diubah + perubahan.dihapus).take(6).forEach { jalur ->
                                     Text(jalur, style = CodeTextStyle.copy(fontSize = MaterialTheme.typography.bodySmall.fontSize), color = Color(KodenusaPalette.TEXT_DIM))
                                 }
                             }
                             Spacer(Modifier.height(10.dp))
-                            OutlinedTextField(
-                                value = pesan,
-                                onValueChange = { pesan = it },
-                                label = { Text("Pesan commit") },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth().testTag("pesan-commit"),
-                            )
-                            Spacer(Modifier.height(10.dp))
+                            if (adalahRepo) {
+                                OutlinedTextField(
+                                    value = pesan,
+                                    onValueChange = { pesan = it },
+                                    label = { Text("Pesan commit") },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth().testTag("pesan-commit"),
+                                )
+                                Spacer(Modifier.height(10.dp))
+                            }
                             if (!adalahRepo) {
                                 PrimaryButton(
                                     text = "Siapkan repo",
