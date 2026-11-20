@@ -1,9 +1,10 @@
-# KodeNusa — IDE Android untuk Semua HP Indonesia
+# KodeNusa — IDE Android untuk semua HP Indonesia
 
-> **Satu kalimat:** IDE Android native yang bisa menghasilkan APK asli di HP 2 GB RAM / 32 GB storage, tanpa PC, tanpa Gradle wajib, tanpa internet wajib — berbahasa Indonesia penuh.
+> **Satu kalimat:** IDE Android native yang menghasilkan APK asli di dalam HP 2–4 GB RAM / 32–64 GB penyimpanan — tanpa PC, tanpa Gradle, tanpa internet wajib — sepenuhnya berbahasa Indonesia.
 
-Status: **M1–M2 tercapai** — Tier 0 terbukti membangun APK di host *dan* di dalam emulator API 24
-(13 uji perangkat hijau, 3 template terbangun di HP). Dokumen ini indeks; detail ada di `docs/`.
+**Status: v0.9.7** · 252 uji unit · 77 uji perangkat · detekt 0 temuan · APK 32,3 MB · Android 7.0+
+
+Dokumen ini adalah **indeks dan peta status**. Detail ada di `docs/`.
 
 ---
 
@@ -11,52 +12,67 @@ Status: **M1–M2 tercapai** — Tier 0 terbukti membangun APK di host *dan* di 
 
 | # | Dokumen | Isi |
 |---|---|---|
-| 0 | [`docs/00-visi-produk.md`](docs/00-visi-produk.md) | Masalah, persona, terobosan, diferensiasi, metrik, non-goals |
-| 1 | [`docs/01-arsitektur-teknis.md`](docs/01-arsitektur-teknis.md) | Arsitektur 3-tier, modul, pipeline build, security, anggaran performa |
-| 2 | [`docs/02-roadmap-milestone.md`](docs/02-roadmap-milestone.md) | M0–M7, exit criteria, perintah verifikasi Gate 1 |
-| 3 | [`docs/03-adr.md`](docs/03-adr.md) | ADR-001..019: keputusan + alasan + konsekuensi |
-| 4 | [`docs/04-backlog-agent-matrix.md`](docs/04-backlog-agent-matrix.md) | Tugas → agent `.agents/agents/` → skill `.agents/skills/` → DoD |
-| 5 | [`DESIGN.md`](DESIGN.md) | Arah visual anti-slop, token OKLCH, tipografi, state |
-| 6 | [`MEMORY.md`](MEMORY.md) | Invariant hasil root-cause (Gate 3), dibaca tiap sesi |
+| 0 | [`docs/00-visi-produk.md`](docs/00-visi-produk.md) | Untuk siapa, masalah apa, janji yang dipegang, dan yang sengaja tidak dikerjakan |
+| 1 | [`docs/01-arsitektur-teknis.md`](docs/01-arsitektur-teknis.md) | Modul, pipeline 9 langkah, aliran galat, AI, Git, rahasia, strategi verifikasi |
+| 2 | [`docs/02-roadmap-milestone.md`](docs/02-roadmap-milestone.md) | Riwayat v0.1.0 → v0.9.7 dan langkah berikutnya menurut risiko |
+| 3 | [`docs/03-adr.md`](docs/03-adr.md) | 31 ADR + tabel "kalau Anda bertanya X, baca nomor ini" |
+| 4 | [`docs/04-backlog-agent-matrix.md`](docs/04-backlog-agent-matrix.md) | Agen/skill yang dipakai, backlog per milestone, gate yang tidak boleh dilewati |
+| 5 | [`docs/05-toolchain-di-perangkat.md`](docs/05-toolchain-di-perangkat.md) | Versi alat, alasan pin, cara verifikasi ulang |
+| 6 | [`docs/06-rencana-2026.md`](docs/06-rencana-2026.md) | Status nyata rencana lama: yang tercapai, yang dibatalkan, yang menunggu |
+| 7 | [`docs/07-eval-agen.md`](docs/07-eval-agen.md) | 10 tugas evaluasi agen AI dan cara mengisinya |
+| 8 | [`docs/08-lembar-ukur-4gb.md`](docs/08-lembar-ukur-4gb.md) | Lembar ukur RAM/build/suhu di HP nyata |
+| 9 | [`docs/FITUR.md`](docs/FITUR.md) | Peta fitur ✅/🟡/⛔ beserta bukti uji |
+| — | [`DESIGN.md`](DESIGN.md) | Arah visual, token OKLCH, tipografi, aturan state |
+| — | [`MEMORY.md`](MEMORY.md) | Invariant dari akar masalah nyata, dibaca setiap sesi |
 
 ---
 
 ## Keputusan yang sudah dikunci
 
-1. **Hybrid 3-tier build** (bukan cloud-only, bukan proot-only).
-   - Tier 0 — nol-Gradle, on-device, Java murni, `aapt2 + ecj + dx + apksigner` (perataan dikerjakan `ZipAligner` di dalam proses). Terbukti: 12.566 byte dalam 1,7 detik di emulator API 24, footprint aset 28 MB. Lihat ADR-017.
-   - Tier 1 — Gradle penuh di worker cloud, opsional, streaming log SSE. Untuk projek besar / Kotlin / dependency berat.
-   - Tier 2 — proot/Termux (JDK + Gradle lokal) untuk power user di HP 4 GB+.
-2. **Native Kotlin + Jetpack Compose**, `minSdk 24`, dua ABI (`arm64-v8a`, `armeabi-v7a`). Compose bukan WebView — editor harus 60 fps di HP kentang.
-3. **Lokal-first**: folder projek di storage lokal adalah *source of truth*. Cloud, git, dan AI assistant hanya opsional dan tidak pernah jadi syarat untuk build.
-4. **Java dulu, Kotlin belakangan.** Tier 0 mengompilasi Java (ECJ). Kotlin baru masuk Tier 1/2 karena butuh JVM — jangan bohongin user di marketing.
+1. **Build hybrid 3-tier, tetapi hanya Tier 0 yang dibangun.** Tier 1 (Gradle di cloud) dan Tier 2 (proot/JDK) tetap tercatat sebagai rencana di ADR-001, belum ada kodenya — karena itu projek Gradle **tidak bisa dibuild** dan aplikasi wajib mengatakan itu (ADR-001, ADR-007).
+2. **Tier 0 = nol Gradle, di dalam HP.** `aapt2 → ECJ 3.25 → dx → apksigner 0.8`, perataan oleh `ZipAligner` Kotlin. Build template hangat **1,4–1,9 detik**; APK pertama di perangkat butuh 21 detik karena penyalinan `android.jar` 24 MB (sekali saja).
+3. **Native Kotlin + Jetpack Compose**, `minSdk 24`, dua ABI (`arm64-v8a`, `armeabi-v7a`). Bukan WebView: editor harus 60 fps di HP kelas bawah.
+4. **Lokal-first.** Folder projek di penyimpanan internal adalah sumber kebenaran. AI, Git, dan GitHub hanya menyala bila pengguna mengisinya.
+5. **Java dulu, Kotlin tidak.** Tier 0 mengompilasi Java 8. Kotlin butuh compiler 70 MB+ atau JVM penuh — ditolak dengan alasan di ADR-003.
 
-## Angka target yang mengikat
+## Angka yang mengikat (terukur, bukan target)
 
-| Metrik | Target | Kenapa |
+| Metrik | Angka | Sumber |
 |---|---|---|
-| Ukuran install APK | < 80 MB | Kuota & storage Indonesia |
-| RAM idle aplikasi | < 120 MB | HP 2 GB harus bisa buka IDE + browser |
-| Build template pertama | < 60 detik (Redmi 9A / 2 GB) | Sesi pertama harus sukses, bukan menyerah |
-| Cold start editor | < 1.5 detik | Standar "langsung pakai" |
-| Konversi onboarding→APK ter-install | ≥ 70% | Satu-satunya metrik produk yang jujur |
-| Bahasa UI | 100% Indonesia + istilah teknis dipertahankan | Error harus bisa dipahami |
+| Ukuran APK rilis | **32.290.843 bita** | `dist/KodeNusa-0.9.7.apk` |
+| RAM menganggur | **67 MB PSS** | emulator API 35 (HP fisik belum) |
+| Build template hangat | **1,4–1,9 s** | emulator, 3 template |
+| Build pertama setelah pasang | **21,4 s** | penyalinan `android.jar` 24 MB |
+| Cold start editor | **≈ 0,4 s** | emulator |
+| Uji unit / perangkat | **252 / 77** | `./gradlew test` · `:app:connectedDebugAndroidTest` |
 
-## Cara menjalankan rencana ini
+## Cara menjaga rencana ini jujur
 
 ```bash
-# Gate 1 — setelah M0 selesai
-./gradlew :app:assembleDebug :build:tier0:testDebugUnitTest
-./gradlew detekt lintDebug
+export JAVA_HOME=/opt/jdk17 PATH=/opt/jdk17/bin:/opt/gradle/bin:$PATH ANDROID_HOME=$HOME/android-sdk
+
+./gradlew clean test detekt :app:assembleDebug     # gate 1
+./gradlew :app:connectedDebugAndroidTest           # gate 2 — 77 uji
+./gradlew :app:assembleRelease -PsemuaAbi          # dipasang & dibuka sebelum dibagikan
+bash scripts/prove/build-hello.sh                  # pipeline tanpa emulator
 ```
 
-Setiap milestone **tidak boleh** ditandai selesai tanpa exit criteria dieksekusi dan exit code 0 (lihat `docs/02`).
+Milestone **tidak** ditandai selesai tanpa exit criteria dijalankan dan exit code 0. Setiap akar masalah baru masuk `MEMORY.md` sebagai invariant.
 
-## Status 0.4.0 (2025-11-20)
+## Status per rilis
 
-- ✅ Operasi berkas penuh di panel projek: tambah berkas/folder, ganti nama, hapus (ADR-022).
-- ✅ Ekspor/impor projek sebagai `.zip` lewat pemilih berkas Android.
-- ✅ Berkas web (HTML/CSS/JS) dan Python/SQL muncul dan bisa diedit.
-- ✅ Peta fitur jujur: `docs/FITUR.md` (✅/🟡/⛔ + bukti uji).
-- ✅ 131 uji unit + 24 uji perangkat hijau di API 24 dan API 34.
-- Berikutnya: pindah berkas antar folder, cari di seluruh projek, perkecil APK < 15 MB, uji di HP 4 GB.
+| Versi | Yang berubah |
+|---|---|
+| 0.4.0 | Operasi berkas penuh, ekspor/impor zip, peta fitur jujur |
+| 0.5.0 | AI BYOK, tanpa kunci bawaan |
+| 0.6.0 | Pindah/salin berkas, agen build, Git di UI |
+| 0.7.0 | Situs murni, terbit ke GitHub Pages, layar Git |
+| 0.8.x | Papan projek agen, gerbang build, vision, perbaikan instalasi Android 13+ |
+| 0.9.0–0.9.2 | Mode hemat RAM, cari se-projek, SAF impor/bagikan |
+| 0.9.3 | Rahasia tersandi Keystore, PWA, eval agen, lembar ukur |
+| 0.9.4 | Foto ke AI, ganti semua, impor zip tanpa ANR |
+| 0.9.5 | Pratinjau situs, bagikan APK lewat GitHub Release |
+| 0.9.6 | Palet perintah, progres unggah bertahap, catatan jujur soal Python |
+| **0.9.7** | Janji "build di server" dihapus; dokumentasi ditulis ulang penuh |
+
+Berikutnya: penangkap crash offline, klon projek dari GitHub, catatan "Kotlin belum didukung". Detail dan alasannya di [`docs/02`](docs/02-roadmap-milestone.md).

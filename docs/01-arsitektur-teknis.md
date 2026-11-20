@@ -1,189 +1,142 @@
-# 01 — Arsitektur Teknis
+# Arsitektur teknis
 
-## 1. Gambaran besar
+Dokumen ini menjelaskan **bagaimana** KodeNusa bekerja dan **mengapa** bentuknya begitu. Alasan per keputusan ada di [ADR](03-adr.md); di sini yang dijelaskan adalah rangkaiannya.
 
-```
-┌──────────────────────────── HP ANDROID (offline penuh) ────────────────────────────┐
-│                                                                                    │
-│  :app (Compose, Hilt, Navigation)                                                  │
-│    ├─ :feature:workspace      daftar projek, buka/buat, import zip/git             │
-│    ├─ :feature:editor         tab, file tree, editor, outline, search              │
-│    ├─ :feature:build          tombol Build, log streaming, error→baris             │
-│    ├─ :feature:template       wizard 5 langkah, katalog template lokal             │
-│    ├─ :feature:learn          halaman konsep 200 kata, glosarium istilah           │
-│    └─ :feature:share          export APK, QR, FileProvider                         │
-│                                                                                    │
-│  :core:editor   Sora Editor (native) + TextMate grammar + incremental highlighter  │
-│  :core:project  model projek (kodenusa.json), file index, watcher, undo stack      │
-│  :core:build    interface BuildEngine + BuildRequest/BuildEvent/BuildResult        │
-│  :build:tier0   ecj + d8 + aapt2 + zipalign + apksigner (ProcessBuilder)           │
-│  :build:cloud   Ktor client, SSE log stream, upload resumable, artifact download   │
-│  :build:tier2   proot/JDK manager (unduh opsional, power user)                     │
-│  :core:diagnose error parser → DiagnosticFix (pesan ID + quick action)             │
-│                                                                                    │
-│  assets/toolchain/arm64-v8a/  (aapt2, d8 deps, zipalign, apksigner, ecj.jar,       │
-│                               android.jar, debug.keystore)  ≈ 55–70 MB             │
-│  filesDir/toolchain/          hasil ekstraksi saat first-run (checksum terverifikasi)│
-└────────────────────────────────────────────────────────────────────────────────────┘
-                                  │ opsional, eksplisit
-                                  ▼
-┌──────────────────────────── CLOUD TIER 1 (Kotlin/Ktor) ────────────────────────────┐
-│  API: POST /v1/builds · GET /v1/builds/{id}/events (SSE) · GET /v1/builds/{id}/apk │
-│  Worker: Node/Go + Docker image (JDK 17, Android SDK 35, Gradle cache warm)        │
-│  Isolasi: satu container per build, network egress allowlist, TTL 15 menit,        │
-│           artefak dihapus setelah 1 jam, tidak ada akses ke kode user lain         │
-└────────────────────────────────────────────────────────────────────────────────────┘
-```
+## 1. Batasan yang membentuk seluruh desain
 
-## 2. Modul & tanggung jawab
-
-| Modul | Tanggung jawab | Dilarang |
-|---|---|---|
-| `:app` | navigasi, DI graph, tema, ikon, string ID | logika build, akses filesystem langsung |
-| `:core:editor` | teks, syntax highlight, selection, bracket match, undo | tahu soal build |
-| `:core:project` | model projek, baca/tulis file, validasi `kodenusa.json` | spawn proses |
-| `:core:build` | kontrak `BuildEngine`, orkestrasi event, cancellation | tahu tool apa pun |
-| `:build:tier0` | eksekusi tool, caching, signing | akses UI |
-| `:build:cloud` | HTTP/SSE, retry, resumable | build lokal |
-| `:core:diagnose` | parse stderr → `Diagnostic` + `QuickFix` | menampilkan UI |
-| `:feature:*` | UI per fitur, state via `ViewModel` + `StateFlow` | saling memanggil langsung |
-
-Aturan dependensi: `feature → core ← impl`. `core` tidak pernah melihat `feature` (skill `android-clean-architecture`).
-
-## 3. Kontrak build (jantung sistem)
-
-```kotlin
-// :core:build
-sealed interface BuildRequest {
-    val projectId: String
-    data class Local(override val projectId: String, val tier: Tier0Config) : BuildRequest
-    data class Remote(override val projectId: String, val variant: String) : BuildRequest
-}
-
-data class Tier0Config(
-    val appName: String,
-    val applicationId: String,
-    val versionCode: Int,
-    val minSdk: Int = 24,
-    val targetSdk: Int = 35,
-    val sourceFiles: List<Path>,      // sudah difilter .java
-    val resourceDirs: List<Path>,
-    val assetDirs: List<Path>,
-    val manifest: Path,
-    val extraJars: List<Path>,
-    val incremental: Boolean = true,
-)
-
-sealed interface BuildEvent {
-    data class Step(val name: BuildStep) : BuildEvent
-    data class Log(val stream: LogStream, val line: String) : BuildEvent
-    data class Diagnostic(val diagnostic: Diagnostic) : BuildEvent
-    data class Progress(val step: BuildStep, val percent: Int) : BuildEvent
-}
-
-data class BuildResult(
-    val success: Boolean,
-    val apk: Path?,                    // null jika gagal
-    val durationMs: Long,
-    val diagnostics: List<Diagnostic>,
-    val apkSizeBytes: Long?,
-)
-
-interface BuildEngine {
-    fun build(request: BuildRequest): Flow<BuildEvent>   // cold flow, cancellable
-}
-
-enum class BuildStep { PREPARE, AAPT_COMPILE, AAPT_LINK, JAVAC, D8, PACKAGE, ALIGN, SIGN }
-```
-
-`Flow` dipilih (bukan callback) supaya cancellation gratis saat user menekan Batal atau meninggalkan layar.
-
-## 4. Pipeline Tier 0 — langkah detail
-
-| # | Langkah | Perintah | Output | Cache key |
-|---|---|---|---|---|
-| 1 | PREPARE | validasi `kodenusa.json`, ekstrak toolchain bila checksum beda | `build/` bersih | versi toolchain |
-| 2 | AAPT_COMPILE | `aapt2 compile --dir res -o build/res.zip` | `res.zip` | hash semua file `res/**` |
-| 3 | AAPT_LINK | `aapt2 link -I android.jar --manifest AndroidManifest.xml -o build/base.apk --java build/gen build/res.zip` | `base.apk` + `R.java` | manifest + res hash |
-| 4 | JAVAC | `ecj -source 11 -target 11 -bootclasspath android.jar -d build/classes <sources> <extraJars>` | `.class` | hash per file `.java` |
-| 5 | D8 | `d8 --min-api 24 --output build/dex build/classes/**/*.class` | `classes.dex` | hash class dir |
-| 6 | PACKAGE | zip: `base.apk` + `classes.dex` (+ assets) | `unsigned.apk` | langkah 3+5 |
-| 7 | ALIGN | `zipalign -p -f 4 unsigned.apk aligned.apk` | `aligned.apk` | — |
-| 8 | SIGN | `apksigner sign --ks debug.keystore --ks-pass pass:android --v1-signing-enabled true --v2-signing-enabled true` | `app-debug.apk` | — |
-
-**Target waktu** (Redmi 9A, template 8 file / 12 resource): langkah 1–3 ≈ 4 s, 4 ≈ 6 s, 5 ≈ 5 s, 6–8 ≈ 3 s → **±20 s build dingin, ±6 s build inkremental**.
-
-**Eksekusi binary:** toolchain diekstrak ke `filesDir/toolchain/<arch>/`, permission `0755`, dijalankan via `ProcessBuilder` dengan `LD_LIBRARY_PATH` di-set ke direktori yang sama. Semua binary dibangun untuk **16 KB page size** (wajib Android 15+).
-
-## 5. Format projek (tanpa Gradle)
-
-```json
-{
-  "format": 1,
-  "name": "Kasir Warung Bu Dedi",
-  "applicationId": "id.kodenusa.warungdedi",
-  "versionName": "1.0.0",
-  "versionCode": 1,
-  "minSdk": 24,
-  "targetSdk": 35,
-  "javaVersion": 11,
-  "entry": "src/main/java/id/kodenusa/warung/MainActivity.java",
-  "buildEngine": "tier0",
-  "dependencies": { "files": ["libs/appcompat-1.7.0.jar"] },
-  "templateId": "kasir-sederhana"
-}
-```
-
-Aturan: `kodenusa.json` **wajib** ada. Kalau ada `build.gradle`, projek dianggap Tier 1/2 dan tombol Build menawarkan cloud — tanpa mencoba menipu user dengan Tier 0.
-
-## 6. Keamanan
-
-| Ancaman | Mitigasi |
+| Batasan | Konsekuensi arsitektur |
 |---|---|
-| Kode user menjalankan shell arbitrary | Tidak ada akses terminal di v1. Argumen `ProcessBuilder` disusun dari `List<String>` — tanpa `sh -c`, tanpa interpolasi string. |
-| Toolchain dimodifikasi di disk | Checksum SHA-256 tiap binary, diverifikasi tiap first-run dan tiap versi aplikasi berubah. |
-| APK yang dibuat berbahaya | APK hanya bisa dibuat user untuk dirinya; tidak ada layanan build publik di v1. |
-| Penyimpanan kunci signing | `debug.keystore` dibundel (rahasia umum, memang untuk debug). Keystore release user: disimpan di app-private storage, **tidak pernah** dikirim ke cloud, dan tidak pernah di-log. |
-| Kebocoran kode ke Tier 1 | Build cloud hanya setelah dialog eksplisit yang menyebut "kode projek ini akan diunggah ke server". Default: mati. |
-| Path traversal dari zip/git import | Normalisasi path + tolak entri zip di luar root projek (zip-slip). |
-| Data user hilang | Tidak ada auto-delete. Workspace di `filesDir/workspaces/<id>` dan bisa di-export kapan saja. |
+| Target RAM 2–4 GB | Tidak ada proses latar permanen, tanpa database, log build dibatasi barisnya |
+| Harus jalan offline | `android.jar`, ECJ, dx, apksigner ikut di dalam APK (ADR-015, ADR-028) |
+| Tanpa Gradle | Format projek sendiri `kodenusa.json` (ADR-005) |
+| APK dibagikan langsung (bukan Play Store) | minSdk 24, tanpa izin berbahaya, tanpa `MANAGE_EXTERNAL_STORAGE` (ADR-022) |
+| Tidak ada server milik proyek | AI memakai kunci pengguna; unggah APK memakai GitHub pengguna (ADR-023, ADR-029) |
+| Kode pengguna tidak boleh hilang | Berkas di disk adalah sumber kebenaran; editor menyimpan otomatis |
 
-## 7. Anggaran performa (dipaksa, bukan diharapkan)
+## 2. Peta modul
 
-| Area | Anggaran | Cara menegakkan |
-|---|---|---|
-| Cold start → editor siap | < 1500 ms | Baseline profile + macrobenchmark di CI |
-| RAM idle | < 120 MB | Heap dump di emulator 2 GB, assert `Runtime.maxMemory` usage |
-| Keystroke → paint | < 16 ms | Macrobenchmark `FrameTimingMetric` pada file 1.000 baris |
-| Scroll file 2.000 baris | 0 frame drop > 32 ms | Sora Editor viewport rendering, bukan Compose `Text` |
-| Ukuran APK | < 80 MB | `apkanalyzer apk summary` di CI, gagal kalau lebih |
-| Build template (2 GB) | < 60 s | Automation test di emulator RAM terbatas |
-
-## 8. Risiko teknis & mitigasi (jujur, ini yang bisa membunuh proyek)
-
-| Risiko | Dampak | Mitigasi | Rencana B kalau gagal |
-|---|---|---|---|
-| Eksekusi binary dari data dir diblokir di versi Android tertentu | Tier 0 mati | Binary 16 KB-aligned, `extractNativeLibs=true`, uji di API 24/29/34/35/36 sebelum M2 selesai | Pindahkan toolchain ke `nativeLibraryDir` sebagai `.so`, atau jalankan via `libsu`/`libadb` |
-| `d8` butuh JVM, tidak jalan murni di ART | Dexing mustahil | Pakai `libd8.jar` via `app_process` (pola Termux), atau bundel `dx` lama, atau ganti ke `dexlib2` untuk konversi langsung | Kirim `.class` ke Tier 1 hanya untuk dexing (downgrade kecil) |
-| Kotlin tidak bisa Tier 0 | Ekspektasi user | Ditulis jelas di UI sejak awal; Kotlin = Tier 1 | Tambah `kotlinc` + minimal JRE di Tier 2 |
-| Ukuran bundel membengkak | Gagal di HP 32 GB | Pisahkan toolchain per-ABI, unduh on-demand untuk armeabi-v7a | Toolchain jadi unduhan terpisah saat onboarding |
-| Play Store menolak `REQUEST_INSTALL_PACKAGES` | Distribusi | Deklarasi jelas + alternatif "buka manual dari Files" | Distribusi via APK langsung + F-Droid |
-| Pemeliharaan 3 pipeline | Tim kelelahan | Kerjakan berurutan M2 → M5 → M7. Tidak pernah paralel | Buang Tier 2 lebih dulu |
-
-## 9. Verifikasi (Gate 1)
-
-```bash
-# build + static analysis
-./gradlew :app:assembleDebug :build:tier0:testDebugUnitTest detekt lintDebug
-
-# uji pipeline build tanpa device (JVM, toolchain di-host)
-./gradlew :build:tier0:testDebugUnitTest --tests '*Tier0PipelineTest*'
-
-# uji on-device (emulator API 24 & 35, RAM 2 GB)
-./gradlew :app:connectedDebugAndroidTest
-
-# ukuran artefak
-./gradlew :app:assembleRelease && apkanalyzer apk summary app/build/outputs/apk/release/*.apk
+```
+:app                 Compose UI + penyimpanan setelan aplikasi
+:core:project        Berkas projek, validasi, zip, pencarian, impor SAF
+:core:build          Kontrak BuildEngine, SitusStatis, SitusPwa
+:core:diagnose       DiagnosticParser + ErrorCatalog
+:core:ai             Klien OpenAI-compatible, PromptBuilder, AgenBuild
+:core:git            RepoGit (JGit), GitHubRilis
+:core:editor         CodeEditorView, Highlighter, Language
+:core:ui             Token warna, komponen dasar
+:build:tier0         Pipeline build di perangkat
+:build:hostcli       CLI Tier 0 untuk JVM host (bukti pipeline tanpa emulator)
 ```
 
-Lulus = exit code 0 untuk semua, APK < 80 MB, dan `Tier0PipelineTest` menghasilkan APK yang lolos `apksigner verify`.
+Aturan ketergantungan: `:app` boleh tahu semua modul; `:core:*` tidak boleh tahu `:app`; `:build:tier0` hanya bergantung pada `:core:build` dan `:core:diagnose`. Tidak ada dependency injection framework — `AppContainer` adalah satu objek biasa, karena aplikasi ini harus tetap ringan.
+
+## 3. Aliran projek
+
+```
+filesDir/projek/<folder>/
+├── kodenusa.json           ← identitas projek (nama, applicationId, jenis, versi)
+├── src/main/AndroidManifest.xml
+├── src/main/java/...       ← Java 8, dikompilasi ECJ
+├── src/main/res/...        ← layout, values, drawable
+└── build/                  ← hasil build (boleh dihapus kapan saja)
+```
+
+- `ProjectLoader` membaca `kodenusa.json`; bila ada `build.gradle`, projek ditandai **bukan Tier 0** dan build dimatikan dengan alasan tertulis (`ProjectValidation.bisaDibangun`).
+- `ProjectTree` menyusun daftar berkas untuk panel; `ProjectFiles` menolak nama tidak sah (absolut, `..`, karakter terlarang) **sebelum** menyentuh disk.
+- Projek `web-murni` memakai `web/` atau `src/main/assets/` sebagai akar situs (`SitusStatis.sumber`). Tidak ada berkas Android sama sekali.
+
+## 4. Pipeline Tier 0 (9 langkah)
+
+```
+PREPARE → AAPT_COMPILE → AAPT_LINK → JAVAC → JAR → D8 → PACKAGE → ALIGN → SIGN
+```
+
+| Langkah | Alat | Catatan teknis |
+|---|---|---|
+| PREPARE | — | Membersihkan `build/`, menyalin aset, memeriksa keutuhan toolchain (SHA-256) |
+| AAPT_COMPILE | `aapt2` 2.19 bionic | Biner per ABI di `jniLibs`, dijalankan dari `nativeLibraryDir` (W^X, ADR-021) |
+| AAPT_LINK | `aapt2` | Menghasilkan APK tanpa dex, dengan `--java` untuk `R.java` |
+| JAVAC | ECJ **3.25.0** | Level bahasa 8, `-bootclasspath android.jar` API 34, `-proc:none` (ADR-011, ADR-016) |
+| JAR | `JarPacker` | Di dalam proses; d8/dx menerima arsip, bukan folder (ADR-012) |
+| D8 | dx 1.16 (build-tools 28.0.3) | Paket direlokasi ke `id.kodenusa.dxtool` supaya tidak bentrok (ADR-017) |
+| PACKAGE | `ApkPackager` | Menyisipkan `classes.dex` + aset ke APK aapt2 |
+| ALIGN | `ZipAligner` | Alignment murni Kotlin, tanpa biner `zipalign` |
+| SIGN | apksigner **0.8** | v2 signing, keystore dibuat di perangkat (ADR-018, ADR-019) |
+
+Semua alat Java (ECJ, dx, apksigner) dijalankan lewat `/system/bin/app_process` dengan classpath `dalvik-cache` tulis — bukan `java -jar`, karena Android tidak punya JVM (ADR-021). Argumen selalu berupa `List<String>` ke `ProcessBuilder`; **tidak pernah** `sh -c` (ADR-006).
+
+## 5. Aliran build dan galat
+
+```
+BuildScreen → BuildSession → Tier0BuildEngine → BuildEvent
+                                   │
+                                   ├── LogLine      → log (dibatasi baris)
+                                   ├── StepChanged  → daftar langkah
+                                   └── Finished     → BuildResult { apk, durasi, diagnostics }
+                                                            │
+                                        DiagnosticParser ───┘
+                                                │
+                                          ErrorCatalog → "judul · berkas · baris · cara perbaiki"
+```
+
+- `BuildSession` memotong log pada batas baris (`ModeHemat.batasLog`) supaya RAM tidak habis untuk teks.
+- Setiap galat yang dikirim ke AI **wajib** melewati `ErrorCatalog`, tidak pernah keluaran mentah alat (`AiBuildGate`).
+- `BuildCache` melewati langkah yang hasilnya tidak berubah; build template hangat 1,4–1,9 detik.
+
+## 6. Editor
+
+`CodeEditorView` adalah `FrameLayout` berisi `TextView` (gutter nomor baris) dan `EditText` (teks). Penyorotan hanya untuk baris yang terlihat di viewport, karena mewarnai seluruh berkas 2.000 baris akan membuat `Spannable` menghabiskan RAM di HP 2 GB.
+
+Invariant: `maxLines = Int.MAX_VALUE` selalu; word-wrap hanya mengubah `setHorizontallyScrolling`. Nama berkas yang diganti saat terbuka = simpan, tutup, buka ulang.
+
+Simpan otomatis berjalan 900 ms setelah pengguna berhenti mengetik (`Autosave` di `EditorScreen`), sehingga aplikasi boleh dibunuh Android kapan saja.
+
+## 7. AI (BYOK)
+
+```
+AiScreen → PromptBuilder (batas Tier 0 + konteks projek) → OpenAiCompatClient → penyedia pilihan pengguna
+                                   │
+                              AgenBuild (maks 12 berkas, maks 3 putaran build)
+                                   │
+                            UbahanBerkas → validasi jalur → tulis berkas
+```
+
+- Tidak ada kunci bawaan, tidak ada server perantara, tidak ada library HTTP pihak ketiga.
+- Jalur dari model dianggap **tidak tepercaya**: absolut, `..`, dan `~` ditolak tanpa "dirapikan".
+- Gambar selalu diperkecil sebelum dikirim (`GambarUntukAi`); foto kamera mentah tidak pernah dikirim.
+- Balasan 400 yang menyebut `image`/`vision`/`multimodal` dipetakan ke `GAMBAR_TIDAK_DIDUKUNG`, bukan "galat penyedia".
+
+## 8. Git dan GitHub
+
+- `RepoGit` memakai **JGit 3.7.1** (versi terakhir yang tidak membutuhkan `java.nio.file` API 26 — ADR-024).
+- Token tidak pernah ditulis ke `.git/config` dan tidak pernah ke berkas projek; ia hanya muncul di URL satu perintah push, lalu remote dikembalikan ke alamat bersih.
+- `GitHubRilis` membuat repo, membuat rilis, dan mengunggah aset dengan `HttpURLConnection`. Badan unggahan ditulis per 64 KB (`AliranUnggah`) supaya progres terlihat.
+
+## 9. Rahasia di disk
+
+`Penyandi`/`KunciAman` memakai Android Keystore (AES-256-GCM, kunci tidak bisa diekspor). Nilai disimpan sebagai `enc1:<iv b64>:<ciphertext b64>`; nilai lama tanpa awalan dibaca sekali lalu ditulis ulang tersandi (ADR-026). Bila dekripsi gagal (kunci berubah setelah restore), aplikasi mengosongkan nilai dan meminta ulang — tidak pernah crash.
+
+## 10. Izin dan permukaan sistem
+
+| Dipakai | Tidak dipakai | Alasan |
+|---|---|---|
+| SAF: `OpenDocument`, `CreateDocument`, `OpenDocumentTree` | `MANAGE_EXTERNAL_STORAGE` | Izin "Semua file" memicu blokir Play Protect di Android 13+ (ADR-022) |
+| `FileProvider` (`${applicationId}.berkas`) | `external-path` | Berbagi hanya dari `filesDir/projek` dan `cacheDir` |
+| `<queries>` untuk intent lintas aplikasi | Izin kamera | `TakePicture` memakai aplikasi kamera pengguna, bukan kamera langsung |
+
+## 11. Strategi verifikasi
+
+| Lapis | Jumlah | Perintah |
+|---|---|---|
+| Uji unit (JVM, JUnit 5) | 252 | `./gradlew test` |
+| Uji perangkat (API 35, sebagian di 24 & 34) | 77 | `./gradlew :app:connectedDebugAndroidTest` |
+| Analisis statis | 0 temuan | `./gradlew detekt --rerun-tasks` |
+| Bukti pipeline tanpa emulator | 3 template | `scripts/prove/build-hello.sh` |
+| Rilis minified | dipasang & dibuka | `:app:assembleRelease -PsemuaAbi` |
+
+Aturan yang tidak boleh dilanggar:
+
+1. Uji yang dijalankan **di perangkat** untuk setiap fitur yang menyentuh berkas, izin, atau Compose.
+2. APK rilis yang minified harus **dipasang dan dibuka** sebelum dibagikan — lulus uji unit tidak membuktikan apa pun tentang R8.
+3. Setiap jalur jaringan baru wajib punya satu uji nyata bergerbang env (mis. `GH_TOKEN`), yang membuat sumber daya, memeriksa, lalu menghapusnya.
+4. Kegagalan dicatat di [MEMORY.md](../MEMORY.md) sebagai invariant, bukan dibiarkan terulang.

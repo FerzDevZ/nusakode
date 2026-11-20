@@ -1,6 +1,7 @@
 # DESIGN.md — Arah Visual KodeNusa
 
-Dikunci sebelum M1 (sesuai `AGENTS.md`: "For UI: settle DESIGN.md first"). Semua komponen M1–M7 mengikuti dokumen ini. Perubahan arah visual = ADR baru, bukan improvisasi di PR.
+Dikunci sebelum M1 (sesuai `AGENTS.md`: "For UI: settle DESIGN.md first"). Berlaku sampai **v0.9.6**.
+Perubahan arah visual = ADR baru, bukan improvisasi di PR.
 
 ---
 
@@ -99,13 +100,27 @@ Aturan praktis:
 - [ ] Semua copy bahasa Indonesia, tanpa buzzword ("seamless", "supercharge", "revolutionary").
 - [ ] Layar 320dp diuji, tanpa overflow horizontal.
 
-## 10. Inventaris layar (M1–M3)
+## 10. Inventaris layar (nyata, v0.9.6)
 
-| Layar | Inti | Catatan desain |
+| Layar | Berkas | Inti | Catatan desain yang berlaku |
+|---|---|---|---|
+| Daftar projek | `ui/WorkspaceScreen.kt` | buka/buat/impor, cari projek | Baris padat + aksi "⋯" per baris; tombol "Buat projek" di **bottom bar** tetap, bukan item terakhir daftar |
+| Wizard | `ui/WizardScreen.kt` | jenis → nama → template → buat | Tombol mati wajib punya `alasan-buat`; hanya pertanyaan yang perlu yang ditanyakan |
+| Editor | `ui/EditorScreen.kt` | panel berkas + tab + kode + cari/ganti | Drawer di 360dp; bilah atas dua baris; tombol **Aksi** membuka palet perintah |
+| Palet perintah | `ui/PaletPerintah.kt` | cari aksi | Daftar satu kolom, tanpa ikon dekoratif, `aksi-kosong` menyebut kata yang gagal |
+| Build | `ui/BuildScreen.kt` | langkah, log, galat, bagikan APK | Log dibatasi baris (mode hemat); kartu Bagikan APK **di atas** pesan setup |
+| Situs | `ui/SitusScreen.kt` | susun, terbit, PWA | Tautan hasil + tombol salin; galat terbit di dalam panel yang sama |
+| Pratinjau situs | `ui/PratinjauSitus.kt` | WebView `file://` | Dialog penuh; catatan batas `file://` (PWA/service worker) ditampilkan apa adanya |
+| Git | `ui/GitScreen.kt` | commit, kirim, riwayat | Tombol kirim mati dengan alasan bila repo/token belum lengkap |
+| Agen | `ui/AgenScreen.kt` | tugas, putaran, hentikan | Log per putaran berurutan; tombol Hentikan benar-benar membatalkan |
+| AI | `ui/AiScreen.kt` | tanya, lampirkan, foto, sisipkan kode | Galat penyedia diterjemahkan; foto kamera diperkecil sebelum dikirim |
+
+## 11. Yang berubah sejak dokumen ini dikunci
+
+| Keputusan awal | Kenyataan sekarang | Alasan |
 |---|---|---|
-| Daftar projek | buka/buat/import | Baris padat, aksi "⋯" per baris, search di header |
-| Wizard 5 langkah | nama → template → branding → build → bagikan | Stepper ringkas, bukan halaman penuh kartu |
-| Editor | file tree + tab + kode | Split 38/62, drawer di 320dp |
-| Build sheet | log + error | Snap point, auto-scroll yang bisa dijeda |
-| Error detail | penyebab + fix | Satu aksi utama, satu aksi "pelajari" |
-| Pengaturan | tema, ukuran font, toolchain | Kelompok padat, tanpa ikon dekoratif |
+| Light mode ditunda sampai M4 | **tidak pernah dibuat** | Sasaran pengguna memakai HP murah malam hari; menambah light mode berarti menguji 2× palet kontras tanpa bukti kebutuhan |
+| Ikon Lucide stroke | sebagian diganti **teks tombol** di bilah atas | Di 360dp, tombol teks lebih cepat dipahami daripada ikon tanpa label |
+| Bottom sheet build dengan 3 snap | tetap, tetapi tombol aksi ada di **bottom bar** | Aksi yang harus ditekan tidak boleh ikut tergulir |
+| `--surface-2` untuk baris terpilih | dipakai juga untuk bilah atas | Tidak menambah token baru hanya demi satu perbedaan 0,05 lightness |
+| "FAB hanya satu per layar" | dihapus; tidak ada FAB di aplikasi | FAB menutupi kode dan tidak bisa dijangkau jempol di layar sempit |

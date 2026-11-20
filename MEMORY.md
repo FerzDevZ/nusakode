@@ -1,7 +1,17 @@
 # MEMORY.md — Invariant Hasil Root-Cause
 
-Dibaca di awal setiap sesi. Format dari `AGENTS.md` Gate 3:
+Dibaca di awal setiap sesi — 67 invariant per v0.9.6. Format dari `AGENTS.md` Gate 3:
 `- **[YY-MM-DD · Komponen]**: gejala → **Root Cause**: penyebab teknis → **Invariant Rule**: aturan permanen.`
+
+Cara memakai:
+
+1. **Sebelum menyentuh area yang pernah rusak**, cari komponennya di sini. Sembilan akar masalah
+   toolchain (ECJ, W^X, dx, apksigner, keystore) pernah menghabiskan berhari-hari; tidak ada alasan
+   menemukannya dua kali.
+2. **Sesudah memperbaiki bug non-trivial**, tambahkan satu baris. Bukan ringkasan obrolan, bukan
+   diary — hanya gejala, penyebab, dan aturan yang mencegahnya terulang.
+3. **Kalau dua invariant bertabrakan**, yang lebih baru menang, tetapi ADR harus diperbarui agar
+   alasan perubahan tercatat.
 
 ---
 

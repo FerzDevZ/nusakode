@@ -6,6 +6,10 @@ menyelesaikan tugas, atau hanya terlihat pintar di demo?**
 Tanpa angka, setiap perubahan prompt berisiko menjadi regresi yang tidak terlihat. Karena itu ada
 10 tugas tetap dan satu cara menjalankannya.
 
+**Status 0.9.6:** harness **siap dan lulus tanpa kunci** (`EvalAgenJalurTest`, 10 tugas lewat loop
+`AgenBuild` dengan model tiruan). Tabel angka di bawah **masih kosong** karena butuh `AI_EVAL=1` +
+kunci milik pengguna. Jangan mengutip angka pass-rate sebelum tabel itu terisi.
+
 ## Cara menjalankan
 
 ```bash

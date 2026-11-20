@@ -1,91 +1,58 @@
-# 00 — Visi Produk & Terobosan
+# Visi produk
 
-## 1. Masalah nyata
+> **Satu kalimat:** kalau seseorang hanya punya HP Android, ia tetap harus bisa membuat aplikasi Android sendiri — hari itu juga, tanpa laptop, tanpa Android Studio, tanpa menunggu sinyal bagus.
 
-| Fakta | Konsekuensi |
+## Masalah nyata
+
+Di Indonesia, HP adalah komputer pertama bagi banyak orang. Android Studio butuh minimal 8 GB RAM, puluhan GB disk, dan unduhan bertahap yang bisa mencapai beberapa GB. Bagi pengguna HP 2–4 GB dengan kuota terbatas, itu bukan "mahal" — itu **tidak mungkin**.
+
+Akibatnya ada dua kelompok yang tertahan:
+
+1. **Pemula yang ingin belajar.** Ia bisa menulis kode di editor HP, tetapi tidak bisa melihat hasilnya jalan. Tanpa umpan balik, belajar berhenti di tengah.
+2. **Pemilik usaha kecil yang butuh alat sendiri.** Kasir, katalog, absensi. Solusi yang ada menuntut langganan atau PC.
+
+KodeNusa mengambil jalur yang selama ini dianggap mustahil: **mengompilasi di dalam HP itu sendiri**.
+
+## Untuk siapa
+
+| Pengguna | Kebutuhan utama | Yang KodeNusa berikan |
+|---|---|---|
+| Pemula (13–25 tahun) | Melihat kode sendiri jadi APK | Template + build 1,4–1,9 detik + pesan galat Bahasa Indonesia |
+| Pemilik warung / toko | Aplikasi kasir atau katalog tanpa langganan | Template Kasir Warung dengan SQLite lokal |
+| Pengguna yang sering putus internet | Bekerja tanpa jaringan | Toolchain di dalam APK; AI dan GitHub opsional |
+| Pembelajar web | Situs statis cepat | Projek `web-murni` tanpa Android sama sekali |
+
+## Janji yang dipegang
+
+1. **RAM 4 GB cukup.** Ambang mode hemat ditentukan dari RAM yang benar-benar dilaporkan sistem (`AMBANG_RAM_BYTE = 4.200.000.000`), bukan angka pemasaran.
+2. **Offline itu fitur, bukan mode cadangan.** Semua yang dibutuhkan untuk membangun APK ada di dalam APK. AI dan GitHub hanya menyala kalau Anda mengisinya.
+3. **Tidak ada server KodeNusa.** Tidak ada akun, tidak ada telemetri, tidak ada upload tersembunyi.
+4. **Galat dijelaskan dalam Bahasa Indonesia.** Setiap pesan galat build melewati `ErrorCatalog`: judul, berkas, baris, dan cara memperbaiki.
+5. **Batas disebut di layar, bukan disembunyikan.** Python, Kotlin, dan projek Gradle tidak didukung; aplikasi mengatakan itu saat Anda menyentuhnya.
+
+## Bukan tujuan (dan alasannya)
+
+| Tidak dikerjakan | Alasan |
 |---|---|
-| Android Studio butuh PC 8–16 GB RAM | 90% calon developer Indonesia tidak punya mesin itu |
-| AndroidIDE (acuan open-source terbaik saat ini) minta **1.5–2 GB RAM bebas + 4 GB storage** | Median HP di Indonesia 2–4 GB RAM / 32–64 GB storage terisi — gagal di gerbang setup |
-| AIDE/Sketchware: usang, tidak dirawat, Java 7 era, Play Store menolak target API lama | Bukan jalan untuk 2026 |
-| Cloud IDE (Replit, StackBlitz, GitHub Codespaces) | Butuh internet stabil + kartu kredit. Di 3T (Terdepan/Terluar/Tertinggal) mati total |
-| Semua dokumentasi & pesan error berbahasa Inggris | Pemula berhenti di error pertama, bukan di logika |
-| Tidak ada jalur "karya saya dipakai orang" | Tidak ada loop motivasi → retensi nol |
+| Kotlin di perangkat | `kotlinc` 70 MB+ menaikkan APK ~2,5×; JVM penuh hanya layak di HP ≥ 4 GB (ADR-003) |
+| Model AI di dalam HP | 400–900 MB, 2–8 token/detik di 4 GB (ADR-023) |
+| Terminal bebas | Permukaan serangan terlalu besar untuk aplikasi yang dibagikan lewat file APK (ADR-008) |
+| Memilih folder arbitrer sebagai lokasi projek | SAF tidak memberi pohon berkas yang stabil; diganti ekspor/impor zip (ADR-022) |
+| Play Store lebih dulu | APK langsung bisa dibagikan hari ini; Play Store menambah waktu review (ADR-010) |
 
-**Kesimpulan:** masalahnya bukan "belum ada IDE Android". Masalahnya **IDE yang ada tidak dirancang untuk HP kelas bawah Indonesia**, dan tidak dirancang untuk orang yang baru mulai.
+## Ukuran keberhasilan
 
-## 2. Persona (3, bukan 10)
+Bukan jumlah unduhan. Yang diukur:
 
-**P1 — Rina, 19, mahasiswa SI, HP Redmi 9A 2/32 GB, kuota 8 GB/bulan.**
-Pernah install Android Studio → laptop kakaknya nge-hang. Ingin bikin aplikasi absensi untuk UKM kampusnya. Butuh: buka app → template → ubah teks → build → APK dibagikan ke teman via WhatsApp.
+1. **Satu template bisa jadi APK di HP 4 GB dalam < 5 detik** (tercapai: 1,4–1,9 detik untuk build hangat).
+2. **Pesan RAM diam < 100 MB** (tercapai: 66 MB PSS).
+3. **Pengguna baru bisa membuat APK pertamanya tanpa membaca dokumentasi** (diuji lewat alur wizard + build di uji perangkat).
+4. **Nol janji palsu di UI** — setiap klaim di layar punya kode dan uji di belakangnya.
 
-**P2 — Pak Dedi, 34, pemilik warung + toko kelontong, HP 3/64 GB.**
-Tidak mau belajar "programming", tapi mau aplikasi kasir sederhana dengan nama tokonya sendiri. Butuh: template → isi nama, harga, logo → APK terpasang di HP kasir.
+## Prinsip desain yang mengikat
 
-**P3 — Bayu, 24, freelancer, HP 8/256 GB.**
-Butuh baca kode projek klien dari GitHub saat di jalan, quick-fix, push commit. Butuh: git, editor yang benar, bukan mainan.
-
-Desain harus melayani P1 sebagai default, P3 sebagai mode lanjutan. **P2 adalah pengguna yang tidak akan pernah menyentuh Android Studio** — di situ volume pasarnya.
-
-## 3. Terobosan — 4 pilar
-
-### Pilar 1 · Tier 0: build APK tanpa Gradle, tanpa JVM
-Rantai kompilasi minimal yang terbukti jalan di Android:
-
-```
-.java ──ecj──► .class ──d8──► classes.dex ─┐
-res/  ──aapt2 compile──► .flat ──aapt2 link─┼──► .apk ──zipalign──► ──apksigner──► APK terpasang
-AndroidManifest.xml ────────────────────────┘
-```
-
-Tool yang dibundel: `aapt2`, `d8` (+ `libd8.jar` di bawah ART), `zipalign`, `apksigner`, `ecj.jar`, `android.jar` (API 34/35 android-stub), `debug.keystore`.
-Total ±55–70 MB terkompresi — **bukan 4 GB SDK**. Ini, bukan Gradle, yang membuat HP 2 GB sanggup.
-
-Batas Tier 0 yang kita akui terbuka:
-- Bahasa: **Java murni** (ECJ belum bisa Kotlin).
-- Dependency: JAR lokal / Maven tunggal yang sudah di-resolve (bukan resolusi transitif penuh).
-- Tanpa ProGuard/R8 minify, tanpa `kapt`, tanpa `viewBinding` generator (pakai `findViewById` atau Compose runtime jar).
-- Batas praktis: ±20 file / ±5.000 LOC.
-
-### Pilar 2 · Tier 1: cloud Gradle sebagai katup, bukan fondasi
-Saat projek melewati batas Tier 0 (butuh Kotlin, library besar, AAB), user menekan satu tombol: build dikirim ke worker (Android SDK + JDK 17 + Gradle cache), log di-stream lewat SSE, APK/AAB kembali. Offline tetap bisa *mengedit*; build ditunda, bukan hilang.
-
-### Pilar 3 · Indonesia-first, bukan terjemahan
-- Pesan error ECJ/d8/aapt2 diterjemahkan ke bahasa manusia: `error: cannot find symbol class RecyclerView` → *"Kamu pakai RecyclerView tapi library-nya belum ditambahkan. Tambahkan `androidx.recyclerview`?" [Tambahkan otomatis]*.
-- Template yang benar-benar dipakai orang: kasir warung, absensi QR, katalog produk + WhatsApp order, kas RT/RW, daftar hafalan, undangan.
-- Jalur belajar menempel di editor: setiap konsep punya satu halaman 200 kata, bukan kursus 40 jam.
-
-### Pilar 4 · Distribusi karya
-Satu tombol: **Bagikan APK** → FileProvider → WhatsApp/Telegram/Drive. Plus QR code untuk instalasi. Play Store opsional dan dijelaskan jujur (biaya $25, AAB, target API).
-
-## 4. Diferensiasi ringkas
-
-| Produk | Jalan di HP 2 GB? | Offline build? | Bahasa ID? | APK asli? | Template lokal relevan? |
-|---|---|---|---|---|---|
-| Android Studio | ❌ (PC) | ✅ | ❌ | ✅ | ❌ |
-| AndroidIDE | ❌ (butuh 1.5–2 GB bebas) | ✅ | ❌ | ✅ | ❌ |
-| AIDE | ⚠️ (tapi usang) | ✅ | ❌ | ✅ | ❌ |
-| Sketchware | ✅ | ✅ | ⚠️ | ⚠️ (terbatas) | ⚠️ |
-| Replit/StackBlitz | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **KodeNusa** | ✅ | ✅ (Tier 0) | ✅ | ✅ | ✅ |
-
-## 5. Metrik keberhasilan (product north star)
-
-1. **Time-to-first-installed-APK** (median) < 10 menit sejak install aplikasi.
-2. **Rasio build Tier 0 sukses** ≥ 85% untuk projek di bawah batas.
-3. **Retensi D7** ≥ 25% (IDE belajar biasanya < 10%).
-4. **Rasio build yang harus lari ke Tier 1** ≤ 15% (kalau lebih tinggi, Tier 0 terlalu sempit).
-
-## 6. Non-goals (tegas)
-
-- Bukan pengganti Android Studio untuk kerja profesional.
-- Bukan IDE multi-bahasa (Python/JS/Flutter) di v1 — fokus menang dulu di Java/Android.
-- Bukan editor berbasis AI yang menulis kode untukmu; AI hanya asisten opsional dan tidak boleh jadi syarat build.
-- Bukan cloud storage; tidak menyimpan kode user di server tanpa aksi eksplisit.
-
-## 7. Prinsip produk
-
-1. **Offline adalah fitur, bukan fallback.** Tanpa internet, editor + build + install harus tetap penuh.
-2. **Jangan pernah berbohong soal kapabilitas.** Kalau projek tidak bisa di-build di Tier 0, katakan sebelum user menekan Build, bukan setelah gagal.
-3. **Error adalah UI.** Setiap error wajib punya: penyebab, lokasi, dan satu aksi perbaikan.
-4. **Hormati HP murah.** Tidak ada animasi 300 ms, tidak ada background service, tidak ada auto-download diam-diam.
-5. **Data user adalah milik user.** Projek = folder biasa. Bisa di-zip, di-git, di-export kapan saja, tanpa lock-in.
+- **Tidak ada tombol mati tanpa alasan.** Tombol yang tidak bisa ditekan wajib menampilkan sebabnya (`alasan-buat`).
+- **Setiap aksi punya kabar.** Hasil aksi yang dipicu dari panel muncul **di dalam panel itu**, bukan di tempat lain.
+- **Berkas pengguna tidak pernah disanitasi diam-diam.** Nama atau jalur yang salah ditolak dengan alasan tertulis.
+- **Rahasia disandikan di disk.** Kunci AI dan token GitHub memakai Android Keystore (ADR-026).
+- **Kegagalan dijelaskan, bukan ditelan.** Tidak ada `catch` kosong; tidak ada `TODO` di rilis.

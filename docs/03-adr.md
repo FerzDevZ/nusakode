@@ -2,6 +2,22 @@
 
 Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif yang ditolak.
 
+**31 keputusan.** Dibaca berurutan dari atas ke bawah; nomor besar berarti keputusan yang lebih baru dan biasanya menimpa asumsi yang lebih lama. Untuk cepat: tabel di bawah menunjuk nomor yang paling sering dicari.
+
+| Kalau Anda bertanya… | Baca |
+|---|---|
+| Mengapa tidak memakai Gradle? | ADR-005 |
+| Mengapa APK-nya 32 MB? | ADR-028 |
+| Mengapa Kotlin tidak didukung? | ADR-003 |
+| Mengapa tidak ada izin penyimpanan? | ADR-022 |
+| Mengapa kunci AI/token GitHub aman? | ADR-026 |
+| Mengapa build di server (Tier 1) belum ada? | ADR-001, ADR-007 |
+| Mengapa alat toolchain dijalankan begini? | ADR-006, ADR-021 |
+| Mengapa ECJ 3.25 dan dx, bukan javac/d8? | ADR-016, ADR-017 |
+| Mengapa JGit 3.7.1? | ADR-024 |
+| Mengapa unggah APK lewat GitHub, bukan server sendiri? | ADR-029 |
+| Mengapa palet perintah, bukan tombol tambahan? | ADR-031 |
+
 ---
 
 ## ADR-001 · Build hybrid 3-tier (Tier 0 lokal, Tier 1 cloud, Tier 2 proot)

@@ -3,6 +3,8 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
+**Rilis terakhir: 0.9.7** (`versionCode 19`) · **252 uji unit · 77 uji perangkat · detekt 0 temuan**
+
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
 ---
@@ -193,13 +195,16 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 
 ---
 
-## Urutan pekerjaan berikutnya (disepakati)
+## Urutan pekerjaan berikutnya
 
-1. **Pindahkan berkas** antar folder + duplikat (paling sering dipakai setelah tambah berkas).
-2. **Cari di seluruh projek** — pengganti "grep" yang tidak ada di HP.
-3. **Layar agen** "Minta AI buatkan…" di atas `AgenBuild` (mesin + uji sudah ada).
-4. **Perkecil APK** 44,7 MB → di bawah 15 MB (potong `android.jar`).
-4. **Uji di HP asli 4 GB** (Redmi 9A): RAM diam, waktu build, pemasangan.
-5. **Kunci tanda tangan milik pengguna** supaya APK bisa di-update di Play.
-6. **Format otomatis** untuk Java/HTML/CSS/JS.
-7. **Enkripsi kunci AI** dengan Android Keystore + uji "kunci tidak bocor ke log".
+| # | Pekerjaan | Kenapa sekarang | Ukuran |
+|---|---|---|---|
+| 1 | ~~Hapus janji "build di server"~~ ✅ | Teks itu menyebut server yang tidak ada | Selesai |
+| 2 | Penangkap crash + "Bagikan laporan" (offline) | Tanpa telemetri, kita buta terhadap kerusakan di HP orang | Sedang |
+| 3 | Klon projek dari GitHub (`RepoGit.klon` sudah ada) | Perjalanan masih searah: bisa kirim, tidak bisa ambil | Sedang |
+| 4 | Catatan "Kotlin belum didukung" saat membuka `.kt` | Sejajar dengan catatan Python yang sudah ada | Kecil |
+| 5 | Tombol "buat repo" di layar Git (`GitHubRilis.buatRepo` sudah ada) | Fungsi REST sudah teruji, hanya belum tersambung | Kecil |
+| 6 | Ukur di HP 4 GB fisik + `AI_EVAL=1` | Satu-satunya angka yang belum bisa saya ukur sendiri | Butuh perangkat/kunci pengguna |
+
+Yang **tidak** akan dikerjakan tanpa bukti kebutuhan nyata: Kotlin di perangkat (ADR-003), Tier 1
+build di server (ADR-001/007), model AI di dalam HP (ADR-023).

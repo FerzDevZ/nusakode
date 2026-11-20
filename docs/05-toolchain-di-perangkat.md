@@ -1,95 +1,76 @@
-# Toolchain Tier 0 di perangkat
+# Toolchain Tier 0 di dalam perangkat
 
-Dokumen ini mencatat apa yang sudah terbukti **di HP**, apa yang belum, dan aturan yang tidak boleh
-dilanggar saat mengganti komponen.
+Dokumen ini menjawab satu pertanyaan: **benda apa saja yang ikut di dalam APK supaya HP bisa mengompilasi sendiri, dan mengapa versi itu yang dipilih?**
 
-## Status terakhir
+## 1. Status terakhir
 
-| Bukti | Hasil |
-|---|---|
-| `aapt2` bionic menjalankan `aapt2 version` di API 24 | lolos (`2.19-6696031`) |
-| `ecj.jar` mengompilasi `Halo.java` lewat `app_process` | lolos, `app/Halo.class` dihasilkan |
-| `dx.jar` terelokasi men-dex `Halo.class` | lolos, `classes.dex` 728 byte |
-| `apksigner` 0.8 menandatangani zip + verifikasi v2 | lolos |
-| Keystore PKCS12 buatan Android (`DebugKeystore`) diterima apksigner 0.8 | lolos, 3 template tetap terbangun |
-| **Tiga template terbangun penuh di dalam emulator API 24** | `halo-dunia` 12.566 B / 1,7 s · `kasir-warung` 16.662 B / 1,9 s · `katalog-whatsapp` 12.566 B / 1,7 s |
-| `:app:connectedDebugAndroidTest` (14 uji) | semuanya hijau; keystore dibuat di perangkat dan dipakai apksigner 0.8 |
-
-Angka di atas berasal dari emulator x86_64 API 24 dengan RAM 3 GB. Pengukuran pada HP 4 GB
-(Redmi 9A) masih menjadi tugas P4.
-
-## Komponen yang dibundel
-
-| Komponen | Berkas | Ukuran di aset | Keterangan |
+| Komponen | Versi | Status | Bukti |
 |---|---|---|---|
-| Resource compiler + linker | `aapt2` (bionic, 3 ABI) | 3,2–5,0 MB per ABI | build-bridge pihak ketiga, API 34 |
-| Kompiler Java | `ecj.jar` 3.25.0 + stub `javax.lang.model` | 1,5 MB | EPL-2.0, lihat ADR-016 |
-| Dexer | `dx.jar` 1.16 terelokasi | 379 KB | Apache-2.0, lihat ADR-017 |
-| Signer | `apksigner.jar` 0.8 | 150 KB | Apache-2.0, lihat ADR-018 |
-| Platform | `android.jar` API 34 | 26 MB | Apache-2.0, lihat ADR-015 |
-| Keystore debug | dibuat `DebugKeystore` per perangkat | 0 KB (tidak dibundel) | ADR-019 |
+| ECJ (kompiler Java) | **3.25.0** | ✅ jalan di API 24 & 35 | 3 template ter-build di perangkat |
+| dx (dexer) | **1.16** (build-tools 28.0.3), paket direlokasi | ✅ | `id.kodenusa.dxtool.command.Main` |
+| apksigner | **0.8** (build-tools 28) | ✅ | APK terpasang di Android 15 |
+| aapt2 | **2.19** bionic, 3 ABI | ✅ | layout + `R.java` benar |
+| `android.jar` | **API 34** | ✅ | classpath kompilasi, 26.361.808 bita |
+| ZipAligner | Kotlin murni | ✅ | tanpa biner `zipalign` |
+| Keystore | dibuat di perangkat | ✅ | `filesDir/keys/debug.keystore`, ADR-019 |
 
-Total aset bersama 28 MB; kalau ditambah tiga ABI, `app-debug.apk` menjadi 48 MB. Batas rilis
-adalah 80 MB, jadi masih ada ruang, tetapi `android.jar` tetap kandidat pertama untuk dipangkas.
+APK rilis membawa komponen di atas: **32.290.843 bita**. Analisis mengapa tidak bisa lebih kecil ada di ADR-028.
 
-## Aturan yang wajib dijaga
+## 2. Lokasi dan cara dijalankan
 
-1. **`app_process` butuh `/system/bin` sebagai argumen kedua.** Bentuk yang benar:
-   `app_process /system/bin <kelas> <argumen…>`; tanpa itu ART memperlakukan nama kelas sebagai
-   direktori lalu berhenti dengan `exit 134`.
-2. **Jangan menjalankan d8/R8 di Android 7.** Semua rilisnya memanggil `java.nio.file.Paths`
-   (API 26+). `exit 137` yang muncul adalah RuntimeInit yang membunuh proses setelah
-   `ClassNotFoundException`, bukan kehabisan RAM.
-3. **Jangan membuang resource saat repack jar.** ECJ memuat `messages.properties` lewat
-   `ResourceBundle`; menghapusnya membuat setiap pemanggilan `Main` melempar
-   `MissingResourceException` dan proses mati tanpa pesan.
-4. **dx wajib direlokasi.** ART menaruh `com.android.dex` di bootclasspath, jadi kelas dx bundel
-   tidak akan pernah dipakai tanpa relokasi jarjar.
-5. **Keystore tidak dibundel.** Dibuat per perangkat di `filesDir/keys/` (ADR-019). Untuk host,
-   CLI membuatnya sendiri di `.tools/debug.keystore`. Jangan menyalin keystore ke `assets/`.
-6. **Tanda tangan v2 saja.** v1 (JAR signing) membuat ART membunuh apksigner; v3 belum dikenal
-   apksigner 0.8.
-
-## Yang masih kurang
-
-1. **Android 10+ (W^X).** `exec` dari `filesDir` bisa diblokir. Rencana: pindahkan `aapt2` ke
-   `nativeLibraryDir` sebagai `libaapt2.so` atau pakai `libsu`. Harus dibuktikan di emulator API 29/35.
-2. **Kunci milik pengguna.** Keystore sekarang dibuat per perangkat (ADR-019), tetapi belum bisa
-   diimpor/diekspor pengguna. Langkah berikutnya: pilih keystore sendiri untuk rilis ke Play.
-3. **Lambda.** dx tidak mendukung `invokedynamic`; pengguna mendapat diagnostik `dex.lambda`.
-   Solusi jangka panjang: Tier 1 cloud atau dexer pengganti.
-4. **Ukuran `android.jar`.** 26 MB adalah berkas terbesar di bundel; pemangkasan ke kelas yang
-   dipakai (target < 12 MB) belum dikerjakan.
-
-## Urutan kerja berikutnya
-
-1. Uji `:app:connectedDebugAndroidTest` di emulator API 29/35 → putuskan W^X.
-2. Ganti keystore bundel dengan generasi perangkat.
-3. Ukur di HP fisik 4 GB: waktu build, RAM diam, ukuran APK.
-4. Pangkas `android.jar` dan ukur ulang bundel.
-## Bukti lintas versi Android (API 24 → API 34)
-
-Toolchain tidak cukup dibuktikan di satu versi Android. Emulator **API 34** dipakai karena di
-sanalah kebijakan terbaru berlaku, dan hasilnya memang berbeda dari API 24:
-
-| Yang diuji | API 24 (Android 7) | API 34 (Android 14) |
-|---|---|---|
-| `aapt2` dari `filesDir` | jalan (kode 0) | **ditolak** `error=13 Permission denied` |
-| `aapt2` dari `cacheDir` | jalan (kode 0) | **ditolak** `error=13 Permission denied` |
-| `aapt2` dari `nativeLibraryDir` (`libaapt2.so`) | jalan (kode 0) | **jalan** (kode 0) |
-| `app_process` bentuk lama `<folder> <kelas>` | jalan | **gagal** (keluar kode 1, mencetak bantuan dalvikvm) |
-| `app_process -Djava.class.path=… --nice-name=…` | jalan | jalan |
-| jar mode `644` (writable) | jalan | **ditolak** `Writable dex file … is not allowed` |
-| jar mode `444` (read-only) | jalan | **jalan** (apksigner 0.8 mencetak `0.8`) |
-| Build 3 template dari HP | lulus | lulus |
-
-Perintah pembuktian ulang:
-
-```bash
-# jalankan suite perangkat pada emulator yang sedang aktif (API 24 atau API 34)
-./gradlew :app:connectedDebugAndroidTest
+```
+toolsDir   = filesDir/toolchain          ← jar dari assets (read-only)
+runnableDir= filesDir/toolchain/bin      ← hasil dex untuk JavaLauncher
+aapt2      = nativeLibraryDir/libaapt2.so ← wajib, lihat ADR-021
 ```
 
-Hasil terakhir: **22 uji perangkat hijau di API 24 dan 22 uji hijau di API 34**, termasuk
-`ExecPolicyDeviceTest` yang menguji ketiga lokasi eksekusi dan `OnDeviceBuildTest` yang
-membangun ketiga template sampai APK bertanda tangan.
+- **Tidak ada JVM di Android.** Karena itu ECJ/dx/apksigner dijalankan lewat `/system/bin/app_process` (ART) dengan `CLASSPATH` ke dex yang sudah diekstrak. `JavaLauncher` menyusun argumen sesuai tingkat SDK (format `app_process` berbeda antara API < 26 dan ≥ 26).
+- **W^X (Android 10+).** Anda tidak boleh `exec` biner dari direktori yang bisa ditulis aplikasi. `libaapt2.so` dipasang sebagai native library (direktori itu `exec`-boleh), jar hanya dibaca (`setReadOnly`).
+- **Semua pemanggilan** memakai `ProcessBuilder(List<String>)`; tidak ada `sh -c`, tidak ada interpolasi string perintah (ADR-006). Setiap argumen divalidasi `canonicalPath` agar tidak keluar dari folder projek.
+
+## 3. Aturan yang wajib dijaga saat mengubah toolchain
+
+1. **SHA-256 diperiksa sebelum eksekusi.** `toolchain.json` memuat hash tiap berkas; `ToolchainInstaller` memverifikasi dan melaporkan `Status.Missing`/`Broken`, bukan diam-diam menjalankan berkas rusak.
+2. **Versi dipin, tidak pernah "terbaru".** ECJ 3.25 dipilih karena masih bisa menjalankan `-bootclasspath` dengan `android.jar` (ADR-011, ADR-016); dx dipilih karena d8 versi baru membutuhkan runtime yang tidak ada di API 24 (ADR-017).
+3. **`android.jar` tidak boleh dipangkas.** Ia adalah classpath kompilasi; memangkasnya membuat kode pengguna yang sah gagal dikompilasi (ADR-028).
+4. **Setiap penambahan library Java harus dibuktikan di API 24**, bukan hanya di JVM host. JGit 3.7.1 dipilih persis karena alasan ini (ADR-024).
+5. **Mengubah modul library → `--rerun-tasks`.** Tanpa itu, hasil build perangkat bisa memakai dex lama.
+6. **Aset biner tidak masuk git** (`.gitignore`): `jniLibs/**/*.so`, jar toolchain, `dist/`, `.tools/`. Yang masuk git hanya `toolchain.json` dan skrip pembangunnya.
+
+## 4. Yang sengaja belum ada
+
+| Tidak ada | Alasan |
+|---|---|
+| Kotlin compiler | 70 MB+, menaikkan APK ~2,5× (ADR-003) |
+| d8 / R8 | tidak bisa jalan di API 24 |
+| `zipalign` biner | diganti `ZipAligner` Kotlin (100 baris, tanpa biner tambahan) |
+| Gradle | diganti `kodenusa.json` (ADR-005) |
+| JDK penuh (proot) | Tier 2, hanya layak ≥ 4 GB, belum dibangun (ADR-001) |
+
+## 5. Cara memverifikasi ulang
+
+```bash
+export JAVA_HOME=/opt/jdk17 PATH=/opt/jdk17/bin:/opt/gradle/bin:$PATH ANDROID_HOME=$HOME/android-sdk
+
+# 1) Pipeline tanpa emulator (JVM host, alat yang sama)
+bash scripts/prove/build-hello.sh
+bash scripts/prove/build-templates.sh
+
+# 2) Pipeline di dalam HP untuk ketiga ABI emulator
+./gradlew :app:assembleRelease -PsemuaAbi
+/home/boxd/android-sdk/platform-tools/adb install -r app/build/outputs/apk/release/app-release.apk
+
+# 3) Uji perangkat yang menyentuh build
+./gradlew :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=id.kodenusa.app.OnDeviceBuildTest,id.kodenusa.app.TemplatesDeviceTest
+```
+
+## 6. Bukti lintas versi Android
+
+| API | Perangkat | Hasil |
+|---|---|---|
+| 24 | `kodenusa24` | 3 template ter-build, APK terpasang |
+| 34 | `kodenusa34` | build & pasang |
+| 35 | `kodenusa35` | 77 uji perangkat hijau, rilis minified dipasang & dibuka |
+
+Catatan: build pertama setelah instalasi menyalin `android.jar` 24 MB ke penyimpanan internal (21,4 detik di emulator). Build berikutnya (hangat) 1,4–1,9 detik. Angka HP fisik belum ada — lihat [lembar ukur](08-lembar-ukur-4gb.md).

@@ -4,6 +4,9 @@ Tujuan: membuktikan klaim "RAM 4 GB cukup" dengan angka dari HP sungguhan, bukan
 Selama tabel di bawah masih kosong, semua angka performa di dokumen lain berasal dari **emulator**
 dan harus disebut begitu.
 
+**Status 0.9.6:** skrip berjalan dari awal sampai akhir, tetapi baru **satu baris emulator** yang
+tercatat. Target pertama: HP 4/64 sekelas Redmi 9A, diukur tiga kali (dingin, hangat, panas).
+
 ## Cara mengisi
 
 ```bash

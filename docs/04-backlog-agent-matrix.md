@@ -1,103 +1,79 @@
-# 04 — Backlog & Matrix Agent/Skill
+# 04 — Agen, skill, dan matriks kerja
 
-Swarm diaktifkan sesuai `AGENTS.md` Phase 0: terdeteksi **Android/Kotlin native** → lead `@mobile-crossplatform-architect`, verifier `@kotlin-reviewer` + `@performance-optimizer`. Skill dimuat JIT, maksimum 3 per subtask.
+Proyek ini dibangun dengan disiplin *swarm*: 113 persona di `.agents/agents/`, 611 skill modular di `.agents/skills/`, dan 23 aturan di `.agents/rules/`. Skill dimuat **hanya saat dibutuhkan** (JIT), 1–3 per langkah, supaya konteks tidak penuh oleh hal yang tidak dipakai.
 
-## Skill yang dimuat (dan kapan)
+Dokumen ini mencatat **siapa mengerjakan apa** dan **bukti seperti apa yang dituntut** — bukan daftar lengkap 611 skill.
 
-| Skill (`.agents/skills/…`) | Dimuat saat |
+## 1. Triad yang dipakai per domain
+
+| Domain | Arsitek | Pembangun | Pemeriksa |
+|---|---|---|---|
+| Pipeline build (Tier 0) | `@architect` | `@systems-rust-cpp-engineer` (pola proses/native), `@backend-developer` | `@code-reviewer`, `@swe-healer` |
+| UI Compose | `@design-director`, `@design-architect` | `@shadcn-craftsman`, `@frontend-developer` | `@antislop-auditor`, `@a11y-contrast-enforcer` |
+| AI & agen | `@ai-agent-systems-engineer` | `@ml-ai-architect` | `@rag-pipeline-reviewer`, `@mle-reviewer` |
+| Git & GitHub | `@distributed-systems-architect` | `@backend-developer` | `@security-reviewer` |
+| Keamanan rahasia | `@cybersecurity-redteam-pro` | `@security-engineer` | `@penetration-tester` |
+| Verifikasi rilis | `@qa-automation-architect` | `@test-automator` | `@e2e-runner`, `@code-reviewer` |
+| Dokumentasi | `@adr-tech-documentation` | `@documentation-engineer` | `@copy-editor` |
+
+## 2. Skill yang benar-benar dipakai (dan kapan)
+
+| Skill | Dipakai untuk |
 |---|---|
-| `android-clean-architecture/SKILL.md` | M0 — menetapkan batas modul & aturan dependensi |
-| `mobile-android-compose-master/SKILL.md` | M1, M3 — Compose, StateFlow, Room |
-| `kotlin-coroutines-flows/SKILL.md` | M1, M2 — `Flow<BuildEvent>`, cancellation, `ProcessBuilder` di `Dispatchers.IO` |
-| `kotlin-testing/SKILL.md` | M2 — contract test untuk 3 `BuildEngine` |
-| `mobile-offline-first-sync-2026/SKILL.md` | M1, M6 — auto-save, konflik, pemulihan crash |
-| `antislop-ui/SKILL.md` + `antislop-layoutmobile/SKILL.md` | M3 — layar onboarding & editor |
-| `antislop-human/SKILL.md` (`accessibility`) | M3, M7 — kontras, target sentuh 48dp, screen reader |
-| `antislop-copywriting/SKILL.md` | M3, M4 — semua string Indonesia |
-| `e2e-testing/SKILL.md` | M2, M7 — E2E build→install |
-| `devops-sre-kubernetes-iac/SKILL.md` | M5 — worker Docker, observability |
-| `cybersecurity-appsec-redteam-2026/SKILL.md` | M0, M2, M5 — path traversal, consent, isolasi worker |
-| `verification-loop/SKILL.md` | setiap akhir milestone (Gate 1) |
+| `android-clean-architecture` | Batas modul `:core:*` vs `:app`, arah ketergantungan |
+| `mobile-android-compose-master` | Layar, state, `LaunchedEffect`, testTag |
+| `clean-code-anti-slop` | Menolak placeholder, `TODO`, nama generik |
+| `antislop-ui` + `antislop-human` | Kontras, target sentuh 48dp, keadaan tombol mati |
+| `accessibility` (WCAG 2.2 AA) | `contentDescription`, focus, teks tombol yang bisa dibaca pembaca layar |
+| `systems-rust-tokio-production` (pola) | Disiplin proses: timeout, output dibatasi, tanpa `sh -c` |
+| `distributed-systems-scale-2026` | Idempotensi unggah rilis, backoff, pemetaan galat HTTP |
+| `cybersecurity-appsec-redteam-2026` | Penolakan jalur berbahaya dari model AI, tanpa secret di log |
+| `jwt-session-security-passkeys` (pola rahasia) | Penyimpanan token/Kunci dengan Android Keystore, bukan SharedPreferences polos |
+| `verification-loop` | Gerbang 6 fase sebelum rilis |
+| `adr-tech-documentation` | 31 ADR dengan konteks–keputusan–konsekuensi |
+| `memory-keeper` | `MEMORY.md` sebagai memori akar masalah |
 
-## Backlog per milestone
+## 3. Backlog per milestone
 
-### M0 — Fondasi
-| Tugas | Agent | Skill | DoD |
-|---|---|---|---|
-| Struktur multi-module + aturan dependensi | `@architect`, `@code-architect` | `android-clean-architecture` | `./gradlew projects` bersih, detekt lolos, tidak ada dependensi `core → feature` |
-| CI (build + detekt + ktlint + APK size) | `@devops-sre-architect` | `github-actions-ci-cd` | Workflow hijau di PR pertama |
-| Spike eksekusi toolchain dari `assets/` | `@kotlin-build-resolver` | `mobile-android-compose-master` | APK terpasang di 1 device fisik |
-| `scripts/prove/build-hello.sh` | `@swe-healer` | — | `apksigner verify` exit 0 |
-| Review keamanan awal (path, proses) | `@cybersecurity-redteam-pro` | `cybersecurity-appsec-redteam-2026` | 0 temuan kritis |
+### M0 — Fondasi ✅
+Proyek Gradle multi-modul, JDK 17, SDK 35, `detekt.yml` (maxIssues 0), CI yang menjalankan `test detekt assembleDebug`.
 
-### M1 — Editor
-| Tugas | Agent | Skill | DoD |
-|---|---|---|---|
-| Integrasi Sora Editor + wrapper Compose | `@mobile-crossplatform-architect` | `mobile-android-compose-master` | Ketikan P95 < 16 ms di file 1.000 baris |
-| File tree, tab, rename/delete, sort | `@frontend-developer` | `android-clean-architecture` | Semua aksi punya undo & error state |
-| Auto-save + pemulihan crash | `@architect` | `mobile-offline-first-sync-2026` | Kill proses → ≤ 1 s ketikan hilang |
-| Grammar Java/XML/JSON/Kotlin | `@code-simplifier` | — | Highlight benar pada 4 fixture |
-| Macrobenchmark scroll & ketik | `@performance-optimizer` | `kotlin-testing` | 0 frame > 32 ms |
+### M1 — Editor ✅
+`CodeEditorView` di atas `EditText`, gutter nomor baris, penyorotan hanya viewport, tab ganda, cari dalam berkas, cari se-projek, ganti semua (peka huruf besar/kecil), simpan otomatis 900 ms.
 
-### M2 — Build engine (paling kritis)
-| Tugas | Agent | Skill | DoD |
-|---|---|---|---|
-| Implementasi 8 langkah Tier 0 | `@kotlin-build-resolver` | `kotlin-coroutines-flows` | `Tier0PipelineTest` menghasilkan APK valid |
-| Caching per-file + inkremental | `@performance-optimizer` | — | Build ke-2 < 10 s |
-| Cancellation bersih | `@code-reviewer` | `kotlin-coroutines-flows` | Test: batal → 0 proses sisa |
-| Parser diagnostik ECJ/d8/aapt2 | `@swe-healer` | — | 15 kasus error → baris tepat |
-| Install flow (FileProvider + izin) | `@mobile-crossplatform-architect` | `antislop-human` | APK terpasang dari dalam app di API 24 & 35 |
-| Hardening: no shell, path guard, checksum toolchain | `@security-reviewer` | `cybersecurity-appsec-redteam-2026` | Semua temuan high tertutup |
-| Contract test 3 engine | `@qa-automation-architect` | `kotlin-testing` | Satu test suite berlaku untuk Tier 0/1/2 |
+### M2 — Build engine ✅ (paling kritis)
+9 langkah pipeline; 9 akar masalah diselesaikan dan dicatat (ECJ bootclasspath, W^X, dx relokasi, apksigner 0.8, keystore per perangkat, alignment Kotlin). Bukti: 3 template jadi APK di API 24 dan 35.
 
-### M3 — Onboarding & template
-| Tugas | Agent | Skill | DoD |
-|---|---|---|---|
-| Arah visual & token | `@design-director`, `@design-architect` | `antislop-ui` | `DESIGN.md` terkunci, token OKLCH di `Theme.kt` |
-| Wizard 5 langkah | `@frontend-developer` | `antislop-layoutmobile` | 320dp width tanpa overflow, 8 state lengkap |
-| 6 template fungsional | `@fullstack-developer` | `mobile-android-compose-master` | Tiap template build sukses & 1 test fungsional |
-| Copy Indonesia | `@copy-editor` | `antislop-copywriting` | 0 buzzword, 0 istilah EN yang tak dijelaskan |
-| Audit anti-slop + a11y | `@antislop-auditor`, `@a11y-contrast-enforcer` | `antislop-human` | Kontras ≥ 4.5:1, target ≥ 48dp |
-| Uji 5 non-programmer | `@planner` | — | ≥ 4/5 sampai APK terpasang |
+### M3 — Onboarding & template ✅
+5 template: Halo Dunia, Kasir Warung, Katalog WhatsApp, Web Katalog, Situs Murni. Wizard menanyakan hanya yang perlu; `Jenis` wajib cocok dengan `jenis` di `templates/index.json`.
 
-### M4 — Belajar & diagnosa
-| Tugas | Agent | Skill | DoD |
-|---|---|---|---|
-| 25 halaman konsep | `@copy-editor` | `antislop-copywriting` | Tiap halaman ≤ 200 kata + 1 contoh kode |
-| Glosarium 60 istilah | `@documentation-engineer` | — | Format EN → ID + analogi |
-| 40 pemetaan error | `@swe-healer` | `kotlin-testing` | 40 unit test, semua hijau |
+### M4 — Belajar & diagnosa ✅
+`DiagnosticParser` + `ErrorCatalog` (26 entri) mengubah keluaran alat menjadi "judul · berkas · baris · cara perbaiki". Semua galat yang dikirim ke AI melewati katalog ini.
 
-### M5 — Cloud
-| Tugas | Agent | Skill | DoD |
-|---|---|---|---|
-| API Ktor + SSE | `@backend-developer` | `kotlin-ktor-patterns` | SSE baris pertama < 1 s |
-| Worker Docker (JDK 17 + SDK 35) | `@devops-sre-architect` | `docker-patterns` | Image < 2 GB, warm cache |
-| Consent + kuota + retensi artefak | `@cybersecurity-redteam-pro` | `cybersecurity-appsec-redteam-2026` | Uji isolasi & TTL lolos |
-| Klien resumable + backoff | `@code-reviewer` | `circuit-breaker-rate-limiter-resilience` | Putus jaringan → build lanjut |
+### M5 — Cloud ⛔
+Tier 1 (worker Gradle) dan Tier 2 (proot/JDK) **tidak dibangun**. Alasannya ADR-001 dan ADR-007: server berarti data pengguna berpindah dan janji "tanpa server" gugur. Konsekuensinya projek Gradle tidak bisa dibuild, dan itu harus dikatakan di UI (lihat rencana #1 di [roadmap](02-roadmap-milestone.md)).
 
-### M6 — Kolaborasi
-| Tugas | Agent | Skill | DoD |
-|---|---|---|---|
-| Git via JGit + kredensial aman | `@architect` | `jwt-session-security-passkeys` | Token di EncryptedSharedPreferences, tidak di log |
-| Snapshot/riwayat lokal | `@database-reviewer` | `mobile-offline-first-sync-2026` | Restore 1 klik, ukuran dibatasi |
-| Import/export zip | `@backend-developer` | — | Zip-slip ditolak (test) |
+### M6 — Kolaborasi ✅ sebagian
+Git nyata di HP (JGit 3.7.1), commit, kirim ke GitHub, riwayat, terbit situs ke `gh-pages` lewat repo sementara. **Belum**: klon projek dari GitHub (kode ada, UI belum).
 
-### M7 — Rilis
-| Tugas | Agent | Skill | DoD |
-|---|---|---|---|
-| Baseline profile + cold start | `@performance-optimizer` | — | < 1.5 s di device 2 GB |
-| Toolchain per-ABI on-demand | `@devops-sre-architect` | `supply-chain-security-sbom` | Checksum + SBOM terbit |
-| Play Store compliance | `@security-reviewer` | `cybersecurity-appsec-redteam-2026` | Deklarasi izin & data safety sesuai |
-| Crash-free ≥ 99% | `@qa-automation-architect` | `e2e-testing` | Beta 2 minggu tanpa regresi P0 |
+### M7 — Rilis ✅
+v0.1.0 → v0.9.6 di GitHub Releases, APK arm-only ditandatangani debug keystore perangkat, `-PsemuaAbi` untuk emulator, setiap rilis dipasang dan dibuka sebelum dibagikan.
 
-## Gate per milestone (wajib, tidak boleh dilewati)
+## 4. Gate yang tidak boleh dilewati
 
-```bash
-./gradlew clean detekt lintDebug
-./gradlew :app:assembleDebug
-./gradlew :build:tier0:testDebugUnitTest :core:diagnose:testDebugUnitTest
-./gradlew :app:connectedDebugAndroidTest   # emulator API 24 & 35, RAM 2 GB
-apkanalyzer apk summary app/build/outputs/apk/debug/app-debug.apk   # < 80 MB
-```
+| Gate | Perintah | Ambang |
+|---|---|---|
+| 1 · Kompilasi & tipe | `./gradlew test detekt` | 0 gagal, 0 temuan |
+| 2 · Perilaku nyata | `./gradlew :app:connectedDebugAndroidTest` | 77/77 hijau |
+| 3 · Pipeline tanpa Gradle | `scripts/prove/build-hello.sh` | APK sah, `apksigner verify` lulus |
+| 4 · Anti-slop & keamanan | tinjauan manual + `grep` rahasia | tidak ada `TODO`, `any`, jalur model tanpa validasi, token di disk |
+| 5 · Rilis | pasang APK minified, buka, tekan satu alur | aplikasi hidup, tanpa crash |
+| 6 · Memori | `MEMORY.md` | setiap akar masalah baru jadi invariant |
 
-Gate 2 (sebelum menandai milestone selesai): `@code-reviewer` + `@antislop-auditor` + `@security-reviewer` menandai **setuju** tanpa temuan High/Critical terbuka. Gate 3: setiap bug non-trivial yang diperbaiki menambah satu baris invariant di `MEMORY.md`.
+## 5. Aturan kerja yang lahir dari kegagalan nyata
+
+1. **Baca dulu, baru ubah.** Setiap klaim "fitur X belum ada" harus dibuktikan dengan membaca berkasnya — pernah ada kesimpulan salah karena satu `grep` huruf kecil.
+2. **Perbaikan satu tempat bukan pola.** ANR pemilih berkas muncul tiga kali di tiga layar karena perbaikan pertama hanya menyentuh satu berkas.
+3. **Uji yang cocok teks harus memakai pohon tak tergabung** (`useUnmergedTree = true`) bila elemen berada di dalam baris yang bisa diklik.
+4. **Jangan menyimpulkan dari "BUILD SUCCESSFUL".** Rilis diverifikasi dengan memasang dan membukanya.
+5. **Heredoc shell tidak dipakai** untuk mengubah repo; pakai editor berkas agar diff terbaca.

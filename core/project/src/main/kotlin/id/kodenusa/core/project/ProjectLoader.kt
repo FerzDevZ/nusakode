@@ -35,7 +35,9 @@ object ProjectLoader {
                 messageId = ProjectIssueIds.GRADLE_DETECTED,
                 field = "buildEngine",
                 severity = Severity.INFO,
-                fallbackMessage = "Proyek ini memakai Gradle. Tier 0 tidak dipakai; build akan diarahkan ke server.",
+                fallbackMessage = "Proyek ini memakai Gradle. Tier 0 (di dalam HP) hanya " +
+                    "membangun projek kodenusa.json; build di server belum tersedia, " +
+                    "jadi projek ini belum bisa dibangun di sini.",
             )
         }
 
