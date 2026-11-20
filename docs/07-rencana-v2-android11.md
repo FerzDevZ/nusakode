@@ -27,15 +27,15 @@ Prinsipnya: **minta paling sedikit yang cukup**, dan izin besar hanya lewat tomb
 | Pasang APK hasil build | `REQUEST_INSTALL_PACKAGES` | saat menekan Pasang | sistem tetap menampilkan dialog setuju |
 | Pilih foto untuk AI (Android 13+) | **tidak ada** | — | **Photo Picker** sistem, tanpa dialog izin |
 | Pilih foto (Android 11–12 / ROM lama) | `READ_MEDIA_IMAGES` / `READ_EXTERNAL_STORAGE` (maxSdk 32) | hanya bila Photo Picker tidak ada | deklarasi sudah ada, permintaan runtime menyusul |
-| "Folder di mana saja" (opsional) | `MANAGE_EXTERNAL_STORAGE` | lewat layar Setelan, **bukan** saat buka app | dideklarasikan sekarang, tombolnya menyusul; tanpa ini SAF tetap bekerja |
+| "Folder di mana saja" (opsional) | **tidak diminta** | — | `MANAGE_EXTERNAL_STORAGE` **dihapus di 0.8.2**: izin ini membuat Android 13+ menandai app "Setelan terbatas" dan Play Protect menghalangi pemasangan dari luar Play Store. SAF sudah cukup |
 | Ambil foto langsung | **tidak ada** | — | memakai aplikasi kamera lewat intent `ACTION_IMAGE_CAPTURE` + FileProvider |
 
 **Tidak dideklarasikan, disengaja:** `CAMERA` (tidak perlu kalau memakai intent kamera), kontak,
 lokasi, mikrofon, `QUERY_ALL_PACKAGES`.
 
-> Catatan penting: `MANAGE_EXTERNAL_STORAGE` membuat aplikasi **tidak bisa masuk Play Store**
-> tanpa justifikasi khusus. KodeNusa dibagikan lewat GitHub Releases, jadi aman — tetapi tombolnya
-> tetap dibuat manual dan dijelaskan, bukan diminta di awal.
+> Pelajaran nyata: 0.8.1 sempat mendeklarasikan `MANAGE_EXTERNAL_STORAGE` dan pemasangan di HP
+> pengguna gagal. Izin itu **dihapus di 0.8.2**; kemampuan folder-di-luar-sandbox tetap ada lewat
+> SAF (persisted tree) yang tidak butuh izin apa pun.
 
 ## 3. AI bisa melihat gambar (dasar sudah jalan)
 
@@ -117,4 +117,47 @@ adb shell dumpsys meminfo id.kodenusa.app | grep TOTAL PSS   # idle ≤ 120 MB
 #    halo-dunia ≤ 20 s, kasir-warung ≤ 30 s, 10 build berturut tanpa ANR
 # 4. penyimpanan
 #    setelah 3 build: build/ ≤ 30 MB per projek, tombol bersih-bersih bekerja
+```
+
+## 7. Kalau aplikasi "tidak bisa dipasang" di Android 11+ / 15
+
+Diuji langsung di emulator **Android 15 (API 35)**: APK 0.8.2 `adb install` → **Success**, aplikasi
+terbuka, dan **48 uji perangkat lulus** (termasuk build Tier 0 di perangkat). Jadi kalau di HP Anda
+gagal, penyebabnya hampir selalu salah satu dari ini:
+
+| Gejala | Penyebab | Solusi |
+|---|---|---|
+| "Aplikasi tidak diinstal" tanpa alasan | **Sumber tidak dikenal** diblokir per-aplikasi (Chrome/Files) | Setelan → Aplikasi → Chrome → "Instal aplikasi tidak dikenal" → Izinkan, lalu pasang ulang |
+| "Aplikasi berbahaya diblokir Play Protect" | APK di luar Play Store + izin sensitif | 0.8.2 sudah membuang `MANAGE_EXTERNAL_STORAGE`; kalau masih muncul: Play Store → profil → Play Protect → setelan → nonaktifkan pemindaian sementara |
+| "Aplikasi tidak diinstal" setelah versi lama | Tanda tangan berbeda (APK dari build lain) | Copot versi lama dulu, atau pasang APK dari **satu sumber** (GitHub Releases) |
+| "Aplikasi tidak diinstal" di HP 32-bit | APK memuat arm64 + v7a; HP 32-bit tetap jalan lewat v7a | pastikan tidak memakai APK modif |
+| Terpasang tapi tidak muncul di launcher | Ikon tidak terbaca oleh launcher tertentu | cari "KodeNusa" di daftar aplikasi; laporkan merek launcher-nya |
+| Berkas hasil unduhan berekstensi `.bin`/`.zip` | Browser mengubah nama | ganti nama jadi `KodeNusa-0.8.2-debug.apk` |
+
+Angka nyata dari emulator Android 15 (RAM 3 GB, setara HP 4/64):
+
+| Ukuran | Hasil |
+|---|---|
+| Pemasangan | `Success` (tanpa peringatan izin) |
+| PSS saat idle | **66 MB** (target < 120 MB) |
+| Waktu uji perangkat penuh | 48 uji, 2 menit, 0 gagal |
+
+## 8. Emulator untuk verifikasi (dipakai proyek ini)
+
+| AVD | API | Kegunaan |
+|---|---|---|
+| `kodenusa24` | 24 (Android 7.0) | batas bawah `minSdk` |
+| `kodenusa34` | 34 (Android 14) | perilaku scoped storage modern |
+| **`kodenusa35`** | **35 (Android 15)** | **wajib** untuk memastikan pemasangan & build tetap jalan di HP baru |
+
+```bash
+# siapkan sekali
+sdkmanager "system-images;android-35;google_apis;x86_64"
+avdmanager create avd -n kodenusa35 -k "system-images;android-35;google_apis;x86_64" -d pixel_5
+# jalankan (RAM 3 GB = HP 4/64)
+sg kvm -c "$ANDROID_HOME/emulator/emulator -avd kodenusa35 -no-window -no-audio -no-snapshot \
+  -memory 3072 -cores 2 -gpu swiftshader_indirect"
+# gerbang wajib sebelum rilis
+./gradlew :app:connectedDebugAndroidTest
+adb install -r dist/KodeNusa-X.Y.Z-debug.apk   # harus "Success"
 ```

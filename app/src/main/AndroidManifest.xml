@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Dipakai hanya untuk membuka pemasang APK setelah build sukses. -->
     <!-- AI memakai endpoint + kunci milik pengguna sendiri. Tanpa setelan AI, aplikasi tetap 100% offline. -->
@@ -19,14 +18,12 @@
         android:maxSdkVersion="32" />
 
     <!--
-        Akses semua berkas: SENGAJA dideklarasikan tetapi hanya diminta lewat layar setelan
-        (tombol "Folder di mana saja"), bukan saat aplikasi dibuka. Tanpa ini, folder projek di
-        luar folder aplikasi tetap bisa dipakai lewat SAF; izin ini hanya menghilangkan langkah
-        memilih folder setiap kali membuka projek lama.
+        SENGAJA TIDAK ADA MANAGE_EXTERNAL_STORAGE.
+        Izin itu membuat Android 13+ menaruh aplikasi di "Setelan terbatas" dan Play Protect
+        menampilkan "aplikasi berbahaya" saat dipasang dari luar Play Store — persis keluhan
+        "tidak bisa dipasang". Folder projek di luar sandbox tetap bisa dipakai lewat SAF
+        (Ekspor/Impor zip dan pemilih folder), jadi izin itu tidak memberi kemampuan baru.
     -->
-    <uses-permission
-        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
-        tools:ignore="ScopedStorage" />
 
     <application
         android:allowBackup="false"

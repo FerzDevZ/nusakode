@@ -1,7 +1,7 @@
 # Rencana Induk 2026 — KodeNusa
 
 > Dokumen ini adalah **rencana kerja yang bisa dieksekusi dingin**: setiap langkah punya berkas yang disentuh, perintah pembuktian, dan kriteria lulus. Tidak ada langkah yang berbunyi "tingkatkan kualitas" tanpa angka.
-> Status terakhir: **198 uji unit · 46 uji perangkat (API 24) · APK 45,9 MB · Tier 0 build 1,4–1,9 s.**
+> Status terakhir: **200 uji unit · 48 uji perangkat (API 24 **dan** API 35) (API 24) · APK 45,9 MB · Tier 0 build 1,4–1,9 s.**
 > **Sesi 1–3 selesai** — layar Situs (susun, pratinjau, bagikan zip, terbit ke GitHub Pages) dan layar Git (siapkan repo, simpan, kirim, riwayat) sudah hidup dan teruji di HP.
 
 ---

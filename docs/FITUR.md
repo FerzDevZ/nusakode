@@ -111,7 +111,7 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | Build tidak dijalankan bila tak ada berkas tertulis | ✅ | `AgenBuildTest.build_tidak_dijalankan_bila_semua_berkas_ditolak…` |
 | **Layar "Minta AI buatkan…"** dengan log per putaran & tombol Hentikan | ✅ | `AgenUiTest` (2 uji: terkunci tanpa kunci AI, aktif setelah kunci + tugas) |
 | **Papan tulis projek nyata**: ringkasan ≤ 2,4 KB, tulis berkas lewat penjaga jalur | ✅ | `AiProjectBoardTest` (6 uji: jalur luar projek, biner, batas ukuran) |
-| **Gerbang build nyata** untuk agen (galat diterjemahkan `ErrorCatalog`) | ✅ | `AiBuildGateTest` (2 uji **di HP**: build sukses, Java rusak → galat berbahasa manusia) |
+| **Gerbang build nyata** untuk agen (galat diterjemahkan `ErrorCatalog`) | ✅ | `AiBuildGateTest` (2 uji **di HP**, API 24 & 35: build sukses, Java rusak → galat berbahasa manusia) |
 
 ## 4d. Git & GitHub (mesin git sudah nyata di HP)
 
