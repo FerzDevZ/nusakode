@@ -57,11 +57,11 @@ Yang masih kurang (masuk backlog P1): tombol **Ambil foto** (intent kamera), **t
 Build** otomatis dilampirkan saat "Perbaiki galat build", dan pemberitahuan jelas bila model yang
 dipilih **tidak mendukung gambar** (sebagian model murah menolak `image_url`).
 
-## 4. Anggaran HP 4 GB / 64 GB (angka nyata dari rilis 0.9.0)
+## 4. Anggaran HP 4 GB / 64 GB (angka nyata dari rilis 0.9.1)
 
 | Komponen | Ukuran terukur | Catatan |
 |---|---|---|
-| **APK rilis (dibagikan sekarang)** | **32,2 MB (30,7 MiB)** | R8 + shrink + arm-only, ditandatangani kunci debug |
+| **APK rilis (dibagikan sekarang)** | **32,3 MB (30,8 MiB)** | R8 + shrink + arm-only, ditandatangani kunci debug |
 | APK debug (untuk emulator) | 45,9 MB | + dex tanpa R8 + aapt2 x86/x86_64 |
 | dex | 11,9 MB debug → ±6 MB rilis | dipangkas R8 |
 | `android.jar` | 26,4 MB | **tidak bisa dipangkas** tanpa memutus kompilasi Java; bahan wajib Tier 0 |
