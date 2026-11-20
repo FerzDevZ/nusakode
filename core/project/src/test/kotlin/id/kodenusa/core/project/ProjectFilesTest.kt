@@ -198,4 +198,20 @@ class ProjectFilesTest {
         assertTrue(hasil is ProjectFiles.Hasil.Gagal)
         luar.delete()
     }
+
+    @Test
+    fun folder_sah_diterima_walau_akar_diakses_lewat_tembusan() {
+        // Di Android, /data/user/0 dan /data/data menunjuk folder yang sama. Kalau perbandingan
+        // prefix memakai akar mentah sedangkan target dikanonikkan, folder `web` yang sah ditolak
+        // sebagai "folder tujuan tidak ada di dalam projek" — berkas dari HP tidak pernah masuk.
+        val nyata = File(root.parentFile, "nyata-${System.nanoTime()}").apply { mkdirs() }
+        val tembusan = File(root.parentFile, "tembusan-${System.nanoTime()}")
+        java.nio.file.Files.createSymbolicLink(tembusan.toPath(), nyata.toPath())
+        File(nyata, "web").mkdirs()
+
+        assertEquals("web", ProjectFiles.safeRelative(tembusan, "web"))
+
+        tembusan.delete()
+        nyata.deleteRecursively()
+    }
 }

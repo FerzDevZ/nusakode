@@ -176,9 +176,14 @@ object ProjectFiles {
         val normalized = mentah.trim().trim('/')
         if (normalized.isEmpty()) return null
         if (normalized.split('/').any { it == ".." }) return null
-        val target = File(root, normalized)
-        val rootPath = root.canonicalPath
-        val targetPath = target.canonicalPath
+        // Target dibangun dari akar yang sudah dikanonikkan. Kalau memakai `root` mentah, di
+        // perangkat hasilnya berbeda: `/data/user/0/...` dan `/data/data/...` adalah alamat yang
+        // sama untuk folder yang sama, sehingga perbandingan prefix gagal dan folder yang sah
+        // (mis. `web`) ditolak sebagai "di luar projek".
+        val rootCanon = runCatching { root.canonicalFile }.getOrDefault(root.absoluteFile)
+        val rootPath = rootCanon.path
+        val targetPath = runCatching { File(rootCanon, normalized).canonicalFile.path }
+            .getOrElse { return null }
         if (targetPath != rootPath && !targetPath.startsWith(rootPath + File.separator)) return null
         return normalized
     }

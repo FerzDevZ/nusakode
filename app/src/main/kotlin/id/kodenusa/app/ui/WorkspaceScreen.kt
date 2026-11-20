@@ -125,6 +125,14 @@ fun WorkspaceScreen(
                 GhostButton("Impor .zip", { pemilihImpor.launch(arrayOf("application/zip", "application/octet-stream")) })
                 GhostButton("Ekspor? pilih projek", { pesan = "Tekan \"Ekspor .zip\" pada salah satu projek di bawah." })
             }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Tidak perlu izin penyimpanan: setiap ambil/simpan berkas lewat pemilih bawaan Android, " +
+                    "jadi yang bisa diakses hanya berkas yang Anda pilih sendiri.",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(KodenusaPalette.TEXT_DIM),
+                modifier = Modifier.testTag("catatan-izin"),
+            )
             pesan?.let { teks ->
                 Spacer(Modifier.height(6.dp))
                 Text(teks, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.ACCENT))

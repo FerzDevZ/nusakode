@@ -1,5 +1,7 @@
 package id.kodenusa.app.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,11 +29,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +54,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.viewinterop.AndroidView
 import id.kodenusa.app.AppContainer
 import id.kodenusa.app.EditorSession
+import id.kodenusa.app.KonteksBerkas
+import id.kodenusa.core.project.BerkasMasuk
 import id.kodenusa.core.project.HasilCari
 import id.kodenusa.core.project.KodenusaProject
 import id.kodenusa.core.project.ProjectFiles
@@ -89,8 +96,37 @@ fun EditorScreen(
     val state = rememberEditorState()
     var aksi by remember { mutableStateOf<FileAction?>(null) }
     var aiTerbuka by remember { mutableStateOf(false) }
+    var pesanBerkas by remember { mutableStateOf<String?>(null) }
     fun segarkan() {
         nodes = ProjectTree.list(projectDir)
+    }
+
+    // Mengambil berkas yang sudah ada di HP (foto, css, logo, .java). Pemilih berkas Android (SAF)
+    // dipakai supaya aplikasi tidak perlu izin penyimpanan sama sekali: izin tidak bisa "gagal"
+    // kalau memang tidak pernah diminta.
+    val konteksHp = androidx.compose.ui.platform.LocalContext.current
+    val pemilihBerkas = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) {
+            state.toast = "Tidak ada berkas dipilih."
+            return@rememberLauncherForActivityResult
+        }
+        val tujuan = BerkasMasuk.folderDariAktif(projectDir, session.active)
+        val nama = KonteksBerkas.namaTampilan(konteksHp, uri)
+        val hasil = runCatching {
+            konteksHp.contentResolver.openInputStream(uri)?.use { aliran ->
+                BerkasMasuk.simpan(projectDir, tujuan, nama, aliran)
+            } ?: BerkasMasuk.Hasil.Gagal("Berkas tidak bisa dibaca dari lokasi itu.")
+        }.getOrElse { BerkasMasuk.Hasil.Gagal(it.message ?: "penyebab tidak diketahui") }
+        segarkan()
+        val kabar = when (hasil) {
+            is BerkasMasuk.Hasil.Sukses ->
+                "${hasil.file.name} masuk ke ${tujuan.ifBlank { "akar projek" }} (${hasil.byte} bita)"
+            is BerkasMasuk.Hasil.Gagal -> "$nama ditolak — ${hasil.pesan}"
+        }
+        pesanBerkas = kabar
+        state.toast = kabar
     }
 
     val scope = rememberCoroutineScope()
@@ -126,6 +162,7 @@ fun EditorScreen(
                     onRename = { node -> aksi = FileAction.Rename(node) },
                     onDelete = { node -> aksi = FileAction.Delete(node) },
                     onMove = { node -> aksi = FileAction.Move(node) },
+                    onBagikan = { node -> bagikan(konteksHp, node.file) },
                     onDuplicate = { node ->
                         // Duplikat tidak perlu pertanyaan, jadi langsung dikerjakan.
                         when (val hasil = ProjectFiles.duplicate(projectDir, node.relativePath)) {
@@ -136,6 +173,11 @@ fun EditorScreen(
                             }
                         }
                     },
+                    onAmbil = {
+                        pesanBerkas = null
+                        pemilihBerkas.launch(arrayOf("*/*"))
+                    },
+                    pesan = pesanBerkas,
                     buildable = canBuild,
                     webMurni = webMurni,
                     onSitus = { session.saveAll(); onSitus?.invoke() },
@@ -143,7 +185,18 @@ fun EditorScreen(
             }
         },
     ) {
-        Scaffold(containerColor = Color(KodenusaPalette.BACKGROUND)) { padding ->
+        val hostPesan = remember { SnackbarHostState() }
+        // Semua hasil aksi (berkas masuk, salinan, galat) sebelumnya ditulis ke `state.toast`
+        // tetapi tidak pernah ditampilkan: pengguna tidak tahu apakah aksinya berhasil atau gagal.
+        LaunchedEffect(state.toast) {
+            val pesan = state.toast ?: return@LaunchedEffect
+            state.toast = null
+            hostPesan.showSnackbar(pesan)
+        }
+        Scaffold(
+            containerColor = Color(KodenusaPalette.BACKGROUND),
+            snackbarHost = { SnackbarHost(hostPesan) { data -> Pesan(data.visuals.message) } },
+        ) { padding ->
             Column(Modifier.fillMaxSize().padding(padding)) {
                 EditorTopBar(
                     title = loaded.project?.name ?: projectDir.name,
@@ -527,6 +580,9 @@ private fun FilePanel(
     onDelete: (ProjectNode) -> Unit,
     onMove: (ProjectNode) -> Unit,
     onDuplicate: (ProjectNode) -> Unit,
+    onBagikan: (ProjectNode) -> Unit,
+    onAmbil: () -> Unit,
+    pesan: String?,
     buildable: Boolean,
     webMurni: Boolean = false,
     onSitus: () -> Unit = {},
@@ -556,6 +612,34 @@ private fun FilePanel(
             GhostButton("+ Berkas", onNewFile, Modifier.weight(1f).testTag("berkas-baru"))
             GhostButton("+ Folder", onNewFolder, Modifier.weight(1f).testTag("folder-baru"))
         }
+        // Mengambil berkas yang sudah ada di HP (foto, css, logo, .java) — dulu tidak ada jalan
+        // masuk sama sekali selain mengetik ulang, dan itu yang dikeluhkan "dimana ambil file".
+        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
+            GhostButton(
+                "Ambil dari HP",
+                onAmbil,
+                Modifier.fillMaxWidth().testTag("ambil-dari-hp"),
+            )
+        }
+        // Hasil aksi berkas ditampilkan di panel ini juga, bukan hanya snackbar di bawah: saat
+        // panel terbuka, snackbar tertutup panel dan pengguna tidak tahu berkasnya masuk atau tidak.
+        if (pesan != null) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                    .background(Color(KodenusaPalette.SURFACE_RAISED), RoundedCornerShape(10.dp))
+                    .border(1.dp, Color(KodenusaPalette.BORDER), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 10.dp, vertical = 8.dp)
+                    .testTag("pesan-berkas"),
+            ) {
+                Text(
+                    pesan,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(KodenusaPalette.TEXT_DIM),
+                )
+            }
+        }
         LazyColumn(
             state = listState,
             modifier = Modifier.weight(1f).padding(top = 6.dp).testTag("daftar-berkas"),
@@ -569,6 +653,7 @@ private fun FilePanel(
                     onDelete = { onDelete(node) },
                     onMove = { onMove(node) },
                     onDuplicate = { onDuplicate(node) },
+                    onBagikan = onBagikan,
                 )
             }
         }
@@ -591,6 +676,7 @@ private fun FileRow(
     onDelete: () -> Unit,
     onMove: () -> Unit,
     onDuplicate: () -> Unit,
+    onBagikan: (ProjectNode) -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
     Row(
@@ -622,6 +708,11 @@ private fun FileRow(
                 onDismissRequest = { menu = false },
                 containerColor = Color(KodenusaPalette.SURFACE_RAISED),
             ) {
+                DropdownMenuItem(
+                    text = { Text("Bagikan berkas…", color = Color(KodenusaPalette.TEXT)) },
+                    onClick = { menu = false; onBagikan(node) },
+                    enabled = !node.directory,
+                )
                 DropdownMenuItem(
                     text = { Text("Pindahkan…", color = Color(KodenusaPalette.TEXT)) },
                     onClick = { menu = false; onMove() },
@@ -824,8 +915,7 @@ private fun Autosave(session: EditorSession) {
     }
 }
 
-private fun initialFile(projectDir: File, nodes: List<ProjectNode>): File? {
-    // Urutan ini membuat projek web langsung terbuka di halamannya, bukan di layar kosong.
+private fun initialFile(projectDir: File, nodes: List<ProjectNode>): File? {    // Urutan ini membuat projek web langsung terbuka di halamannya, bukan di layar kosong.
     val kandidat = listOf(
         "src/main/java/app/MainActivity.java",
         "web/index.html",
@@ -839,4 +929,50 @@ private fun initialFile(projectDir: File, nodes: List<ProjectNode>): File? {
     }
     val ekstensiKode = setOf("java", "html", "htm", "css", "js", "json")
     return nodes.firstOrNull { !it.directory && it.file.extension.lowercase() in ekstensiKode }?.file
+}
+
+/**
+ * Folder tujuan berkas yang diambil dari HP: folder berkas yang sedang dibuka, atau akar projek.
+ *
+ * Dulu berkas baru "hilang" karena selalu ditaruh di folder yang tidak terlihat; untuk berkas dari
+ * HP aturannya sama — masuk ke folder yang sedang dilihat pengguna.
+ */
+/**
+ * Membagikan satu berkas projek ke aplikasi lain (WhatsApp, Drive, Gmail) lewat `FileProvider`.
+ *
+ * Ini jalan keluar yang selama ini tidak ada: pengguna bisa mengeluarkan berkas tanpa kabel USB dan
+ * tanpa mencari folder `Android/data` yang tertutup sejak Android 11.
+ */
+private fun bagikan(konteks: android.content.Context, berkas: java.io.File) {
+    if (!berkas.isFile) return
+    runCatching {
+        val uri = KonteksBerkas.uriBagikan(konteks, berkas)
+        val kirim = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = KonteksBerkas.mime(berkas)
+            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+            putExtra(android.content.Intent.EXTRA_SUBJECT, berkas.name)
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        konteks.startActivity(
+            android.content.Intent.createChooser(kirim, "Bagikan ${berkas.name}").apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+        )
+    }
+}
+
+/** Balasan singkat untuk aksi berkas, memakai warna panel aplikasi (bukan snackbar bawaan). */
+@Composable
+private fun Pesan(teks: String) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(12.dp)
+            .background(Color(KodenusaPalette.SURFACE_RAISED), RoundedCornerShape(12.dp))
+            .border(1.dp, Color(KodenusaPalette.BORDER), RoundedCornerShape(12.dp))
+            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .testTag("pesan-aksi"),
+    ) {
+        Text(teks, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.TEXT))
+    }
 }

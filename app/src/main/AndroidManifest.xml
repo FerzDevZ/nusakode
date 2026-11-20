@@ -18,6 +18,33 @@
         android:maxSdkVersion="32" />
 
     <!--
+        Paket lain yang ingin kita lihat/ajak. Tanpa blok ini Android 11+ menyembunyikan pemilih
+        berkas dan aplikasi pembagi, sehingga `resolveActivity` mengembalikan null walau kedua
+        pemilih itu ada di perangkat. Ini bukan izin — hanya deklarasi niat.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.OPEN_DOCUMENT" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.CREATE_DOCUMENT" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.OPEN_DOCUMENT_TREE" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/vnd.android.package-archive" />
+        </intent>
+    </queries>
+
+    <!--
         SENGAJA TIDAK ADA MANAGE_EXTERNAL_STORAGE.
         Izin itu membuat Android 13+ menaruh aplikasi di "Setelan terbatas" dan Play Protect
         menampilkan "aplikasi berbahaya" saat dipasang dari luar Play Store — persis keluhan

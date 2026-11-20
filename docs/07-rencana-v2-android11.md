@@ -57,7 +57,7 @@ Yang masih kurang (masuk backlog P1): tombol **Ambil foto** (intent kamera), **t
 Build** otomatis dilampirkan saat "Perbaiki galat build", dan pemberitahuan jelas bila model yang
 dipilih **tidak mendukung gambar** (sebagian model murah menolak `image_url`).
 
-## 4. Anggaran HP 4 GB / 64 GB (angka nyata dari rilis 0.9.1)
+## 4. Anggaran HP 4 GB / 64 GB (angka nyata dari rilis 0.9.2)
 
 | Komponen | Ukuran terukur | Catatan |
 |---|---|---|
