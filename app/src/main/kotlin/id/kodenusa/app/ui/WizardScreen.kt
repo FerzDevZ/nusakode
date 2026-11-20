@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,6 +23,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import id.kodenusa.app.AppContainer
 import id.kodenusa.app.TemplateInfo
@@ -67,9 +69,47 @@ fun WizardScreen(
     val masalahLain = masalah.filter { it.severity == Severity.ERROR && it.field != "name" && it.field != "applicationId" }
     val canCreate = selected != null && name.isNotBlank() && masalah.none { it.severity == Severity.ERROR } && !busy
 
-    Scaffold(containerColor = Color(KodenusaPalette.BACKGROUND)) { padding ->
+    Scaffold(
+        containerColor = Color(KodenusaPalette.BACKGROUND),
+        // Tombol aksi tinggal di bilah bawah, tidak ikut tergulir: dulu tombol ini adalah item
+        // terakhir LazyColumn sehingga tertutup keyboard dan user tidak bisa menekannya.
+        bottomBar = {
+            Surface(color = Color(KodenusaPalette.BACKGROUND)) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    GhostButton("Batal", onCancel, Modifier.weight(1f))
+                    PrimaryButton(
+                        text = "Buat projek",
+                        onClick = {
+                            val template = selected ?: return@PrimaryButton
+                            busy = true
+                            failure = null
+                            scope.launch {
+                                val result = withContext(Dispatchers.IO) {
+                                    container.templates.create(
+                                        templateId = template.id,
+                                        target = container.projectStore.uniqueFolder(name.trim()),
+                                        appName = name.trim(),
+                                        appId = efektifId,
+                                    )
+                                }
+                                busy = false
+                                result.onSuccess(onCreated).onFailure { failure = it.message }
+                            }
+                        },
+                        modifier = Modifier.weight(1.4f).testTag("tombol-buat"),
+                        enabled = canCreate,
+                        loading = busy,
+                    )
+                }
+            }
+        },
+    ) { padding ->
         LazyColumn(
-            Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp),
+            Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp)
+                .testTag("daftar-wizard"),
             verticalArrangement = Arrangement.spacedBy(14.dp),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 20.dp),
         ) {
@@ -137,35 +177,6 @@ fun WizardScreen(
                     Panel(Modifier.fillMaxWidth()) {
                         Text(failure.orEmpty(), color = Color(KodenusaPalette.ERROR), style = MaterialTheme.typography.bodyMedium)
                     }
-                }
-            }
-
-            item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    GhostButton("Batal", onCancel, Modifier.weight(1f))
-                    PrimaryButton(
-                        text = "Buat projek",
-                        onClick = {
-                            val template = selected ?: return@PrimaryButton
-                            busy = true
-                            failure = null
-                            scope.launch {
-                                val result = withContext(Dispatchers.IO) {
-                                    container.templates.create(
-                                        templateId = template.id,
-                                        target = container.projectStore.uniqueFolder(name.trim()),
-                                        appName = name.trim(),
-                                        appId = efektifId,
-                                    )
-                                }
-                                busy = false
-                                result.onSuccess(onCreated).onFailure { failure = it.message }
-                            }
-                        },
-                        modifier = Modifier.weight(1.4f),
-                        enabled = canCreate,
-                        loading = busy,
-                    )
                 }
             }
         }
