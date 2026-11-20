@@ -20,6 +20,9 @@ class AppContainer(context: Context) {
 
     val templates = Templates(context)
 
+    /** Setelan endpoint + kunci AI milik pengguna (kosong = AI belum aktif). */
+    val aiStore = AiSettingsStore(context)
+
     fun newEngine(toolchain: Toolchain): BuildEngine = Tier0BuildEngine(toolchain)
 
     private companion object {

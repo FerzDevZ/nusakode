@@ -75,3 +75,6 @@ Dibaca di awal setiap sesi. Format dari `AGENTS.md` Gate 3:
 
 - **[25-11-20 · Panel berkas]**: projek bisa dibuat tetapi berkas tidak bisa ditambah/diubah dan berkas web tidak muncul → **Root Cause**: panel hanya membaca daftar, tidak punya operasi tulis; `TEXT_EXTENSIONS` tidak memuat html/css/js sehingga berkas template web tidak pernah ditampilkan → **Invariant Rule**: setiap permukaan yang menampilkan berkas wajib punya jalur tambah/ganti nama/hapus lewat satu modul murni (`ProjectFiles`) dengan validasi nama dan pengecekan `canonicalPath`; daftar ekstensi teks wajib mencakup semua jenis berkas yang bisa dibuat aplikasi sendiri. Diuji oleh `ProjectFilesTest`, `ProjectArchiveTest`, dan `FileOpsUiTest`.
 
+
+- **[25-11-20 · AI/BYOK]**: jawaban model terlihat kosong di awal aliran → **Root Cause**: endpoint OpenAI-compatible mengirim `delta.reasoning` sebelum `delta.content`; menggabungkan keduanya juga membuat kode yang disisipkan ke editor diawali omonongan model → **Invariant Rule**: `content` dan `reasoning` wajib dipisah di klien (reasoning hanya cadangan bila content kosong), dan penyedia yang mengabaikan `stream` maupun membalas 503 sesaat wajib ditangani tanpa membuat pengguna melihat exception mentah. Diuji oleh `OpenAiCompatClientTest` + `ChatNyataTest`.
+

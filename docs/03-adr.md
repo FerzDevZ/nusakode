@@ -298,3 +298,23 @@ Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif
 - Pengimpor zip memperlakukan isi zip sebagai **masukan tidak tepercaya**: entri yang keluar folder (`../`, path absolut) ditolak dan seluruh ekstraksi dibatalkan.
 
 **Konsekuensi:** (+) Pengguna bisa mengelola berkas sendiri, dan projek bisa dipindah ke Unduhan/Drive/kartu SD sebagai satu berkas. (+) Semua aturan keamanan path teruji tanpa perangkat (`ProjectFilesTest` 12 uji, `ProjectArchiveTest` 6 uji). (+) Berkas web sekarang terlihat dan bisa diedit. (−) Menyunting projek langsung di folder luar (mis. lewat aplikasi lain) belum bisa; itu menunggu Tier 2 dengan izin SAF penuh.
+
+---
+
+## ADR-023 — AI dengan endpoint + kunci milik pengguna (BYOK), model dibaca otomatis
+
+**Tanggal:** 2025-11-20 · **Status:** diterima
+
+**Konteks:** Pengguna ingin asisten AI di dalam IDE. Tiga pilihan ada: (a) awan dengan kunci milik pengguna, (b) model kecil di perangkat lewat llama.cpp (400–900 MB, 2–8 token/detik di HP 4 GB), (c) hibrida. Pengguna memilih **a**, dengan syarat eksplisit: *"orang input endpoint dan key-nya sendiri, terus apps kita otomatis baca model yang tersedia dan kita bebas memilih model dan mengganti model"*.
+
+**Keputusan:**
+- Modul baru `:core:ai` berisi klien **OpenAI-compatible** murni Kotlin/JVM: `GET {endpoint}/models` untuk membaca daftar model, `POST {endpoint}/chat/completions` untuk bertanya. Tanpa library HTTP pihak ketiga (`HttpURLConnection`), supaya APK tidak bertambah berat dan uji bisa jalan di JVM.
+- **Tidak ada kunci bawaan, tidak ada server perantara.** Tanpa setelan, tidak ada satu byte pun keluar dari HP. Izin `INTERNET` ditambahkan ke manifes, tetapi jalur jaringan hanya aktif setelah pengguna mengisi endpoint + kunci.
+- Daftar model **dibaca dari endpoint** (bukan ditulis mati di kode), disimpan sebagai cache supaya layar tidak kosong saat offline, dan pengguna bisa **mengganti model** kapan saja.
+- Jawaban dialirkan potongan demi potongan (SSE) dengan pemisahan tegas: `delta.content` = jawaban, `delta.reasoning` = proses berpikir. Reasoning **tidak** dimasukkan ke kode, hanya dipakai sebagai cadangan bila `content` kosong. Ini penting karena endpoint uji mengirim `reasoning` lebih dulu.
+- Galat dipetakan ke bahasa Indonesia dengan langkah perbaikan: 401/403 kunci salah, 404 alamat salah, 429 kuota, 5xx penyedia (dicoba ulang sekali), jaringan mati, balasan aneh.
+- Prompt sistem mengunci batas teknis projek: **Java 8, minSdk 24, tanpa Gradle, tanpa AndroidX, tanpa Kotlin** — supaya model tidak menyarankan hal yang mustahil di-build di HP.
+- Jawaban dengan blok kode bisa dimasukkan ke berkas aktif sekali tekan ("Masukkan kode ke berkas").
+- Uji: 17 uji unit dengan **server HTTP sungguhan di localhost** (bukan mock), plus `ChatNyataTest` yang memanggil endpoint asli dan otomatis dilewati bila variabel lingkungan tidak diisi.
+
+**Konsekuensi:** (+) Fitur AI berguna tanpa biaya server dan tanpa membesarkan APK berarti (+0,0–0,1 MB). (+) Privasi tetap jujur: AI opsional, semua fitur lain 100% offline. (+) Mesin bisa ditukar: kalau nanti model di perangkat dipakai, ia tinggal mengimplementasi antarmuka yang sama. (−) Pengguna harus punya endpoint + kunci sendiri; ini dinyatakan terus terang di layar AI, bukan disembunyikan. (−) Kunci disimpan di `SharedPreferences` privat aplikasi (tidak bisa dibaca aplikasi lain tanpa root); enkripsi dengan Android Keystore bisa ditambahkan kemudian.

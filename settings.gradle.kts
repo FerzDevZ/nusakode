@@ -18,6 +18,7 @@ rootProject.name = "kodenusa"
 
 include(":core:build")
 include(":core:project")
+include(":core:ai")
 include(":core:diagnose")
 include(":build:tier0")
 include(":build:hostcli")

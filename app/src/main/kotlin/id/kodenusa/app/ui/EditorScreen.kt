@@ -78,6 +78,7 @@ fun EditorScreen(
     val session = remember(projectDir) { EditorSession(projectDir, initialFile(projectDir, nodes)) }
     val state = rememberEditorState()
     var aksi by remember { mutableStateOf<FileAction?>(null) }
+    var aiTerbuka by remember { mutableStateOf(false) }
     fun segarkan() {
         nodes = ProjectTree.list(projectDir)
     }
@@ -130,6 +131,7 @@ fun EditorScreen(
                         session.saveAll()
                         onBuild()
                     },
+                    onAi = { aiTerbuka = true },
                     buildable = canBuild,
                 )
 
@@ -208,6 +210,22 @@ fun EditorScreen(
     }
 
     Autosave(session)
+    if (aiTerbuka) {
+        val aktif = session.active
+        AiScreen(
+            store = container.aiStore,
+            konteks = AiKonteks(
+                jalur = aktif?.let { runCatching { it.relativeTo(projectDir).invariantSeparatorsPath }.getOrNull() },
+                isi = aktif?.let { session.textOf(it) },
+                judul = if (aktif == null) "Tanya AI" else "AI · ${aktif.name}",
+            ),
+            onDismiss = { aiTerbuka = false },
+            onSisip = { kode ->
+                ketikaSisip(aktif, session, projectDir, kode)?.let { state.toast = it }
+                aiTerbuka = false
+            },
+        )
+    }
     FileActionHost(
         aksi = aksi,
         projectDir = projectDir,
@@ -217,6 +235,20 @@ fun EditorScreen(
         onTutupTab = { file -> session.close(file) },
         session = session,
     )
+}
+
+/** Menaruh kode jawaban AI ke berkas aktif; mengembalikan pesan untuk toast. */
+private fun ketikaSisip(aktif: File?, session: EditorSession, projectDir: File, kode: String): String? {
+    if (aktif == null) return "Buka dulu satu berkas, lalu masukkan kodenya."
+    if (!aktif.name.endsWith(".java") && !aktif.name.endsWith(".xml") &&
+        !aktif.name.endsWith(".html") && !aktif.name.endsWith(".css") &&
+        !aktif.name.endsWith(".js") && !aktif.name.endsWith(".md")
+    ) {
+        return "Kode tidak dimasukkan: ${aktif.name} bukan berkas teks kode."
+    }
+    session.update(aktif, kode)
+    session.save(aktif)
+    return "Kode AI dimasukkan ke ${aktif.name}. Cek lalu Build APK."
 }
 
 /** Folder tujuan untuk berkas/folder baru: folder dari berkas aktif, atau akar projek. */
@@ -309,28 +341,43 @@ private fun EditorTopBar(
     onSave: () -> Unit,
     onFind: () -> Unit,
     onBuild: () -> Unit,
+    onAi: () -> Unit,
     buildable: Boolean,
 ) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        GhostButton("☰", onMenu)
-        Column(Modifier.weight(1f)) {
-            Text(
-                title,
-                style = MaterialTheme.typography.titleSmall,
-                color = Color(KodenusaPalette.TEXT),
-                maxLines = 1,
-            )
-            if (dirty) {
-                Text("belum disimpan · tersimpan otomatis", style = MaterialTheme.typography.labelSmall, color = Color(KodenusaPalette.WARN))
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            GhostButton("☰", onMenu)
+            Column(Modifier.weight(1f)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color(KodenusaPalette.TEXT),
+                    maxLines = 1,
+                )
+                if (dirty) {
+                    Text(
+                        "belum disimpan · tersimpan otomatis",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(KodenusaPalette.WARN),
+                    )
+                }
             }
+            PrimaryButton("Build APK", onBuild, enabled = buildable)
         }
-        GhostButton("Cari", onFind)
-        GhostButton("Simpan", onSave)
-        PrimaryButton("Build APK", onBuild, enabled = buildable)
+        // Baris kedua: aksi yang sering dipakai tapi tidak boleh berebut tempat dengan tombol build
+        // di layar 360dp (HP kelas bawah yang jadi sasaran aplikasi ini).
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            GhostButton("AI", onAi, Modifier.testTag("buka-ai"))
+            GhostButton("Cari", onFind)
+            GhostButton("Simpan", onSave)
+        }
     }
 }
 

@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import id.kodenusa.app.ApkInstaller
 import id.kodenusa.app.AppContainer
@@ -61,6 +62,7 @@ fun BuildScreen(
     val session = remember(projectDir) { BuildSession(scope) }
     var state by remember { mutableStateOf(BuildUiState()) }
     var setupMessage by remember { mutableStateOf<String?>(null) }
+    var aiTerbuka by remember { mutableStateOf(false) }
 
     session.onChange = { state = it }
 
@@ -202,6 +204,9 @@ fun BuildScreen(
                 if (state.running) {
                     GhostButton("Hentikan", { session.cancel() }, Modifier.weight(1f))
                 } else {
+                    if (state.hasErrors) {
+                        GhostButton("Tanya AI", { aiTerbuka = true }, Modifier.testTag("tanya-ai-galat"))
+                    }
                     PrimaryButton(
                         text = if (state.result == null) "Build ulang" else "Build lagi",
                         onClick = {
@@ -223,6 +228,32 @@ fun BuildScreen(
                 }
             }
             Spacer(Modifier.height(24.dp))
+        }
+    }
+
+    if (aiTerbuka) {
+        AiScreen(
+            store = container.aiStore,
+            konteks = AiKonteks(
+                galat = galatUntukAi(state, setupMessage),
+                judul = "AI · galat build",
+            ),
+            onDismiss = { aiTerbuka = false },
+            onSisip = {},
+        )
+    }
+}
+
+/** Merangkum galat build menjadi teks yang bisa dipahami model. */
+private fun galatUntukAi(state: BuildUiState, setup: String?): String = buildString {
+    setup?.let { appendLine("Masalah persiapan build: $it") }
+    state.fatal?.let { appendLine("Galat utama: $it") }
+    state.diagnostics.forEach { d ->
+        val info = explain(d)
+        appendLine("${d.severity} · ${info.title} · ${d.rawMessage}")
+        if (info.fix.isNotBlank()) appendLine("  saran: ${info.fix}")
+        d.file?.let { berkas ->
+            appendLine("  lokasi: $berkas${d.line?.let { baris -> ":$baris" }.orEmpty()}")
         }
     }
 }

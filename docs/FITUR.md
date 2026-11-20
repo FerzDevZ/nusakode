@@ -66,6 +66,35 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Build lewat Gradle di perangkat (proot + JDK) | ⛔ | Tier 2, untuk HP 4 GB+ |
 | Build di cloud | ⛔ | Tier 1, butuh server + biaya |
 
+## 4b. Asisten AI (BYOK — endpoint & kunci milik pengguna)
+
+| Fitur | Status | Bukti / catatan |
+|---|---|---|
+| Isi endpoint sendiri (mis. `https://api.crown.ai.id/v1`) + kunci sendiri | ✅ | `AiUiTest` — tombol terkunci sebelum diisi |
+| Baca daftar model otomatis dari endpoint | ✅ | `OpenAiCompatClientTest.daftar_model_dibaca_dari_endpoint_pengguna` |
+| Ganti model kapan saja | ✅ | Layar AI → Atur → pilih model |
+| Jawaban mengalir (streaming) huruf demi huruf | ✅ | `aliran_sse_content_dan_reasoning_dirakit_benar` |
+| `reasoning` tidak dicampur ke kode jawaban | ✅ | uji yang sama (`reasoning` dipisah) |
+| Galat 401/404/429/5xx/jaringan dijelaskan dalam bahasa Indonesia | ✅ | 8 uji klien |
+| Penyedia yang mengabaikan `stream` tetap terbaca | ✅ | `penyedia_yang_mengabaikan_stream_tetap_terbaca` |
+| 503 sesaat dicoba ulang sekali | ✅ | `galat_503_dicoba_ulang_sekali_lalu_berhasil` |
+| Jelaskan & perbaiki galat build dari layar Build | ✅ | tombol "Tanya AI" di `BuildScreen` |
+| Perbaiki/ubah berkas aktif | ✅ | konteks berkas otomatis dikirim |
+| Masukkan kode jawaban ke berkas aktif sekali tekan | ✅ | `CodeBlocks.terbesar` + tombol "Masukkan kode ke berkas" |
+| Prompt mengunci batas projek (Java 8, tanpa Gradle/AndroidX/Kotlin) | ✅ | `PromptBuilderTest` |
+| Model berjalan di dalam HP (offline penuh) | ⛔ | ditunda; butuh model 400–900 MB, lambat di HP 4 GB (ADR-023) |
+| Kunci bawaan dari pembuat aplikasi / server perantara | ⛔ | sengaja tidak ada — aplikasi tidak menyimpan biaya AI |
+| Enkripsi kunci dengan Android Keystore | ⛔ | rencana; sekarang di `SharedPreferences` privat aplikasi |
+
+**Bukti ke endpoint sungguhan** (dijalankan terhadap endpoint milik pengguna):
+model terbaca `zai-org/GLM-5.3-Flash`, `deepseek-ai/DeepSeek-V4-Flash-0731`, `MiniMaxAI/MiniMax-M2.7`;
+jawaban streaming keluar sebagai blok `java`. Perintahnya:
+
+```bash
+AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
+  ./gradlew :core:ai:test --tests '*ChatNyataTest*'
+```
+
 ## 5. Distribusi & keamanan
 
 | Fitur | Status | Bukti / catatan |
@@ -82,7 +111,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
 | Fitur | Status | Bukti |
 |---|---|---|
-| Uji unit | ✅ | 130+ uji (`./gradlew test`) |
+| Uji unit | ✅ | 137 uji (`./gradlew test`) |
 | Uji perangkat (UI + build + kebijakan exec) | ✅ | 26 uji, API 24 & API 34 |
 | Analisis statis detekt, 0 temuan | ✅ | `./gradlew detekt` |
 | CI menjalankan gerbang yang sama | ✅ | `.github/workflows/ci.yml` |
@@ -93,7 +122,8 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
 1. **Pindahkan berkas** antar folder + duplikat (paling sering dipakai setelah tambah berkas).
 2. **Cari di seluruh projek** — pengganti "grep" yang tidak ada di HP.
-3. **Perkecil APK** 42,6 MB → di bawah 15 MB (potong `android.jar`).
+3. **Perkecil APK** 44,7 MB → di bawah 15 MB (potong `android.jar`).
 4. **Uji di HP asli 4 GB** (Redmi 9A): RAM diam, waktu build, pemasangan.
 5. **Kunci tanda tangan milik pengguna** supaya APK bisa di-update di Play.
 6. **Format otomatis** untuk Java/HTML/CSS/JS.
+7. **Enkripsi kunci AI** dengan Android Keystore + uji "kunci tidak bocor ke log".
