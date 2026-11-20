@@ -9,16 +9,32 @@ import id.kodenusa.core.git.RepoGit
  * Kenapa terpisah: token tidak boleh ikut ter-export saat projek di-zip atau di-push ke git.
  * Kalau setelan ini disimpan di dalam projek, satu kali "Bagikan zip" cukup untuk membocorkan akun.
  *
- * Token tidak pernah ditulis ke `.git/config` (lihat ADR-024) dan tidak pernah masuk log.
+ * Token tidak pernah ditulis ke `.git/config` (lihat ADR-024), tidak pernah masuk log, dan
+ * **disandikan** di penyimpanan lewat [KunciAman] (Android Keystore). Alamat repo tidak disandikan
+ * karena bukan rahasia dan perlu ditampilkan ulang kepada pengguna.
  */
-class GitSettingsStore(context: Context) {
+class GitSettingsStore(
+    context: Context,
+    private val sandi: Penyandi = KunciAman,
+) {
 
     private val prefs = context.getSharedPreferences("git", Context.MODE_PRIVATE)
 
     /** Alamat repo yang sudah dirapikan, atau kosong bila belum diisi. */
     fun alamatRepo(): String = prefs.getString(KEY_ALAMAT, "").orEmpty()
 
-    fun token(): String = prefs.getString(KEY_TOKEN, "").orEmpty()
+    /**
+     * Token tersandi, dengan migrasi otomatis dari nilai teks biasa versi lama: sekali dibaca, nilai
+     * lama langsung ditulis ulang dalam bentuk tersandi.
+     */
+    fun token(): String {
+        val mentah = prefs.getString(KEY_TOKEN, "").orEmpty()
+        if (mentah.isEmpty()) return ""
+        if (mentah.startsWith(KunciAman.AWALAN)) return sandi.dekripsi(mentah)
+        val asli = sandi.dekripsi(mentah)
+        if (asli.isNotEmpty()) prefs.edit().putString(KEY_TOKEN, sandi.enkripsi(asli)).apply()
+        return asli
+    }
 
     fun nama(): String = prefs.getString(KEY_NAMA, "").orEmpty().ifBlank { "Pengguna KodeNusa" }
 
@@ -27,9 +43,10 @@ class GitSettingsStore(context: Context) {
     fun cabang(): String = prefs.getString(KEY_CABANG, CABANG_BAWAAN).orEmpty().ifBlank { CABANG_BAWAAN }
 
     fun simpan(alamat: String, token: String, cabang: String = CABANG_BAWAAN) {
+        val tokenBersih = token.trim()
         prefs.edit()
             .putString(KEY_ALAMAT, alamat.trim())
-            .putString(KEY_TOKEN, token.trim())
+            .putString(KEY_TOKEN, if (tokenBersih.isEmpty()) "" else sandi.enkripsi(tokenBersih))
             .putString(KEY_CABANG, cabang.trim().ifBlank { CABANG_BAWAAN })
             .apply()
     }

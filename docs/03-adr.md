@@ -357,3 +357,54 @@ Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif
 **Bukti:** 8 uji `SitusStatisTest` (termasuk `node_modules`/build diabaikan, index di subfolder ditolak, sisa build dibersihkan), 3 uji `PagesTest` (terbit ke `gh-pages` lalu diklon ulang isinya sama; tautan GitHub Pages dihitung benar), dan 3 uji **di HP** (`SitusDeviceTest`: template situs murni tersusun tanpa APK, template `web-katalog` juga bisa terbit, projek aplikasi biasa ditolak dengan pesan jelas).
 
 **Konsekuensi:** (+) Pengguna web tidak lagi dipaksa membuat APK. (+) Publikasi gratis tanpa server KodeNusa, tanpa biaya. (+) Tidak ada berkas biner baru: situs hanyalah salinan aset projek. (−) GitHub Pages hanya `https`, tidak bisa untuk situs dengan backend/database — untuk itu jalur lain (VPS/hosting pengguna) tetap di luar lingkup. (−) Layar "Jadikan situs" + tombol "Terbitkan" belum ada; mesin dan ujinya sudah siap.
+
+---
+
+## ADR-026 — Kunci AI dan token GitHub disandikan dengan Android Keystore
+
+**Keputusan:** rahasia pengguna disimpan **tersandi** (AES-256-GCM) dengan kunci yang dibuat di Android Keystore dan tidak bisa diekspor. Nilai lama yang masih teks biasa dibaca sekali lalu ditulis ulang dalam bentuk tersandi (migrasi otomatis).
+
+**Konteks:** sampai 0.9.2, `AiSettingsStore` dan `GitSettingsStore` menulis kunci API serta token GitHub sebagai teks biasa ke `SharedPreferences`. Berkas itu tidak bisa dibaca aplikasi lain tanpa root, tetapi ikut tersalin oleh aplikasi backup, `adb backup`, atau siapa pun yang memegang HP dalam keadaan tidak terkunci. Kunci AI dan token GitHub adalah kredensial berbayar dan punya akses tulis ke repo — kebocorannya berdampak nyata, bukan teoretis.
+
+**Bentuk:** `Penyandi` (antarmuka) dengan dua implementasi: `KunciAman` (Keystore; format `enc1:<iv>:<ciphertext>` base64) dan `PenyandiPolos` (hanya untuk uji). IV acak 12 bita per penyandian, karena IV berulang pada GCM membocorkan isi. Nilai yang rusak atau tidak bisa didekripsi menghasilkan string kosong — aplikasi meminta pengguna mengisi ulang, tidak menampilkan layar galat.
+
+- Alamat repo GitHub **tidak** disandikan: bukan rahasia, dan harus bisa ditampilkan di layar Terbit.
+- `setUserAuthenticationRequired(false)`: memaksa sidik jari akan menghentikan build otomatis serta agen yang berjalan.
+- Format menyimpan versi (`enc1`) supaya format berikutnya bisa migrasi tanpa menebak.
+
+**Bukti:** 7 uji di perangkat `KunciAmanDeviceTest` — bolak-balik, IV berbeda tiap penyandian, isi `shared_prefs` tidak memuat teks asli (diperiksa berkasnya, bukan hanya API), token GitHub tersandi sementara alamat repo tetap terbaca, migrasi nilai lama, nilai rusak tidak membuat aplikasi berhenti, dan setelah kunci Keystore dihapus nilai tersandi menjadi kosong.
+
+**Konsekuensi:** (+) Menyalin berkas preferensi tidak lagi cukup untuk mencuri kunci. (+) Tidak ada perubahan pada alur AI dan git. (−) Kunci tidak bisa dipulihkan bila HP di-reset — memang disengaja; pengguna memasukkan ulang. (−) `KunciAman.lupakan()` membuat nilai lama tak terbaca, jadi hanya dipakai saat pengguna menghapus semua setelan.
+
+---
+
+## ADR-027 — Situs murni bisa dipasang di HP sebagai PWA (tetap nol berkas Android)
+
+**Keputusan:** projek `web-murni` mendapat tombol **"Siapkan mode offline"** yang membuat `manifest.json`, `service-worker.js`, dan satu baris `<script>` pendaftar di `index.html`.
+
+**Konteks:** target pengguna sering kehilangan sinyal. Situs statis tanpa service worker tampil sebagai halaman galat browser begitu internet mati — padahal seluruh isinya sudah ada di HP. PWA juga membuat situs bisa "Tambahkan ke layar utama" seperti aplikasi, tanpa Play Store.
+
+**Aturan:**
+
+- Berkas ditulis ke **folder sumber situs** (`web/` bila ada), bukan ke akar projek — kalau tidak, pendaftar tidak akan pernah jalan. Ditentukan lewat `SitusStatis.sumber`.
+- **Tidak pernah menimpa** `manifest.json` atau `service-worker.js` milik pengguna; keduanya dilaporkan sebagai "dibiarkan".
+- Pendaftar hanya disisipkan **sekali**; `index.html` tanpa `</body>` tetap ditangani.
+- Aset di atas 2 MB tidak diprecache (kuota dan RAM HP 2 GB); `.git`, `build`, `node_modules` tidak ikut.
+- Ikon hanya didaftarkan bila berkasnya ada; bila belum ada, PWA tetap jalan offline tetapi diberi catatan bahwa belum bisa dipasang.
+- Tetap **tanpa** `src/` dan tanpa `kodenusa.json` baru — ADR-025 tidak dilanggar.
+
+**Bukti:** 9 uji `SitusPwaTest` (manifest di folder situs, hanya aset web yang diprecache, berkas pengguna tidak ditimpa, pendaftar sekali, ikon bersyarat, HTML tanpa `body`, folder build/git tidak ikut, berkas 3 MB dilewati) dan 1 uji di HP (`SitusUiTest.siapkan_mode_offline_…` memeriksa `web/manifest.json`, `web/service-worker.js`, dan `serviceWorker.register` benar-benar ada di disk).
+
+**Konsekuensi:** (+) Situs tetap terbuka tanpa internet dan bisa dipasang. (+) Tidak ada biner baru. (−) Service worker hanya aktif di `https` atau `localhost`; saat berkas dibuka lewat `file://` di browser HP, mode offline tidak jalan — batasan browser, bukan bug, dan disebut di layar.
+
+---
+
+## ADR-028 — Ukuran APK 32 MB dipertahankan (hasil analisis, bukan kelalaian)
+
+**Keputusan:** tetap membawa `android.jar` (API 34) di dalam APK. Tidak ada pemangkasan kelas.
+
+**Alasan angka:** dari 32,3 MB APK rilis, **24,1 MB adalah `assets/toolchain/shared/android.jar`** (26,4 MB mentah). Berkas itu sudah terkompresi maksimal oleh aapt2; dibuat ulang dengan deflate -9 hanya menghemat 45 KB. Sisanya: 2 × `libaapt2.so` (3,8 MB terkompresi), `classes.dex` 1,8 MB, `ecj.jar` 1,5 MB, font 0,3 MB.
+
+**Mengapa tidak dipangkas:** `android.jar` adalah classpath kompilasi. Kelas yang dibuang muncul sebagai "cannot find symbol" pada kode pengguna yang sah (Bluetooth, kamera, cetak). Memangkasnya berarti mengorbankan janji "kompilasi di HP untuk kode Java apa pun" demi sekitar 10 MB. Alternatif "unduh toolchain saat build pertama" ditolak karena melanggar janji offline.
+
+**Konsekuensi:** (+) Semua template dan kode pengguna tetap bisa dikompilasi tanpa internet. (−) APK 32,3 MB, di atas target awal 30 MB; angka ini ditulis terbuka di README, bukan disembunyikan.

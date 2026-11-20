@@ -34,6 +34,7 @@ import androidx.core.content.FileProvider
 import id.kodenusa.app.GitSettingsStore
 import id.kodenusa.core.build.HasilSitus
 import id.kodenusa.core.build.SitusGagalException
+import id.kodenusa.core.build.SitusPwa
 import id.kodenusa.core.build.SitusStatis
 import id.kodenusa.core.git.Hasil
 import id.kodenusa.core.git.RepoGit
@@ -75,6 +76,8 @@ fun SitusScreen(
     var terbitSibuk by remember(projectDir) { mutableStateOf(false) }
     var tautan by remember(projectDir) { mutableStateOf<String?>(null) }
     var terbitGalat by remember(projectDir) { mutableStateOf<String?>(null) }
+    var sibukPwa by remember(projectDir) { mutableStateOf(false) }
+    var pwaPesan by remember(projectDir) { mutableStateOf<String?>(null) }
     val alasanTerbit = when {
         alamat.isBlank() -> "Isi alamat repo GitHub dulu, misalnya https://github.com/nama/repo."
         token.isBlank() -> "Isi token GitHub dulu, lalu simpan."
@@ -163,6 +166,64 @@ fun SitusScreen(
                         loading = sibuk,
                         enabled = !sibuk,
                     )
+                }
+            }
+
+            Panel(Modifier.fillMaxWidth()) {
+                Column {
+                    Text(
+                        "Bisa dibuka tanpa internet",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(KodenusaPalette.TEXT),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Membuat manifest.json dan service-worker.js, lalu mendaftarkannya di " +
+                            "index.html. Situs tetap terbuka saat sinyal hilang dan bisa " +
+                            "\"Tambahkan ke layar utama\" seperti aplikasi.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(KodenusaPalette.TEXT_DIM),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        if (SitusStatis.sumber(projectDir) == null) {
+                            "Butuh web/index.html dulu."
+                        } else {
+                            "Berkas yang sudah ada tidak akan ditimpa."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(KodenusaPalette.TEXT_DIM),
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    GhostButton(
+                        text = "Siapkan mode offline",
+                        onClick = {
+                            sibukPwa = true
+                            scope.launch {
+                                val keluaran = withContext(Dispatchers.IO) {
+                                    runCatching { SitusPwa.siapkan(projectDir) }
+                                }
+                                sibukPwa = false
+                                keluaran.fold(
+                                    onSuccess = { pwaPesan = it.ringkas },
+                                    onFailure = {
+                                        pwaPesan = "Gagal menyiapkan mode offline: " +
+                                            (it.message ?: "penyebab tidak diketahui")
+                                    },
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().testTag("siapkan-pwa"),
+                    )
+                    pwaPesan?.let {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(KodenusaPalette.OK),
+                            modifier = Modifier.testTag("pesan-pwa"),
+                        )
+                    }
                 }
             }
 

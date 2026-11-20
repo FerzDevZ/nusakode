@@ -52,6 +52,8 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | **Ambil berkas dari HP** (Unduhan, Drive, kartu SD, foto) | ✅ | tombol `ambil-dari-hp` → pemilih berkas Android (SAF) → `BerkasMasuk.simpan`; masuk ke folder berkas yang sedang dibuka; batas 24 MB; nama bentrok jadi ` (2)`; nama berbahaya **ditolak** dengan alasan (`BerkasMasukTest`, `BerkasHpUiTest`) |
 | **Bagikan berkas keluar** (WhatsApp/Drive/Gmail) | ✅ | menu `⋯` → "Bagikan berkas…" lewat `FileProvider` (`file_paths.xml` hanya membuka `projek/` + `cache/`) |
 | **Tanpa izin penyimpanan sama sekali** | ✅ | tidak ada `READ/WRITE_EXTERNAL_STORAGE` aktif maupun `MANAGE_EXTERNAL_STORAGE`; `<queries>` mendeklarasikan pemilih berkas agar bisa di-resolve di Android 11+ |
+| **Kunci AI & token GitHub tersandi (Android Keystore)** | ✅ | `KunciAman` AES-256-GCM, format `enc1:`; migrasi otomatis dari teks biasa; 7 uji perangkat `KunciAmanDeviceTest` memeriksa isi `shared_prefs` |
+| **Situs murni bisa dipasang & dibuka tanpa internet (PWA)** | ✅ | tombol `siapkan-pwa` → `manifest.json` + `service-worker.js` + pendaftar di `index.html`; 9 uji `SitusPwaTest` + 1 uji layar |
 | **Kabar hasil aksi berkas** | ✅ | `pesan-berkas` di panel + snackbar `pesan-aksi`; dulu semua pesan ditulis tetapi tidak pernah tampil |
 | Multi-kursor, lipat kode (code folding) | ⛔ | rencana |
 | Format otomatis (prettier/google-java-format) | ⛔ | rencana |
@@ -174,8 +176,8 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 
 | Fitur | Status | Bukti |
 |---|---|---|
-| Uji unit | ✅ | 223 uji (`./gradlew test`) |
-| Uji di perangkat | ✅ | 59 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
+| Uji unit | ✅ | 234 uji (`./gradlew test`) |
+| Uji di perangkat | ✅ | 67 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
 | Analisis statis detekt, 0 temuan | ✅ | `./gradlew detekt` |
 | CI menjalankan gerbang yang sama | ✅ | `.github/workflows/ci.yml` |
 

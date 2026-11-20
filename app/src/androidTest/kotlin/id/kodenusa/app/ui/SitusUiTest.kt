@@ -55,7 +55,7 @@ class SitusUiTest {
             layar.onAllNodesWithTag("ringkasan-situs").fetchSemanticsNodes().isNotEmpty()
         }
         layar.onNodeWithText("Isi situs").assertExists()
-        layar.onNodeWithText("index.html", substring = true).assertExists()
+        layar.onAllNodesWithText("index.html", substring = true)[0].assertExists()
         assertTrue("index.html harus benar-benar tersusun di disk", File(projek, "build/situs/index.html").isFile)
     }
 
@@ -95,6 +95,23 @@ class SitusUiTest {
         }
         layar.onNodeWithTag("terbitkan-situs").performScrollTo().assertIsEnabled()
         layar.onNodeWithText("https://github.com/uji/warung").assertExists()
+    }
+
+    @Test
+    fun siapkan_mode_offline_membuat_manifest_dan_service_worker() {
+        val projek = projekSitus()
+        layar.setContent { KodenusaTheme { SitusScreen(projectDir = projek, onBack = {}) } }
+
+        layar.onNodeWithTag("siapkan-pwa").performScrollTo().performClick()
+
+        layar.waitUntil(timeoutMillis = 10_000) {
+            layar.onAllNodesWithTag("pesan-pwa").fetchSemanticsNodes().isNotEmpty()
+        }
+        layar.onNodeWithText("mode offline", substring = true, ignoreCase = true).assertExists()
+        assertTrue("manifest.json harus benar-benar dibuat", File(projek, "web/manifest.json").isFile)
+        assertTrue("service-worker.js harus benar-benar dibuat", File(projek, "web/service-worker.js").isFile)
+        val index = File(projek, "web/index.html").readText()
+        assertTrue("index.html harus mendaftarkan service worker", index.contains("serviceWorker.register"))
     }
 
     @Test

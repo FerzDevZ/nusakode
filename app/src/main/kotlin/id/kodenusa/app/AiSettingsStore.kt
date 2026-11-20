@@ -8,25 +8,48 @@ import id.kodenusa.core.ai.AiModel
  * Menyimpan setelan AI milik pengguna.
  *
  * Kunci API **tidak pernah** ditanam di aplikasi dan tidak pernah dikirim ke server pembuat aplikasi.
- * Ia hanya hidup di penyimpanan privat aplikasi ini (`SharedPreferences`), yang tidak bisa dibaca
- * aplikasi lain pada HP tanpa root.
+ * Ia hidup di penyimpanan privat aplikasi ini dan **disandikan** lewat [KunciAman] (Android
+ * Keystore), sehingga menyalin berkas preferensi tidak cukup untuk mengambil kunci.
  */
-class AiSettingsStore(context: Context) {
+class AiSettingsStore(
+    context: Context,
+    private val sandi: Penyandi = KunciAman,
+) {
 
     private val prefs = context.getSharedPreferences("ai", Context.MODE_PRIVATE)
 
+    /**
+     * Membaca nilai rahasia. Nilai lama yang masih teks biasa (dari versi sebelum 0.9.3) langsung
+     * ditulis ulang dalam bentuk tersandi, jadi tidak ada pengguna yang harus mengisi ulang kunci.
+     */
+    private fun bacaRahasia(kunci: String): String {
+        val mentah = prefs.getString(kunci, "").orEmpty()
+        if (mentah.isEmpty()) return ""
+        if (mentah.startsWith(KunciAman.AWALAN)) return sandi.dekripsi(mentah)
+        val asli = sandi.dekripsi(mentah)
+        if (asli.isNotEmpty()) prefs.edit().putString(kunci, sandi.enkripsi(asli)).apply()
+        return asli
+    }
+
+    private fun tulisRahasia(kunci: String, nilai: String) {
+        val bersih = nilai.trim()
+        prefs.edit()
+            .putString(kunci, if (bersih.isEmpty()) "" else sandi.enkripsi(bersih))
+            .apply()
+    }
+
     fun muat(): AiConfig = AiConfig(
         baseUrl = prefs.getString(KUNCI_ENDPOINT, "").orEmpty(),
-        apiKey = prefs.getString(KUNCI_RAHASIA, "").orEmpty(),
+        apiKey = bacaRahasia(KUNCI_RAHASIA),
         model = prefs.getString(KUNCI_MODEL, "").orEmpty(),
     )
 
     fun simpan(config: AiConfig) {
         prefs.edit()
             .putString(KUNCI_ENDPOINT, config.baseUrl.trim())
-            .putString(KUNCI_RAHASIA, config.apiKey.trim())
             .putString(KUNCI_MODEL, config.model)
             .apply()
+        tulisRahasia(KUNCI_RAHASIA, config.apiKey)
     }
 
     fun pilihModel(id: String) {
@@ -55,10 +78,8 @@ class AiSettingsStore(context: Context) {
      * Tanpa ini, menutup layar AI lalu membukanya lagi terasa seperti "reset" — keluhan nyata pengguna.
      */
     fun simpanDraf(endpoint: String, kunci: String) {
-        prefs.edit()
-            .putString(KUNCI_ENDPOINT, endpoint.trim())
-            .putString(KUNCI_RAHASIA, kunci.trim())
-            .apply()
+        prefs.edit().putString(KUNCI_ENDPOINT, endpoint.trim()).apply()
+        tulisRahasia(KUNCI_RAHASIA, kunci)
     }
 
     /** Menyimpan obrolan per projek supaya jawaban panjang tidak hilang saat layar ditutup. */
