@@ -109,6 +109,7 @@ fun EditorScreen(
     var aksi by remember { mutableStateOf<FileAction?>(null) }
     var aiTerbuka by remember { mutableStateOf(false) }
     var pesanBerkas by remember { mutableStateOf<String?>(null) }
+    var pythonTerbuka by remember { mutableStateOf(false) }
     fun segarkan() {
         nodes = ProjectTree.list(projectDir)
     }
@@ -117,6 +118,9 @@ fun EditorScreen(
     // dipakai supaya aplikasi tidak perlu izin penyimpanan sama sekali: izin tidak bisa "gagal"
     // kalau memang tidak pernah diminta.
     val konteksHp = androidx.compose.ui.platform.LocalContext.current
+    val runnerPython = remember {
+        id.kodenusa.app.PythonRunner.dariKonteks(konteksHp.applicationInfo.nativeLibraryDir)
+    }
     val pemilihBerkas = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
     ) { uri ->
@@ -241,6 +245,14 @@ fun EditorScreen(
                         pratinjau = true
                     },
                     onPalet = { palet = true },
+                    onJalankanPython = if (session.active?.name?.endsWith(".py", ignoreCase = true) == true) {
+                        {
+                            session.saveAll()
+                            pythonTerbuka = true
+                        }
+                    } else {
+                        null
+                    },
                 )
 
                 TabStrip(session, onSelect = { file -> session.open(file); state.load(file) })
@@ -339,8 +351,9 @@ fun EditorScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "Python belum bisa dijalankan atau dibuild di KodeNusa. Berkas tetap " +
-                                "bisa disunting dan dikirim ke GitHub.",
+                            "Python dijalankan dengan MicroPython di dalam HP (tanpa internet). " +
+                                "Kode dasar jalan; modul seperti requests, numpy, dan pip belum " +
+                                "tersedia. Build APK dari Python belum bisa.",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color(KodenusaPalette.WARN),
                             modifier = Modifier.testTag("catatan-python"),
@@ -445,6 +458,17 @@ fun EditorScreen(
                 null
             },
         )
+    }
+    if (pythonTerbuka) {
+        val aktif = session.active
+        if (aktif != null) {
+            PythonConsoleDialog(
+                berkas = aktif,
+                folderKerja = projectDir,
+                runner = runnerPython,
+                onTutup = { pythonTerbuka = false },
+            )
+        }
     }
     FileActionHost(
         aksi = aksi,
@@ -591,6 +615,7 @@ private fun EditorTopBar(
     adaSitus: Boolean = false,
     onPratinjau: () -> Unit = {},
     onPalet: () -> Unit = {},
+    onJalankanPython: (() -> Unit)? = null,
 ) {
     Column(Modifier.fillMaxWidth()) {
         Row(
@@ -630,6 +655,9 @@ private fun EditorTopBar(
             GhostButton("AI", onAi, Modifier.testTag("buka-ai"))
             GhostButton("Cari", onFind)
             GhostButton("Simpan", onSave)
+            if (onJalankanPython != null) {
+                GhostButton("Jalankan", onJalankanPython, Modifier.testTag("jalankan-python"))
+            }
             if (adaSitus) {
                 GhostButton("Pratinjau", onPratinjau, Modifier.testTag("buka-pratinjau"))
             }

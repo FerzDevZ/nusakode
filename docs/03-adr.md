@@ -497,3 +497,28 @@ repo belum ada.
 
 **Konsekuensi.** `Pill` dibatasi satu baris; pengujian wizard tidak lagi menggulir ke kolom nama
 (kini selalu terlihat). Semua kontras tetap dijaga oleh `ContrastTest`.
+
+### ADR-034 — Python Tier 2: MicroPython dibawa di APK, bukan CPython yang diunduh
+**Tanggal:** 2026-11-20 · **Status:** diterima (fitur 0.10.0)
+
+**Konteks.** Janji jujur 0.9.7–0.9.9: "Python belum bisa dijalankan". Rencana Tier 2 butuh
+interpreter Python yang jalan di HP 2–4 GB tanpa internet.
+
+**Pilihan yang dipertimbangkan.**
+1. **CPython penuh (python-build-standalone)**: stdlib lengkap, tetapi 25–50 MB per ABI —
+   menggandakan ukuran APK, dan binernya harus diekstrak ke lokasi yang boleh `exec`.
+2. **Chaquopy**: butuh Gradle di perangkat — bertentangan dengan ADR-005 (tanpa Gradle).
+3. **MicroPython unix port, di-cross-compile, dikemas sebagai `libmicropython.so`**: ~0,6 MB per
+   ABI, pola eksekusi yang sudah terbukti sama dengan `libaapt2.so` (ADR-021), offline penuh.
+
+**Keputusan.** MicroPython v1.25.0 (unix port) di-cross-compile dengan NDK r27 untuk
+arm64-v8a, armeabi-v7a, x86_64; dikemas sebagai `libmicropython.so` di `jniLibs`. Dimatikan:
+SSL/mbedtls, btree, ffi, thread (bionic tidak punya `pthread_cancel`). Diaktifkan: json, re,
+socket, termios, math, random, time, os, io, collections + modul murni dari micropython-lib
+(functools, pathlib, dan lainnya).
+
+**Konsekuensi yang disebut jujur di layar.** Modul seperti `requests`, `numpy`, dan `pip` tidak
+tersedia; build APK dari Python belum bisa; skrip dibatasi 20 detik; `_thread` tidak ada.
+`PythonRunner` memvalidasi berkas di dalam folder projek, argv berbentuk daftar (ADR-006),
+dan mematikan proses yang membeku. Uji: 5 uji perangkat `PythonRunnerDeviceTest` menjalankan
+skrip sungguhan (halo, galat, batas waktu, di luar folder, bukan .py) + 1 uji UI konsol.

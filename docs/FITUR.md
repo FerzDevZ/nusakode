@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.9.9** (`versionCode 21`) · **236 uji unit · 84 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.10.0** (`versionCode 22`) · **236 uji unit · 90 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -56,7 +56,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | **Tanpa izin penyimpanan sama sekali** | ✅ | tidak ada `READ/WRITE_EXTERNAL_STORAGE` aktif maupun `MANAGE_EXTERNAL_STORAGE`; `<queries>` mendeklarasikan pemilih berkas agar bisa di-resolve di Android 11+ |
 | **Palet perintah** | ✅ | Tombol **Aksi** di editor: ketik "apk", "bangun", "cari", "impor" untuk menjalankan aksi tanpa mencari tombolnya. Pencarian memakai semua kata (AND), dan projek web murni tidak pernah menawarkan Build APK. |
 | **Progres unggahan APK** | ✅ | Kartu Bagikan APK menampilkan "Mengunggah 42% (13,4 MB dari 32,3 MB)" — dikirim per potongan 64 KB, bukan sekali kirim yang tampak menggantung. |
-| **Catatan jujur soal Python** | ✅ | Membuka berkas `.py` menampilkan: *"Python belum bisa dijalankan atau dibuild di KodeNusa. Berkas tetap bisa disunting dan dikirim ke GitHub."* |
+| **Python bisa dijalankan (Tier 2, ADR-033)** | ✅ | Tombol "Jalankan" pada berkas `.py` menjalankan skrip dengan MicroPython yang dibawa di APK (tanpa internet), keluaran tampil di konsol editor. Catatan jujur: modul seperti requests/numpy/pip belum tersedia, build APK dari Python belum bisa. |
 | **Pratinjau situs di dalam aplikasi** | ✅ | Tombol **Pratinjau** di editor memuat `index.html` projek lewat WebView — sunting lalu lihat tanpa keluar aplikasi, tanpa internet. Batas `file://` disebutkan di layar. |
 | **Bagikan APK lewat GitHub Release** | ✅ | Setelah APK jadi, kartu **Bagikan APK** mengunggahnya ke rilis repo Anda dan menampilkan tautan unduh. Ukuran (32 MB) dan tujuan ditampilkan sebelum tombol ditekan. |
 | **Foto langsung ke AI** | ✅ | tombol `foto-kamera` memakai kamera HP (hasil disimpan sementara lewat FileProvider), jadi layar galat bisa difoto, bukan dicari dulu di galeri |
@@ -201,10 +201,10 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | # | Pekerjaan | Kenapa sekarang | Ukuran |
 |---|---|---|---|
 | 1 | ~~Hapus janji "build di server"~~ ✅ | Teks itu menyebut server yang tidak ada | Selesai |
-| 2 | ~~Penangkap crash + "Bagikan laporan" (offline)~~ ✅ | Selesai di 0.9.9: `LaporanGalat` + kartu di layar projek (ADR-032) | Selesai |
-| 3 | ~~Klon projek dari GitHub~~ ✅ | Selesai di 0.9.9: `KlonProjekDialog` tersambung ke `RepoGit.klon` | Selesai |
-| 4 | ~~Catatan "Kotlin belum didukung" saat membuka `.kt`~~ ✅ | Selesai di 0.9.9: `catatan-kotlin`, sejajar catatan Python | Selesai |
-| 5 | ~~Tombol "buat repo" di layar Git~~ ✅ | Selesai di 0.9.9: `BuatRepoCard` tersambung ke `GitHubRilis.buatRepo` | Selesai |
+| 2 | ~~Penangkap crash + "Bagikan laporan" (offline)~~ ✅ | Selesai di 0.10.0: `LaporanGalat` + kartu di layar projek (ADR-032) | Selesai |
+| 3 | ~~Klon projek dari GitHub~~ ✅ | Selesai di 0.10.0: `KlonProjekDialog` tersambung ke `RepoGit.klon` | Selesai |
+| 4 | ~~Catatan "Kotlin belum didukung" saat membuka `.kt`~~ ✅ | Selesai di 0.10.0: `catatan-kotlin`, sejajar catatan Python | Selesai |
+| 5 | ~~Tombol "buat repo" di layar Git~~ ✅ | Selesai di 0.10.0: `BuatRepoCard` tersambung ke `GitHubRilis.buatRepo` | Selesai |
 | 6 | Ukur di HP 4 GB fisik + `AI_EVAL=1` | Satu-satunya angka yang belum bisa saya ukur sendiri | Butuh perangkat/kunci pengguna |
 
 Yang **tidak** akan dikerjakan tanpa bukti kebutuhan nyata: Kotlin di perangkat (ADR-003), Tier 1

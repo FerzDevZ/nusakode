@@ -1,6 +1,6 @@
 # Roadmap dan riwayat rilis
 
-Versi terakhir: **0.9.9** (`versionCode 21`), dirilis 20 November 2026.
+Versi terakhir: **0.10.0** (`versionCode 22`), dirilis 20 November 2026.
 
 ## Fase
 
@@ -38,8 +38,9 @@ Versi terakhir: **0.9.9** (`versionCode 21`), dirilis 20 November 2026.
 | **0.9.7** | Janji "build di server" dihapus dari UI; seluruh dokumentasi ditulis ulang agar cocok dengan kenyataan |
 | **0.9.8** | Laporan galat offline + tombol bagikan (ADR-032); klon repo GitHub dari layar projek; buat repo baru dari layar Git; catatan jujur untuk berkas `.kt` |
 | **0.9.9** | Perapatan tampilan (ADR-033): tombol sekunder berwujud, kolom nama wizard selalu terlihat di bilah bawah, kelompok pilihan diberi judul, Git menyuruh siapkan repo dulu |
+| **0.10.0** | Python bisa dijalankan (ADR-034): MicroPython v1.25 dibawa sebagai libmicropython.so, tombol Jalankan + konsol keluaran di editor, batas 20 detik |
 
-Artefak 0.9.9: `KodeNusa-0.9.9.apk`, **32.306.187 bita**, sha256 `abd510ca1c27e9c955bc675cc4c11e0763a97d6840ccc9762cb39c22c2061c01`.
+Artefak 0.10.0: `KodeNusa-0.10.0.apk`, **32.772.723 bita**, sha256 `50a56613334cda7dcedf9138639a2f6f28ca2911a53c143956690ae67d5a7895`.
 
 ## Berikutnya, berurutan menurut risiko yang dihilangkan
 

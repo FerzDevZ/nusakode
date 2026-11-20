@@ -20,9 +20,9 @@ import java.io.File
 /**
  * Janji jujur soal Python.
  *
- * KodeNusa **tidak** bisa menjalankan atau membuild Python — Tier 0 hanya mengenal Java. Uji ini
- * memastikan berkas `.py` yang dibuka memberi tahu hal itu di layar, bukan membiarkan pengguna
- * menekan Build APK lalu bingung membaca galat yang tidak ada hubungannya.
+ * Sejak Tier 2 (ADR-033) Python **bisa dijalankan** lewat MicroPython, tetapi masih **tidak bisa
+ * dibuild** jadi APK. Uji ini memastikan berkas `.py` yang dibuka menyatakan keduanya di layar —
+ * apa yang jalan dan apa yang belum — bukan membiarkan pengguna menebak sendiri.
  */
 @RunWith(AndroidJUnit4::class)
 class CatatanPythonUiTest {

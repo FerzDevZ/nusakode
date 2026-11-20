@@ -2,7 +2,7 @@
 
 > **Satu kalimat:** IDE Android native yang menghasilkan APK asli di dalam HP 2–4 GB RAM / 32–64 GB penyimpanan — tanpa PC, tanpa Gradle, tanpa internet wajib — sepenuhnya berbahasa Indonesia.
 
-**Status: v0.9.9** · 236 uji unit · 84 uji perangkat · detekt 0 temuan · APK 32,3 MB · Android 7.0+
+**Status: v0.10.0** · 236 uji unit · 90 uji perangkat · detekt 0 temuan · APK 32,3 MB · Android 7.0+
 
 Dokumen ini adalah **indeks dan peta status**. Detail ada di `docs/`.
 
@@ -14,7 +14,7 @@ Dokumen ini adalah **indeks dan peta status**. Detail ada di `docs/`.
 |---|---|---|
 | 0 | [`docs/00-visi-produk.md`](docs/00-visi-produk.md) | Untuk siapa, masalah apa, janji yang dipegang, dan yang sengaja tidak dikerjakan |
 | 1 | [`docs/01-arsitektur-teknis.md`](docs/01-arsitektur-teknis.md) | Modul, pipeline 9 langkah, aliran galat, AI, Git, rahasia, strategi verifikasi |
-| 2 | [`docs/02-roadmap-milestone.md`](docs/02-roadmap-milestone.md) | Riwayat v0.1.0 → v0.9.9 dan langkah berikutnya menurut risiko |
+| 2 | [`docs/02-roadmap-milestone.md`](docs/02-roadmap-milestone.md) | Riwayat v0.1.0 → v0.10.0 dan langkah berikutnya menurut risiko |
 | 3 | [`docs/03-adr.md`](docs/03-adr.md) | 31 ADR + tabel "kalau Anda bertanya X, baca nomor ini" |
 | 4 | [`docs/04-backlog-agent-matrix.md`](docs/04-backlog-agent-matrix.md) | Agen/skill yang dipakai, backlog per milestone, gate yang tidak boleh dilewati |
 | 5 | [`docs/05-toolchain-di-perangkat.md`](docs/05-toolchain-di-perangkat.md) | Versi alat, alasan pin, cara verifikasi ulang |
@@ -39,7 +39,7 @@ Dokumen ini adalah **indeks dan peta status**. Detail ada di `docs/`.
 
 | Metrik | Angka | Sumber |
 |---|---|---|
-| Ukuran APK rilis | **32.306.187 bita** | `dist/KodeNusa-0.9.9.apk` |
+| Ukuran APK rilis | **32.772.723 bita** | `dist/KodeNusa-0.10.0.apk` |
 | RAM menganggur | **67 MB PSS** | emulator API 35 (HP fisik belum) |
 | Build template hangat | **1,4–1,9 s** | emulator, 3 template |
 | Build pertama setelah pasang | **21,4 s** | penyalinan `android.jar` 24 MB |
@@ -74,6 +74,7 @@ Milestone **tidak** ditandai selesai tanpa exit criteria dijalankan dan exit cod
 | 0.9.5 | Pratinjau situs, bagikan APK lewat GitHub Release |
 | 0.9.6 | Palet perintah, progres unggah bertahap, catatan jujur soal Python |
 | 0.9.9 | Perapatan tampilan (ADR-033): tombol sekunder berwujud, kolom nama wizard selalu terlihat, kelompok pilihan berjudul, Git menyuruh siapkan repo dulu |
+| 0.10.0 | Python bisa dijalankan (ADR-034): MicroPython dibawa di APK, tombol Jalankan + konsol di editor, 5 uji perangkat nyata |
 | **0.9.7** | Janji "build di server" dihapus; dokumentasi ditulis ulang penuh |
 
 Berikutnya: penangkap crash offline, klon projek dari GitHub, catatan "Kotlin belum didukung". Detail dan alasannya di [`docs/02`](docs/02-roadmap-milestone.md).
