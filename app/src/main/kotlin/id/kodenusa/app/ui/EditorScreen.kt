@@ -457,6 +457,15 @@ fun EditorScreen(
                 aiTerbuka = false
                 null
             },
+            onBukaBerkasBaru = { berkas ->
+                // Berkas yang baru dibuat AI langsung dibuka: pengguna melihat hasilnya, bukan
+                // mencarinya di panel. Pohon berkas juga disegarkan supaya berkas baru terlihat.
+                session.open(berkas)
+                state.load(berkas)
+                nodes = ProjectTree.list(projectDir)
+                aiTerbuka = false
+                state.toast = "Berkas ${berkas.name} dibuat dan dibuka."
+            },
         )
     }
     if (pythonTerbuka) {

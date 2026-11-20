@@ -34,7 +34,13 @@ object ProjectFiles {
         data class Gagal(val pesan: String) : Hasil
     }
 
-    /** Membuat berkas kosong (atau dengan isi awal) di dalam folder [parentRelative]. */
+    /** Membuat berkas kosong (atau dengan isi awal) di dalam folder [parentRelative].
+     *
+     * Folder tujuan **boleh belum ada**: sub-folder baru dibuat otomatis selama jalurnya tetap
+     * di dalam projek. Tanpa ini, berkas baru di folder dalam (mis. dari AI:
+     * `src/main/java/app/LayarKedua.java`) selalu ditolak dengan "Folder tujuan tidak ada" —
+     * bug nyata yang membuat pengguna menyangka aplikasi tak bisa bikin berkas di sub-folder.
+     */
     fun createFile(
         root: File,
         parentRelative: String,
@@ -43,7 +49,17 @@ object ProjectFiles {
     ): Hasil {
         val valid = validasiNama(name)
         if (valid != null) return Hasil.Gagal(valid)
-        val parent = resolve(root, parentRelative) ?: return Hasil.Gagal("Folder tujuan tidak ada di dalam projek.")
+        val parent = if (parentRelative.isBlank()) {
+            root
+        } else {
+            val aman = safeRelative(root, parentRelative)
+                ?: return Hasil.Gagal("Folder tujuan keluar dari folder projek.")
+            val kandidat = File(root, aman)
+            if (!kandidat.exists() && !kandidat.mkdirs()) {
+                return Hasil.Gagal("Folder tidak bisa dibuat: $aman")
+            }
+            kandidat
+        }
         if (!parent.isDirectory) return Hasil.Gagal("Tujuan bukan folder.")
         val target = File(parent, name.trim())
         if (target.exists()) return Hasil.Gagal("Berkas \"${target.name}\" sudah ada. Pakai nama lain.")

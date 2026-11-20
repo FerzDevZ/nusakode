@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -124,5 +125,37 @@ class AiUiTest {
         layar.waitUntil(timeoutMillis = 20_000) {
             layar.onAllNodesWithText("AI").fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    @Test
+    fun pemilih_berkas_ai_menampilkan_pohon_dan_pencarian_sub_folder() {
+        // Setelan AI disemai supaya layar langsung masuk mode obrolan.
+        InstrumentationRegistry.getInstrumentation().targetContext
+            .getSharedPreferences("ai", android.content.Context.MODE_PRIVATE)
+            .edit()
+            .putString("endpoint", "https://api.crown.ai.id/v1")
+            .putString("kunci", "kunci-uji-panjang")
+            .putString("model", "model-uji")
+            .commit()
+
+        bukaEditor()
+        layar.onNodeWithTag("buka-ai").performClick()
+        layar.waitForIdle()
+        layar.onNodeWithTag("pilih-berkas-ai").performClick()
+        layar.waitForIdle()
+
+        // Kolom pencarian harus ada — cara mencari berkas di sub-folder tanpa menggulir panjang.
+        layar.onNodeWithTag("cari-berkas-ai").assertExists()
+        // Folder src tampil sebagai judul di pohon, bukan disembunyikan. Memakai testTag, bukan
+        // teks, karena panel berkas editor di belakang dialog juga menampilkan "▸ src".
+        layar.onNodeWithTag("folder-ai-src").assertExists()
+        // Mencari berkas yang ada di sub-folder dalam harus menemukannya lewat jalurnya.
+        layar.onNodeWithTag("cari-berkas-ai").performTextInput("MainActivity")
+        layar.waitForIdle()
+        layar.onAllNodes(hasText("MainActivity", substring = true)).fetchSemanticsNodes()
+            .isNotEmpty().let { temuan ->
+                org.junit.Assert.assertTrue("berkas di sub-folder harus ditemukan pencarian", temuan)
+            }
+        layar.onNodeWithTag("tutup-pilih-berkas").performClick()
     }
 }

@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.12.0** (`versionCode 24`) · **232 uji unit · 99 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.13.0** (`versionCode 25`) · **234 uji unit · 102 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -111,6 +111,8 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Kode AI benar-benar masuk ke berkas (buffer + disk) | ✅ | `EditorScreen.ketikaSisip` → `session.update` + `session.save` + `editor.setContent` |
 | **AI bekerja di tingkat folder projek, bukan cuma berkas aktif** | ✅ | tombol `konteks-projek` + `pilih-berkas-ai` (`AiProjectBoard.konteks()`, 2.400 karakter, lewati `build/.git/node_modules`) |
 | **"Simpan berkas dari jawaban ini ke projek"** — blok `<<<BERKAS: jalur>>>` langsung ditulis ke disk | ✅ | `UbahanBerkas.ambil()` + `AiProjectBoard.tulis()`; `AiProjectBoardTest` (6 uji), `UbahanBerkasTest` (6 uji) |
+| **AI bisa membuat berkas BARU di sub-folder** (bukan cuma mengedit yang ada) | ✅ | prompt `ATURAN_AGEN` eksplisit mengizinkan berkas baru; tombol `buat-berkas-dari-kode` di tiap blok kode membuka dialog jalur bebas — sub-folder dibuat otomatis (`ProjectFiles.createFile` diperbaiki: folder tujuan yang belum ada ikut dibuat, jalur `../` tetap ditolak). Uji: `ProjectFilesTest.berkas_baru_dibuat_di_sub_folder_yang_belum_ada`, `AiBuatBerkasTest` (2 uji perangkat) |
+| **Pemilih berkas AI berupa pohon folder + pencarian** (bukan daftar datar) | ✅ | dialog "Pilih berkas projek" menampilkan `▸ folder` yang bisa dibuka, berkas menjorok per kedalaman, dan kolom "Cari nama berkas…" (`cari-berkas-ai`); uji `AiUiTest.pemilih_berkas_ai_menampilkan_pohon_dan_pencarian_sub_folder` |
 | Lampirkan gambar/screenshot galat (vision) | ✅ | `GambarUntukAi` (≤1024 px, ≤700 KB) + `GambarVisionTest`, `GambarAiDeviceTest` |
 
 **Bukti ke endpoint sungguhan** (dijalankan terhadap endpoint milik pengguna):
@@ -173,7 +175,7 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | Server lokal di HP untuk dibuka keluarga via Wi-Fi | ⛔ | rencana langkah S4 (`docs/06-rencana-2026.md`) |
 | PWA (manifest + service worker) agar bisa "dipasang" tanpa APK | ⛔ | rencana |
 
-## 4f. Tema & tampilan (0.11.0, diperluas 0.12.0)
+## 4f. Tema & tampilan (0.11.0, diperluas 0.13.0)
 
 | Fitur | Status | Bukti / catatan |
 |---|---|---|

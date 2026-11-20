@@ -35,6 +35,27 @@ class ProjectFilesTest {
     }
 
     @Test
+    fun berkas_baru_dibuat_di_sub_folder_yang_belum_ada() {
+        // Bug nyata: folder yang belum ada membuat createFile menolak dengan "Folder tujuan tidak
+        // ada", sehingga AI/pengguna tidak bisa menaruh berkas baru di folder dalam.
+        val hasil = ProjectFiles.createFile(
+            root, "src/main/java/app", "LayarKedua.java", "public class LayarKedua {}",
+        )
+
+        val jadi = sukses(hasil)
+        assertTrue(File(root, "src/main/java/app").isDirectory)
+        assertEquals("public class LayarKedua {}", jadi.readText())
+    }
+
+    @Test
+    fun berkas_baru_dengan_jalur_keluar_projek_ditolak() {
+        val hasil = ProjectFiles.createFile(root, "../kabur", "X.java", "isi")
+
+        assertTrue(gagal(hasil).contains("keluar"))
+        assertTrue(!File(root.parentFile, "kabur").exists())
+    }
+
+    @Test
     fun nama_kembar_ditolak_tanpa_menimpa() {
         File(root, "Main.java").writeText("kode lama")
 

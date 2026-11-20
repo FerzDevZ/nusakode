@@ -115,3 +115,21 @@ class CodeBlocksTest {
         assertTrue(bersih.contains("Penyebabnya lupa import."))
     }
 }
+
+    @Test
+    fun aturan_agen_mengizinkan_berkas_baru_secara_eksplisit() {
+        // Bug nyata: aturan lama hanya menyebut "berkas yang berubah", sehingga model menolak
+        // membuat berkas baru meski tugasnya jelas membutuhkan.
+        assertTrue(
+            PromptBuilder.ATURAN_AGEN.contains("BARU"),
+            "aturan agen harus menyebut berkas BARU",
+        )
+        assertTrue(
+            PromptBuilder.ATURAN_AGEN.contains("Membuat berkas BARU diperbolehkan"),
+            "aturan agen harus mengizinkan pembuatan berkas baru",
+        )
+        assertTrue(
+            PromptBuilder.ATURAN_AGEN.contains("folder"),
+            "aturan agen harus menjelaskan folder dibuat otomatis",
+        )
+    }

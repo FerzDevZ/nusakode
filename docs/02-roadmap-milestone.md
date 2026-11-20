@@ -1,6 +1,6 @@
 # Roadmap dan riwayat rilis
 
-Versi terakhir: **0.12.0** (`versionCode 24`), dirilis 20 November 2026.
+Versi terakhir: **0.13.0** (`versionCode 25`), dirilis 20 November 2026.
 
 ## Fase
 
@@ -78,6 +78,15 @@ Sama seperti `.py`: saat pengguna membuka `.kt`, jelaskan bahwa Tier 0 hanya Jav
 
 Rencana v0.12 dan kandidat setelahnya disusun terpisah: lihat [`11-rencana-v0.12.md`](11-rencana-v0.12.md).
 
+
+## v0.13.0 — AI bisa membuat berkas baru & pemilih berkas jadi pohon (20 November 2026)
+
+- **Bug nyata diperbaiki:** `ProjectFiles.createFile` menolak folder tujuan yang belum ada — inilah akar keluhan "AI ga bisa bikin berkas di sub-folder". Kini sub-folder dibuat otomatis; jalur `../` tetap ditolak.
+- Tombol "Buat berkas baru dari kode" di tiap blok kode jawaban AI — jalur bebas, sub-folder ikut, langsung terbuka di editor.
+- Prompt agen (`ATURAN_AGEN`) eksplisit mengizinkan berkas BARU.
+- Pemilih berkas AI jadi pohon folder (`▸ src` dst.) + kolom pencarian; chip konteks diberi label jujur "Konteks projek + bikin berkas"; chip digabung satu baris gulir.
+- Dokumen saran UI/UX: [`12-saran-ui-ux-ai.md`](12-saran-ui-ux-ai.md).
+- 234 uji unit · 102 uji perangkat · detekt 0.
 
 ## v0.12.0 — perbaikan dari uji manual (20 November 2026)
 

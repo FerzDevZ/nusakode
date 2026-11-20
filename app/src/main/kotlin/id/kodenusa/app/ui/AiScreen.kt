@@ -3,6 +3,7 @@ package id.kodenusa.app.ui
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -94,6 +95,7 @@ fun AiScreen(
     akarProjek: File,
     onDismiss: () -> Unit,
     onSisip: (kode: String, bahasa: String) -> String?,
+    onBukaBerkasBaru: (java.io.File) -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     val klien = remember { OpenAiCompatClient() }
@@ -121,12 +123,9 @@ fun AiScreen(
     // membaca berkas lain (mis. nama kolom di DatabaseKasir.java) dan tidak bisa membuat berkas
     // baru — dan itu yang membuat "AI-nya belum bisa buka folder source".
     val papan = remember(akarProjek) { AiProjectBoard(akarProjek) }
-    val daftarBerkasProjek = remember(akarProjek) {
-        ProjectTree.list(akarProjek)
-            .filter { !it.directory && !it.relativePath.startsWith("build/") }
-            .map { it.relativePath }
-    }
     var pakaiKonteksProjek by remember { mutableStateOf(false) }
+    var buatBerkasTerbuka by remember { mutableStateOf(false) }
+    var cariBerkas by remember { mutableStateOf("") }
     var berkasKonteks by remember { mutableStateOf<String?>(null) }
     var pilihBerkas by remember { mutableStateOf(false) }
     var hasilTulis by remember { mutableStateOf<String?>(null) }
@@ -380,9 +379,23 @@ fun AiScreen(
                         onPilihBerkas = { pilihBerkas = true },
                         onBuangBerkas = { berkasKonteks = null },
                         onTulisProjek = { tulisKeProjek(jawaban.ifEmpty { riwayat.lastOrNull()?.second.orEmpty() }) },
+                        onBuatBerkasBaru = { buatBerkasTerbuka = true },
                     )
                 }
             }
+        }
+
+        if (buatBerkasTerbuka) {
+            val kodeTerakhir = CodeBlocks.terbesar(jawaban.ifEmpty { riwayat.lastOrNull()?.second.orEmpty() })
+            DialogBuatBerkasDariKode(
+                kode = kodeTerakhir?.isi.orEmpty(),
+                akar = akarProjek,
+                onTutup = { buatBerkasTerbuka = false },
+                onJadi = { berkas ->
+                    buatBerkasTerbuka = false
+                    onBukaBerkasBaru(berkas)
+                },
+            )
         }
 
         if (pilihBerkas) {
@@ -404,35 +417,158 @@ fun AiScreen(
                             color = Kode.textDim,
                         )
                         Spacer(Modifier.height(8.dp))
-                        if (daftarBerkasProjek.isEmpty()) {
+                        // Pohon folder: folder tampil sebagai judul, berkas menjorok sesuai
+                        // kedalamannya — pengguna bisa melihat sub-folder, bukan daftar datar.
+                        TextField(
+                            value = cariBerkas,
+                            onValueChange = { cariBerkas = it },
+                            singleLine = true,
+                            placeholder = { Text("Cari nama berkas…", color = Kode.textDim) },
+                            modifier = Modifier.fillMaxWidth().testTag("cari-berkas-ai"),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Kode.surfaceRaised,
+                                unfocusedContainerColor = Kode.surfaceRaised,
+                                focusedTextColor = Kode.text,
+                                unfocusedTextColor = Kode.text,
+                            ),
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        val nodeProyek = remember(akarProjek) { ProjectTree.list(akarProjek) }
+                        val tampil = if (cariBerkas.isBlank()) nodeProyek else nodeProyek.filter {
+                            it.relativePath.contains(cariBerkas, ignoreCase = true)
+                        }
+                        if (tampil.isEmpty()) {
                             Text(
-                                "Belum ada berkas di projek ini.",
+                                if (cariBerkas.isBlank()) "Belum ada berkas di projek ini."
+                                else "Tidak ada berkas yang cocok dengan \"$cariBerkas\".",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Kode.textDim,
                             )
                         }
                         LazyColumn(Modifier.weight(1f, fill = false)) {
-                            items(daftarBerkasProjek) { jalur ->
-                                Text(
-                                    jalur,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Kode.text,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            berkasKonteks = jalur
-                                            pakaiKonteksProjek = false
-                                            pilihBerkas = false
-                                            hasilTulis = null
-                                        }
-                                        .padding(vertical = 10.dp)
-                                        .testTag("berkas-ai-$jalur"),
+                            items(tampil) { node ->
+                                val menjorok = Modifier.padding(
+                                    start = (8 + node.depth * 14).dp,
+                                    top = 6.dp,
+                                    bottom = 6.dp,
                                 )
+                                if (node.directory) {
+                                    Text(
+                                        "▸ ${node.name}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Kode.textDim,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .then(menjorok)
+                                            .testTag("folder-ai-${node.relativePath}"),
+                                    )
+                                } else {
+                                    Text(
+                                        node.name,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Kode.text,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .then(menjorok)
+                                            .clickable {
+                                                berkasKonteks = node.relativePath
+                                                pakaiKonteksProjek = false
+                                                pilihBerkas = false
+                                                hasilTulis = null
+                                            }
+                                            .testTag("berkas-ai-${node.relativePath}"),
+                                    )
+                                }
                             }
                         }
                         Spacer(Modifier.height(6.dp))
                         GhostButton("Tutup", { pilihBerkas = false }, Modifier.testTag("tutup-pilih-berkas"))
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Dialog "Buat berkas baru dari kode": pengguna menulis jalur lengkap berkas baru (boleh
+ * sub-folder, mis. `src/main/java/app/LayarKedua.java`), berkas dibuat dengan isi kode dari
+ * jawaban AI, lalu langsung dibuka di editor. Inilah jalur resmi membuat berkas baru dari AI —
+ * sebelumnya tombol sisip hanya bisa menimpa berkas yang sedang terbuka.
+ */
+// internal (bukan private) supaya bisa diuji langsung dari androidTest tanpa lewat seluruh layar.
+@Composable
+internal fun DialogBuatBerkasDariKode(
+    kode: String,
+    akar: java.io.File,
+    onTutup: () -> Unit,
+    onJadi: (java.io.File) -> Unit,
+) {
+    var jalur by remember { mutableStateOf("") }
+    var galat by remember { mutableStateOf<String?>(null) }
+    Dialog(onDismissRequest = onTutup) {
+        Surface(
+            color = Kode.surface,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    "Buat berkas baru dari kode",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Kode.text,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Tulis jalur lengkapnya; folder yang belum ada ikut dibuat.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Kode.textDim,
+                )
+                Spacer(Modifier.height(10.dp))
+                TextField(
+                    value = jalur,
+                    onValueChange = { jalur = it },
+                    singleLine = true,
+                    placeholder = { Text("src/main/java/app/LayarKedua.java", color = Kode.textDim) },
+                    modifier = Modifier.fillMaxWidth().testTag("jalur-berkas-baru"),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Kode.surfaceRaised,
+                        unfocusedContainerColor = Kode.surfaceRaised,
+                        focusedTextColor = Kode.text,
+                        unfocusedTextColor = Kode.text,
+                    ),
+                )
+                galat?.let {
+                    Spacer(Modifier.height(6.dp))
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = Kode.error)
+                }
+                Spacer(Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    GhostButton("Batal", onTutup, Modifier.testTag("batal-berkas-baru"))
+                    PrimaryButton(
+                        "Buat berkas",
+                        {
+                            val bersih = jalur.trim().trim('/')
+                            if (bersih.isBlank()) {
+                                galat = "Jalur berkas masih kosong."
+                                return@PrimaryButton
+                            }
+                            if (bersih.contains("..") || bersih.startsWith("/")) {
+                                galat = "Jalur harus di dalam folder projek."
+                                return@PrimaryButton
+                            }
+                            val nama = bersih.substringAfterLast('/')
+                            val induk = bersih.removeSuffix("/$nama")
+                            val hasil = id.kodenusa.core.project.ProjectFiles.createFile(
+                                akar, induk, nama, kode,
+                            )
+                            when (hasil) {
+                                is id.kodenusa.core.project.ProjectFiles.Hasil.Gagal -> galat = hasil.pesan
+                                is id.kodenusa.core.project.ProjectFiles.Hasil.Sukses -> onJadi(hasil.file)
+                            }
+                        },
+                        modifier = Modifier.testTag("buat-berkas-ok"),
+                    )
                 }
             }
         }
@@ -576,6 +712,7 @@ private fun ChatAiPanel(
     onPilihBerkas: () -> Unit = {},
     onBuangBerkas: () -> Unit = {},
     onTulisProjek: () -> Unit = {},
+    onBuatBerkasBaru: () -> Unit = {},
 ) {
     val daftar = rememberLazyListState()
     val terakhir = jawaban.ifBlank { riwayat.lastOrNull { it.first == "assistant" }?.second.orEmpty() }
@@ -647,6 +784,12 @@ private fun ChatAiPanel(
                 modifier = Modifier.fillMaxWidth().testTag("sisip-kode"),
             )
             Spacer(Modifier.height(6.dp))
+            GhostButton(
+                "Buat berkas baru dari kode",
+                onBuatBerkasBaru,
+                modifier = Modifier.fillMaxWidth().testTag("buat-berkas-dari-kode"),
+            )
+            Spacer(Modifier.height(6.dp))
         }
 
         if (terakhir.contains("<<<BERKAS:")) {
@@ -668,13 +811,15 @@ private fun ChatAiPanel(
             Spacer(Modifier.height(6.dp))
         }
 
+        // Satu baris chip yang bisa digulir: menghemat dua baris vertikal di layar 5 inci,
+        // dan urutannya tetap konteks dulu, lalu gambar — sama seperti alur berpikir pengguna.
         Row(
-            Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             GhostButton(
-                if (adaKonteksProjek) "Konteks projek ✓" else "Konteks projek",
+                if (adaKonteksProjek) "Konteks projek ✓" else "Konteks projek + bikin berkas",
                 onKonteksProjek,
                 modifier = Modifier.testTag("konteks-projek"),
             )
@@ -691,16 +836,12 @@ private fun ChatAiPanel(
                 )
                 GhostButton("Buang", onBuangBerkas)
             }
-        }
-        Spacer(Modifier.height(6.dp))
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             GhostButton(
                 if (memuatGambar) "Menyiapkan gambar…" else "Lampirkan gambar",
                 onLampirkan,
                 modifier = Modifier.testTag("lampirkan-gambar"),
                 enabled = !memuatGambar,
             )
-            Spacer(Modifier.width(6.dp))
             GhostButton(
                 "Foto",
                 onFoto,
@@ -708,7 +849,6 @@ private fun ChatAiPanel(
                 enabled = !memuatGambar,
             )
             if (adaGambar) {
-                Spacer(Modifier.width(6.dp))
                 Pill(
                     "1 gambar siap",
                     Kode.ok,

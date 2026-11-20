@@ -76,15 +76,17 @@ object PromptBuilder {
 
     /** Aturan format yang dipakai [UbahanBerkas] untuk menerapkan perubahan otomatis. */
     const val ATURAN_AGEN: String = "Kamu mengubah projek secara langsung. Untuk SETIAP berkas yang " +
-        "berubah, tulis persis seperti ini:\n" +
+        "berubah atau BARU, tulis persis seperti ini:\n" +
         "<<<BERKAS: jalur/relatif/NamaBerkas.java>>>\n" +
         "```java\n" +
         "isi berkas lengkap dari awal sampai akhir\n" +
         "```\n" +
         "Syarat: jalur relatif tanpa garis miring di depan dan tanpa '..'; isi harus lengkap, bukan " +
         "potongan; jangan pernah menulis penanda untuk berkas yang tidak berubah; jangan memakai " +
-        "Kotlin, Gradle, AndroidX, atau library pihak ketiga. Kalau tugas tidak mungkin di Tier 0, " +
-        "tulis penjelasannya tanpa penanda berkas sama sekali."
+        "Kotlin, Gradle, AndroidX, atau library pihak ketiga. Membuat berkas BARU diperbolehkan bila " +
+        "tugasnya membutuhkan: tulis jalur lengkap termasuk foldernya (mis. " +
+        "src/main/java/app/LayarKedua.java) dan aplikasi akan membuat foldernya otomatis. Kalau " +
+        "tugas tidak mungkin di Tier 0, tulis penjelasannya tanpa penanda berkas sama sekali."
 
     /** Pertanyaan bebas tanpa berkas terbuka. */
     fun untukTanya(pertanyaan: String): List<ChatMessage> = listOf(
