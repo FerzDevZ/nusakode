@@ -59,6 +59,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import id.kodenusa.app.AppContainer
 import id.kodenusa.app.EditorSession
 import id.kodenusa.app.KonteksBerkas
+import id.kodenusa.app.ModeTema
 import id.kodenusa.core.project.BerkasMasuk
 import id.kodenusa.core.project.HasilCari
 import id.kodenusa.core.project.KodenusaProject
@@ -92,6 +93,7 @@ fun EditorScreen(
     onBack: () -> Unit,
     onBuild: () -> Unit,
     onSitus: (() -> Unit)? = null,
+    onGantiTema: (ModeTema) -> Unit = {},
 ) {
     val loaded = remember(projectDir) { container.projectStore.load(projectDir) }
     // Situs murni tidak punya APK. Menampilkan tombol "Build APK" di projek seperti itu hanya
@@ -428,6 +430,9 @@ fun EditorScreen(
                 onPratinjau = { session.saveAll(); pratinjau = true },
                 onBerkasBaru = { aksi = FileAction.NewFile },
                 onImpor = { mintaImpor = true },
+                onTemaGelap = { onGantiTema(ModeTema.GELAP) },
+                onTemaTerang = { onGantiTema(ModeTema.TERANG) },
+                onTemaSistem = { onGantiTema(ModeTema.SISTEM) },
                 webMurni = webMurni,
                 adaSitus = adaSitus,
             ),

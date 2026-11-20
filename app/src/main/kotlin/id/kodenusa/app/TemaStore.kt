@@ -28,6 +28,11 @@ class TemaStore(private val konteks: Context) {
         get() = prefs.getString(KUNCI_KUSTOM, null)
         set(value) = prefs.edit().putString(KUNCI_KUSTOM, value).apply()
 
+    /** Tautan unduh tema terakhir — diisi ulang otomatis di dialog unduh supaya tidak mengetik dua kali. */
+    var tautanTerakhir: String?
+        get() = prefs.getString(KUNCI_TAUTAN, null)
+        set(value) = prefs.edit().putString(KUNCI_TAUTAN, value).apply()
+
     /** Token warna aktif — dipanggil sebelum setContent supaya tidak ada frame warna salah. */
     fun tokens(): KodenusaTokens = when (mode) {
         ModeTema.GELAP -> KodenusaTokens.dari(PaletGelapBengkel, gelap = true)
@@ -52,5 +57,6 @@ class TemaStore(private val konteks: Context) {
     private companion object {
         const val KUNCI_MODE = "mode"
         const val KUNCI_KUSTOM = "kustom-json"
+        const val KUNCI_TAUTAN = "tautan-terakhir"
     }
 }

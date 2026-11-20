@@ -85,6 +85,10 @@ fun KodeNusaApp(container: AppContainer, tokensAwal: KodenusaTokens) {
                 onBack = { screen = Screen.Workspace },
                 onBuild = { screen = Screen.Build(current.projectDir) },
                 onSitus = { screen = Screen.Situs(current.projectDir) },
+                onGantiTema = { modeBaru ->
+                    container.temaStore.mode = modeBaru
+                    tokens = container.temaStore.tokens()
+                },
             )
 
             is Screen.Build -> BuildScreen(

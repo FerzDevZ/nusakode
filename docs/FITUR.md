@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.11.0** (`versionCode 23`) · **229 uji unit · 97 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.12.0** (`versionCode 24`) · **232 uji unit · 99 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -173,16 +173,19 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | Server lokal di HP untuk dibuka keluarga via Wi-Fi | ⛔ | rencana langkah S4 (`docs/06-rencana-2026.md`) |
 | PWA (manifest + service worker) agar bisa "dipasang" tanpa APK | ⛔ | rencana |
 
-## 4f. Tema & tampilan (0.11.0)
+## 4f. Tema & tampilan (0.11.0, diperluas 0.12.0)
 
 | Fitur | Status | Bukti / catatan |
 |---|---|---|
 | 4 tema bawaan: Gelap bengkel, Gelap AMOLED, Terang kertas, Terang kontras tinggi | ✅ | `KodenusaTokens`, `ContrastTest` (4 tema: teks ≥ 4,5:1, garis ≥ 3:1, aksen wajib hangat) |
 | Pilihan "Ikuti sistem" (mengikuti mode malam Android) | ✅ | `TemaStore`, dibaca sebelum `setContent` (tanpa kilat tema salah) |
 | Layar Tema dengan pratinjau kartu warna | ✅ | `TemaScreen`, uji UI `TemaUiTest` (pilihan bertahan setelah recreate) |
-| Tema kustom `.kntema` (impor SAF, unduh URL, ekspor) | ✅ | `Kntema` + `KntemaTest` (9 uji), ADR-036 |
-| Gerbang kontras menolak tema buruk dengan pesan spesifik | ✅ | `Kntema.pasanganGagal` — menyebut pasangan warna & rasio yang gagal |
+| Tema kustom `.kntema` (impor SAF, unduh URL, ekspor) | ✅ | `Kntema` + `KntemaTest`, ADR-036; HTTP polos diizinkan untuk unduh (ADR-037) |
+| Gerbang kontras menolak tema buruk dengan pesan spesifik | ✅ | `Kntema.pasanganGagal` — menyebut pasangan warna & rasio yang gagal (terverifikasi di emulator: tema `#666` di latar `#101010` ditolak, rasio 3,31:1) |
 | Ikon bilah status mengikuti tema | ✅ | `MainActivity` + `SideEffect` di `KodeNusaApp` (ditemukan lewat screenshot nyata) |
+| Semua tema bertahan setelah aplikasi dibuat ulang | ✅ | `TemaCycleDeviceTest` — memutar 5 mode × recreate, ikon bilah status dicek tiap kali |
+| Pintasan tema di palet perintah editor | ✅ | `DaftarPerintah` — ketik "tema"/"gelap"/"terang"/"sistem"; uji `DaftarPerintahTest` + `PaletPerintahUiTest` |
+| Riwayat tautan unduh + pesan galat manusiawi | ✅ | `TemaStore.tautanTerakhir` terisi ulang otomatis; galat jaringan diterjemahkan (alamat tak ditemukan, server tak menjawab) |
 | Ikon vektor + komponen Banner/SegmentedControl | ✅ | `Components.kt` (`GhostIconButton`, `Banner`, `SegmentedControl`, `Modifier.tekan()`) |
 | Tema dinamis Material You (warna wallpaper) | ⛔ | butuh API 31+, minSdk 24; bisa jadi ADR nanti |
 

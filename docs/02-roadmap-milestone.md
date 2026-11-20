@@ -1,6 +1,6 @@
 # Roadmap dan riwayat rilis
 
-Versi terakhir: **0.11.0** (`versionCode 23`), dirilis 20 November 2026.
+Versi terakhir: **0.12.0** (`versionCode 24`), dirilis 20 November 2026.
 
 ## Fase
 
@@ -77,3 +77,11 @@ Sama seperti `.py`: saat pengguna membuka `.kt`, jelaskan bahwa Tier 0 hanya Jav
 ## Ke depan
 
 Rencana v0.12 dan kandidat setelahnya disusun terpisah: lihat [`11-rencana-v0.12.md`](11-rencana-v0.12.md).
+
+
+## v0.12.0 — perbaikan dari uji manual (20 November 2026)
+
+- Unduh tema dari tautan diperbaiki (HTTP polos diizinkan, ADR-037) + pesan galat manusiawi + riwayat tautan.
+- Bug serialisasi `.kntema` diperbaiki (`gelap` kini selalu tertulis).
+- Pintasan tema di palet perintah; uji memutar 5 tema × recreate.
+- 232 uji unit · 99 uji perangkat · detekt 0.

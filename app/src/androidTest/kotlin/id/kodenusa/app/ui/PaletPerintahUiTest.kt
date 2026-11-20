@@ -33,6 +33,9 @@ class PaletPerintahUiTest {
         onPratinjau = { dijalankan += "pratinjau" },
         onBerkasBaru = { dijalankan += "berkas-baru" },
         onImpor = { dijalankan += "impor" },
+        onTemaGelap = { dijalankan += "tema-gelap" },
+        onTemaTerang = { dijalankan += "tema-terang" },
+        onTemaSistem = { dijalankan += "tema-sistem" },
         webMurni = webMurni,
         adaSitus = true,
     )
@@ -79,5 +82,19 @@ class PaletPerintahUiTest {
         layar.onNodeWithTag("cari-aksi").performTextInput("zzz")
         layar.onNodeWithTag("aksi-kosong").assertExists()
         layar.onNodeWithText("Tidak ada aksi yang cocok dengan \"zzz\".").assertExists()
+    }
+
+    @Test
+    fun pintasan_tema_bisa_ditemukan_dan_dijalankan_dari_palet() {
+        val dijalankan = mutableListOf<String>()
+        layar.setContent {
+            KodenusaTheme {
+                PaletPerintahDialog(perintah = perintahContoh(dijalankan), onTutup = {})
+            }
+        }
+        layar.onNodeWithTag("cari-aksi").performTextInput("tema")
+        layar.onNodeWithTag("aksi-tema-terang", useUnmergedTree = true).assertExists()
+        layar.onNodeWithTag("aksi-tema-terang", useUnmergedTree = true).performClick()
+        assertEquals(listOf("tema-terang"), dijalankan)
     }
 }

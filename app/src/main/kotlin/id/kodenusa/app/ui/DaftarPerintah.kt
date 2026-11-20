@@ -19,6 +19,9 @@ fun daftarPerintah(
     onPratinjau: () -> Unit,
     onBerkasBaru: () -> Unit,
     onImpor: () -> Unit,
+    onTemaGelap: () -> Unit,
+    onTemaTerang: () -> Unit,
+    onTemaSistem: () -> Unit,
     webMurni: Boolean,
     adaSitus: Boolean,
 ): List<Perintah> {
@@ -50,6 +53,27 @@ fun daftarPerintah(
             keterangan = "Foto, CSS, logo, .java — masuk ke folder berkas aktif.",
             alias = listOf("ambil", "upload", "saf"),
             jalankan = onImpor,
+        ),
+        Perintah(
+            id = "tema-gelap",
+            judul = "Tema gelap",
+            keterangan = "Langsung memasang tema gelap bengkel tanpa membuka layar Tema.",
+            alias = listOf("tema", "gelap", "dark"),
+            jalankan = onTemaGelap,
+        ),
+        Perintah(
+            id = "tema-terang",
+            judul = "Tema terang",
+            keterangan = "Langsung memasang tema terang kertas.",
+            alias = listOf("terang", "light"),
+            jalankan = onTemaTerang,
+        ),
+        Perintah(
+            id = "tema-sistem",
+            judul = "Tema ikut sistem",
+            keterangan = "Gelap saat malam Android menyala, terang saat siang.",
+            alias = listOf("sistem", "otomatis"),
+            jalankan = onTemaSistem,
         ),
     )
     if (webMurni) {

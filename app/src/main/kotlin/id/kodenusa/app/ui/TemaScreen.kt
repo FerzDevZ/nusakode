@@ -236,9 +236,11 @@ fun TemaScreen(
 
     if (unduhTerbuka) {
         DialogUnduhTema(
+            tautanAwal = temaStore.tautanTerakhir,
             onTutup = { unduhTerbuka = false },
             onUnduh = { tautan ->
                 unduhTerbuka = false
+                temaStore.tautanTerakhir = tautan
                 lingkup.launch {
                     pesan = JenisBanner.INFO to "Mengunduh tema…"
                     val hasil = withContext(Dispatchers.IO) {
@@ -266,11 +268,24 @@ fun TemaScreen(
                         }
                     }
                     hasil.onSuccess { pasangKustom(it, Kntema.serialisasi(it)) }
-                        .onFailure { pesan = JenisBanner.GALAT to "Unduh gagal: ${it.message}" }
+                        .onFailure { pesan = JenisBanner.GALAT to pesanUnduh(it) }
                 }
             },
         )
     }
+}
+
+/** Pesan galat unduh yang bisa dipahami, bukan nama exception Inggris. */
+private fun pesanUnduh(galat: Throwable): String = when (galat) {
+    is java.net.UnknownHostException ->
+        "Unduh gagal: alamat tidak ditemukan. Periksa ejaan tautan atau koneksi internet."
+    is java.net.SocketTimeoutException ->
+        "Unduh gagal: server tidak menjawab dalam 10 detik. Coba lagi nanti."
+    is java.net.ConnectException ->
+        "Unduh gagal: tidak bisa tersambung ke server. Periksa koneksi internet."
+    is java.io.IOException if galat.message?.contains("Cleartext") == true ->
+        "Unduh gagal: tautan HTTP tidak diizinkan Android. Pakai tautan https:// jika ada."
+    else -> "Unduh gagal: ${galat.message ?: "alasan tidak diketahui."}"
 }
 
 private fun gelapSistem(uiMode: Int): Boolean =
@@ -360,8 +375,8 @@ private fun PratinjauTema(palet: PaletInt) {
 }
 
 @Composable
-private fun DialogUnduhTema(onTutup: () -> Unit, onUnduh: (String) -> Unit) {
-    var tautan by remember { mutableStateOf("") }
+private fun DialogUnduhTema(tautanAwal: String?, onTutup: () -> Unit, onUnduh: (String) -> Unit) {
+    var tautan by remember { mutableStateOf(tautanAwal.orEmpty()) }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onTutup,
         title = { Text("Unduh tema dari tautan", color = Kode.text) },

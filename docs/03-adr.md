@@ -567,3 +567,25 @@ bagikan lewat tautan/berkas apa pun, termasuk GitHub milik pengguna sendiri.
 dengan `ContrastTest` bawaan (satu sumber kebenaran: `Kontras.rasio`). Mode "Ikuti sistem" dibaca
 di `MainActivity` sebelum `setContent` supaya tidak ada kilat tema salah. Ikon bilah status
 mengikuti kegelapan tema.
+
+### ADR-037 — Unduh tema boleh lewat HTTP polos, dengan pagar 4 KB + gerbang kontras
+
+**Tanggal.** 20 November 2026.
+
+**Konteks.** Tema `.kntema` dibagikan sebagai berkas (ADR-036) — sering lewat tautan dari grup
+WhatsApp atau penyimpanan lokal seseorang, dan banyak tautan seperti itu berupa `http://`
+(langsung, bukan `https://`). Android 9+ memblokir HTTP polos secara bawaan, sehingga dialog
+"Unduh dari tautan" gagal dengan galat teknis — ditemukan lewat uji manual di emulator, bukan
+uji otomatis.
+
+**Keputusan.** `network_security_config.xml` mengizinkan cleartext HTTP untuk semua host, hanya
+untuk pengunduhan tema. Pagar yang membuat risikonya wajar:
+1. Berkas dibatasi **4 KB** dan harus JSON `.kntema` sah — bukan kode, tidak dieksekusi.
+2. Gerbang kontras menolak tema buruk sebelum dipasang (ADR-036).
+3. Galat jaringan diterjemahkan jadi pesan manusiawi (alamat tidak ditemukan, server tak menjawab,
+   HTTP tidak diizinkan) — bukan nama exception Inggris.
+
+**Konsekuensi.** Pengguna bisa membagikan tema lewat tautan apa pun tanpa server KodeNusa
+(ADR-001 tetap). Risiko sesi-sisi (MITM mengganti warna tema) diterima: dampak terburuk adalah
+tema jelek yang ditolak gerbang kontras. HTTPS tetap disarankan di pesan galat ketika HTTP
+ditolak oleh konfigurasi.

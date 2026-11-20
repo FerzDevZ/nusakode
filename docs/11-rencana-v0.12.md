@@ -15,6 +15,11 @@
 
 ## Prioritas v0.12 — "rapikan dasar, ukur yang nyata"
 
+> **Status (20 Nov 2026, rilis 0.12.0):** nomor 2, 4, 5 selesai dan teruji (232 unit · 99
+> perangkat · detekt 0). Nomor 1 menunggu HP fisik. Nomor 3 ternyata sudah terpasang sejak
+> awal (gutter nomor baris + undo/redo di `CodeEditorView`) — kekurangannya hanya uji; ditambah
+> ke daftar uji berikutnya, bukan fitur baru.
+
 | # | Pekerjaan | Kenapa sekarang | Ukuran selesai |
 |---|---|---|---|
 | 1 | **Ukur di HP fisik 4 GB** (`scripts/ukur-hp.sh`) | Satu-satunya klaim utama yang belum punya angka nyata. Semua keputusan arsitektur selanjutnya (Tier 2, Kotlin) bergantung padanya | Lembar `docs/08-lembar-ukur-4gb.md` terisi angka dari HP sungguhan, bukan emulator |
