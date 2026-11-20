@@ -95,6 +95,7 @@ Detail aliran data, invariant keamanan, dan alasan tiap pilihan ada di [docs/01-
 | [docs/00-visi-produk.md](docs/00-visi-produk.md) | Untuk siapa, masalah apa, dan apa yang sengaja tidak dikerjakan |
 | [docs/01-arsitektur-teknis.md](docs/01-arsitektur-teknis.md) | Modul, aliran build, invariant keamanan |
 | [docs/02-roadmap-milestone.md](docs/02-roadmap-milestone.md) | Riwayat rilis v0.1.0 → v0.11.0 dan langkah berikutnya |
+| [docs/11-rencana-v0.12.md](docs/11-rencana-v0.12.md) | Rencana v0.12+: ukur HP fisik, editor, ADR kandidat (Material You, galeri tema) |
 | [docs/03-adr.md](docs/03-adr.md) | 31 keputusan arsitektur beserta konsekuensinya |
 | [docs/04-backlog-agent-matrix.md](docs/04-backlog-agent-matrix.md) | Agen dan skill yang dipakai membangun proyek ini |
 | [docs/05-toolchain-di-perangkat.md](docs/05-toolchain-di-perangkat.md) | Versi tool, alasan pin, dan cara memverifikasi |

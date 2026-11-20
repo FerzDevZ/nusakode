@@ -15,6 +15,7 @@ Dokumen ini adalah **indeks dan peta status**. Detail ada di `docs/`.
 | 0 | [`docs/00-visi-produk.md`](docs/00-visi-produk.md) | Untuk siapa, masalah apa, janji yang dipegang, dan yang sengaja tidak dikerjakan |
 | 1 | [`docs/01-arsitektur-teknis.md`](docs/01-arsitektur-teknis.md) | Modul, pipeline 9 langkah, aliran galat, AI, Git, rahasia, strategi verifikasi |
 | 2 | [`docs/02-roadmap-milestone.md`](docs/02-roadmap-milestone.md) | Riwayat v0.1.0 → v0.11.0 dan langkah berikutnya menurut risiko |
+| 3 | [`docs/11-rencana-v0.12.md`](docs/11-rencana-v0.12.md) | Rencana v0.12+: prioritas terukur + kandidat yang butuh ADR |
 | 3 | [`docs/03-adr.md`](docs/03-adr.md) | 31 ADR + tabel "kalau Anda bertanya X, baca nomor ini" |
 | 4 | [`docs/04-backlog-agent-matrix.md`](docs/04-backlog-agent-matrix.md) | Agen/skill yang dipakai, backlog per milestone, gate yang tidak boleh dilewati |
 | 5 | [`docs/05-toolchain-di-perangkat.md`](docs/05-toolchain-di-perangkat.md) | Versi alat, alasan pin, cara verifikasi ulang |

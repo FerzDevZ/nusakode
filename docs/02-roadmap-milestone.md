@@ -73,3 +73,7 @@ Sama seperti `.py`: saat pengguna membuka `.kt`, jelaskan bahwa Tier 0 hanya Jav
 | Model AI di dalam HP | 400–900 MB, 2–8 token/detik | ADR-023 |
 | Play Store | APK langsung sudah bisa dibagikan | ADR-010 |
 | Terminal | Permukaan serangan terlalu besar | ADR-008 |
+
+## Ke depan
+
+Rencana v0.12 dan kandidat setelahnya disusun terpisah: lihat [`11-rencana-v0.12.md`](11-rencana-v0.12.md).

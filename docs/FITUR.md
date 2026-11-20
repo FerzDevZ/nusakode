@@ -37,7 +37,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Duplikat berkas/folder (`-salinan`, `-salinan-2`) | ✅ | `ProjectFiles.duplicate` + `FileOpsUiTest.berkas_bisa_diduplikasi_dari_menu` |
 | Lokasi berkas/folder baru dipilih pengguna (bawaan: akar projek) | ✅ | `FileActionDialog.LokasiField` (`testTag("pilih-lokasi")`) |
 | Berkas/folder baru tidak lagi "hilang" di dalam `src/main/java/…` | ✅ | uji memeriksa disk: `File(akar, "komponen").isDirectory` |
-| Cari di seluruh projek (bukan hanya 1 berkas) | ⛔ | rencana |
+| Cari di seluruh projek (bukan hanya 1 berkas) | ✅ | `ProjectSearch` + `ProjectSearchTest` (5 uji); panel hasil `jalur:baris` bisa diketuk — lihat juga bagian Editor |
 
 ## 3. Editor
 
