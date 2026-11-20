@@ -16,6 +16,7 @@ sealed interface Screen {
     data class Editor(val projectDir: File) : Screen
     data class Build(val projectDir: File) : Screen
     data class Situs(val projectDir: File) : Screen
+    data class Git(val projectDir: File) : Screen
 }
 
 @Composable
@@ -27,6 +28,7 @@ fun KodeNusaApp(container: AppContainer) {
             is Screen.Editor -> Screen.Workspace
             is Screen.Build -> Screen.Editor(current.projectDir)
             is Screen.Situs -> Screen.Editor(current.projectDir)
+            is Screen.Git -> Screen.Editor(current.projectDir)
             else -> Screen.Workspace
         }
     }
@@ -56,9 +58,15 @@ fun KodeNusaApp(container: AppContainer) {
             projectDir = current.projectDir,
             onBack = { screen = Screen.Editor(current.projectDir) },
             onSitus = { screen = Screen.Situs(current.projectDir) },
+            onGit = { screen = Screen.Git(current.projectDir) },
         )
 
         is Screen.Situs -> SitusScreen(
+            projectDir = current.projectDir,
+            onBack = { screen = Screen.Editor(current.projectDir) },
+        )
+
+        is Screen.Git -> GitScreen(
             projectDir = current.projectDir,
             onBack = { screen = Screen.Editor(current.projectDir) },
         )

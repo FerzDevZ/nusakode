@@ -1,8 +1,8 @@
 # Rencana Induk 2026 — KodeNusa
 
 > Dokumen ini adalah **rencana kerja yang bisa dieksekusi dingin**: setiap langkah punya berkas yang disentuh, perintah pembuktian, dan kriteria lulus. Tidak ada langkah yang berbunyi "tingkatkan kualitas" tanpa angka.
-> Status terakhir: **186 uji unit · 36 uji perangkat (API 24) · APK 45,8 MB · Tier 0 build 1,4–1,9 s.**
-> **Sesi 1 (S1) selesai** — layar Situs hidup: susun, ringkasan, buka di browser, bagikan zip.
+> Status terakhir: **186 uji unit · 39 uji perangkat (API 24) · APK 45,9 MB · Tier 0 build 1,4–1,9 s.**
+> **Sesi 1–2 selesai** — layar Situs (susun, pratinjau, bagikan zip, terbit ke GitHub Pages) dan layar Git (siapkan repo, simpan, kirim, riwayat) sudah hidup dan teruji di HP.
 
 ---
 
@@ -41,7 +41,7 @@ Setiap langkah dirancang **satu sesi kerja** (≤ 1 PR). Kolom *Paralel* menanda
 | # | Langkah | Berkas utama | Kriteria lulus | Paralel |
 |---|---|---|---|---|
 | S1 ✅ | **Layar "Situs"**: pratinjau, susun, bagikan zip | `ui/SitusScreen.kt`, `KodeNusaApp.kt`, `BuildScreen.kt` | `:app:connectedDebugAndroidTest` uji `SitusUiTest` hijau di API 24 & 34 | — |
-| S2 | **Terbit ke GitHub Pages** dari layar Situs + tampilkan tautan & tombol salin | `SitusScreen.kt`, `GitSettingsStore.kt` | uji UI: tombol terbit terkunci tanpa token; dengan token uji palsu → pesan galat jelas | G1 |
+| S2 ✅ | **Terbit ke GitHub Pages** dari layar Situs + tampilkan tautan & tombol salin | `SitusScreen.kt`, `GitSettingsStore.kt` | uji UI: tombol terbit terkunci tanpa token; dengan token uji palsu → pesan galat jelas | G1 |
 | S3 | **PWA otomatis**: `manifest.json` + service worker ditulis saat susun (opsional, satu sakelar) | `core/build/SitusStatis.kt` (fungsi `tambahkanPwa`) | uji JVM: `index.html` diberi `<link rel=manifest>`, `sw.js` ada, idempoten | — |
 | S4 | **Server lokal di HP** (`http://192.168.x.x:8080`) untuk dibuka keluarga via Wi-Fi | `core/build/ServerLokal.kt` (JVM: `com.sun.net.httpserver`), `SitusScreen.kt` | uji JVM: server menyajikan `index.html` & MIME benar; tombol mati saat tak ada Wi-Fi | S3 |
 | S5 | **Pratinjau di dalam app** (WebView aset lokal, tanpa izin jaringan) | `ui/SitusPreview.kt` | uji UI: pratinjau tampil, `file://` tidak bisa keluar folder | S1 |
@@ -50,8 +50,8 @@ Setiap langkah dirancang **satu sesi kerja** (≤ 1 PR). Kolom *Paralel* menanda
 
 | # | Langkah | Berkas utama | Kriteria lulus | Paralel |
 |---|---|---|---|---|
-| G1 | **Penyimpanan setelan git** (alamat repo + token, terpisah dari projek) | `GitSettingsStore.kt` | uji JVM/Android: tersimpan, bisa dihapus, tidak masuk log | — |
-| G2 | **Layar GitHub**: commit, push, riwayat, status perubahan | `ui/GitScreen.kt` | uji UI: tanpa repo → tombol push mati dengan alasan; setelah commit → riwayat bertambah | G1, S2 |
+| G1 ✅ | **Penyimpanan setelan git** (alamat repo + token, terpisah dari projek) | `GitSettingsStore.kt` | uji JVM/Android: tersimpan, bisa dihapus, tidak masuk log | — |
+| G2 ✅ | **Layar GitHub**: commit, push, riwayat, status perubahan | `ui/GitScreen.kt` | uji UI: tanpa repo → tombol push mati dengan alasan; setelah commit → riwayat bertambah | G1, S2 |
 | G3 | **Buat repo otomatis** lewat REST (`POST /user/repos`, plus `PUT /repos/{o}/{r}/contents/.gitkeep` bila perlu) | `core/git/GitHubRest.kt` | uji JVM dengan `HttpServer` tiruan: 201 → repo terbuat; 422 → "repo sudah ada, pakai alamat itu" | G1 |
 | G4 | **Bagikan APK**: unggah ke Releases (`POST /releases`, `uploads.github.com`) dan salin tautan | `GitHubRest.kt`, `BuildScreen.kt` | uji JVM: dua langkah request, tautan `releases/download/...` dirakit benar | G3 |
 | G5 | **Buka projek dari GitHub** (klon ke workspace lewat `RepoGit.klon`) | `ProjectStore.kt`, `ui/GitScreen.kt` | uji perangkat: klon remote lokal → projek muncul di daftar & bisa dibuild | G2 |

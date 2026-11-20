@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,13 +24,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import id.kodenusa.app.GitSettingsStore
 import id.kodenusa.core.build.HasilSitus
 import id.kodenusa.core.build.SitusGagalException
 import id.kodenusa.core.build.SitusStatis
+import id.kodenusa.core.git.Hasil
+import id.kodenusa.core.git.RepoGit
 import id.kodenusa.ui.CodeTextStyle
 import id.kodenusa.ui.GhostButton
 import id.kodenusa.ui.KodenusaPalette
@@ -56,11 +63,25 @@ fun SitusScreen(
     onBack: () -> Unit,
 ) {
     val konteks = LocalContext.current
+    val papanKlip = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
+    val setelanGit = remember(konteks) { GitSettingsStore(konteks) }
     var hasil by remember(projectDir) { mutableStateOf<HasilSitus?>(null) }
     var galat by remember(projectDir) { mutableStateOf<String?>(null) }
     var pesan by remember(projectDir) { mutableStateOf<String?>(null) }
     var sibuk by remember(projectDir) { mutableStateOf(false) }
+    var alamat by remember(projectDir) { mutableStateOf(setelanGit.alamatRepo()) }
+    var token by remember(projectDir) { mutableStateOf(setelanGit.token()) }
+    var terbitSibuk by remember(projectDir) { mutableStateOf(false) }
+    var tautan by remember(projectDir) { mutableStateOf<String?>(null) }
+    var terbitGalat by remember(projectDir) { mutableStateOf<String?>(null) }
+    val alasanTerbit = when {
+        alamat.isBlank() -> "Isi alamat repo GitHub dulu, misalnya https://github.com/nama/repo."
+        token.isBlank() -> "Isi token GitHub dulu, lalu simpan."
+        !setelanGit.bolehDiterbitkan(alamat) -> "Alamat harus diawali https:// atau file:// (SSH belum didukung)."
+        hasil == null -> "Susun situs dulu supaya ada yang diterbitkan."
+        else -> null
+    }
 
     fun susun() {
         sibuk = true
@@ -219,6 +240,98 @@ fun SitusScreen(
                             "Terbit gratis ke GitHub Pages: siapkan token GitHub dulu di layar GitHub (menyusul).",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(KodenusaPalette.TEXT_DIM),
+                        )
+                    }
+                }
+            }
+
+            Panel(Modifier.fillMaxWidth().testTag("panel-terbit")) {
+                Column {
+                    Text(
+                        "Terbitkan ke GitHub Pages",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(KodenusaPalette.TEXT),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Gratis, tanpa server KodeNusa. Situs dikirim ke cabang ${GitSettingsStore.CABANG_BAWAAN} " +
+                            "dari repo sementara, jadi kode Java projek tidak ikut tampil.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(KodenusaPalette.TEXT_DIM),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = alamat,
+                        onValueChange = { alamat = it; terbitGalat = null },
+                        label = { Text("Alamat repo GitHub") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().testTag("alamat-repo"),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = token,
+                        onValueChange = { token = it; terbitGalat = null },
+                        label = { Text("Token GitHub") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth().testTag("token-github"),
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    PrimaryButton(
+                        text = "Terbitkan sekarang",
+                        onClick = {
+                            setelanGit.simpan(alamat, token)
+                            terbitSibuk = true
+                            terbitGalat = null
+                            tautan = null
+                            val folder = hasil?.folder
+                            scope.launch {
+                                val keluaran = withContext(Dispatchers.IO) {
+                                    if (folder == null) {
+                                        Hasil.Gagal("Susun situs dulu sebelum menerbitkan.")
+                                    } else {
+                                        RepoGit.terbitkanSitus(
+                                            folderSitus = folder,
+                                            urlRepo = alamat,
+                                            token = token,
+                                            pesan = "Terbitkan situs dari KodeNusa",
+                                        )
+                                    }
+                                }
+                                terbitSibuk = false
+                                when (keluaran) {
+                                    is Hasil.Sukses -> {
+                                        tautan = setelanGit.tautanSitus()
+                                        pesan = if (tautan == null) {
+                                            "Situs terkirim. Tautan publik hanya dihitung untuk repo github.com."
+                                        } else {
+                                            "Situs terbit. Tautan bisa dibuka siapa pun."
+                                        }
+                                    }
+                                    is Hasil.Gagal -> terbitGalat = keluaran.pesan
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().testTag("terbitkan-situs"),
+                        enabled = alasanTerbit == null && !terbitSibuk,
+                        loading = terbitSibuk,
+                    )
+                    if (alasanTerbit != null) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(alasanTerbit, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.TEXT_DIM))
+                    }
+                    terbitGalat?.let { salah ->
+                        Spacer(Modifier.height(8.dp))
+                        Text(salah, style = MaterialTheme.typography.bodyMedium, color = Color(KodenusaPalette.ERROR), modifier = Modifier.testTag("galat-terbit"))
+                    }
+                    tautan?.let { alamatSitus ->
+                        Spacer(Modifier.height(10.dp))
+                        Text(alamatSitus, style = CodeTextStyle, color = Color(KodenusaPalette.ACCENT), modifier = Modifier.testTag("tautan-situs"))
+                        Spacer(Modifier.height(8.dp))
+                        GhostButton(
+                            "Salin tautan",
+                            { papanKlip.setText(AnnotatedString(alamatSitus)) },
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
