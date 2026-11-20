@@ -435,3 +435,15 @@ Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif
 
 **Konsekuensi:** (+) Sunting → lihat tanpa keluar aplikasi dan tanpa internet. (−) Halaman yang memanggil `fetch()` ke berkas lokal bisa gagal sesuai kebijakan browser; untuk itu jalur "Susun situs" tetap ada.
 
+---
+
+## ADR-031 — Palet perintah, bukan baris tombol tambahan
+
+**Keputusan:** semua aksi editor (simpan, cari se-projek, berkas baru, impor, build/susun situs, pratinjau) bisa dicari dan dijalankan dari **palet perintah** yang dibuka lewat tombol **Aksi**.
+
+**Mengapa:** layar 360dp hanya memuat satu tombol utama dan tiga tombol kecil. Setiap fitur baru selama v0.9.x menuntut satu tombol lagi — jalur itu berakhir di toolbar bergulir yang tidak bisa ditekan dengan jempol. Palet memindahkan biaya "ruang" menjadi biaya "ingat kata kunci", dan kata kunci itu bisa ditulis (build, apk, bangun, kompilasi) sehingga tidak perlu dihafal persis.
+
+**Pencocokan:** setiap kata pada kueri harus muncul di judul/keterangan/alias (AND). Mengetik "simpan git" menghasilkan nol baris, bukan semua baris yang memuat "git" — hasil kosong lebih jujur daripada daftar panjang yang tidak relevan.
+
+**Konsekuensi:** (+) Aksi baru tidak lagi berebut ruang dengan tombol Build APK. (+) Projek `web-murni` tidak pernah menawarkan "Build APK" di palet. (−) Aksi yang sangat sering (Simpan) tetap punya tombol sendiri; palet bukan pengganti tombol utama.
+

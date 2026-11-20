@@ -52,6 +52,9 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | **Ambil berkas dari HP** (Unduhan, Drive, kartu SD, foto) | ✅ | tombol `ambil-dari-hp` → pemilih berkas Android (SAF) → `BerkasMasuk.simpan`; masuk ke folder berkas yang sedang dibuka; batas 24 MB; nama bentrok jadi ` (2)`; nama berbahaya **ditolak** dengan alasan (`BerkasMasukTest`, `BerkasHpUiTest`) |
 | **Bagikan berkas keluar** (WhatsApp/Drive/Gmail) | ✅ | menu `⋯` → "Bagikan berkas…" lewat `FileProvider` (`file_paths.xml` hanya membuka `projek/` + `cache/`) |
 | **Tanpa izin penyimpanan sama sekali** | ✅ | tidak ada `READ/WRITE_EXTERNAL_STORAGE` aktif maupun `MANAGE_EXTERNAL_STORAGE`; `<queries>` mendeklarasikan pemilih berkas agar bisa di-resolve di Android 11+ |
+| **Palet perintah** | ✅ | Tombol **Aksi** di editor: ketik "apk", "bangun", "cari", "impor" untuk menjalankan aksi tanpa mencari tombolnya. Pencarian memakai semua kata (AND), dan projek web murni tidak pernah menawarkan Build APK. |
+| **Progres unggahan APK** | ✅ | Kartu Bagikan APK menampilkan "Mengunggah 42% (13,4 MB dari 32,3 MB)" — dikirim per potongan 64 KB, bukan sekali kirim yang tampak menggantung. |
+| **Catatan jujur soal Python** | ✅ | Membuka berkas `.py` menampilkan: *"Python belum bisa dijalankan atau dibuild di KodeNusa. Berkas tetap bisa disunting dan dikirim ke GitHub."* |
 | **Pratinjau situs di dalam aplikasi** | ✅ | Tombol **Pratinjau** di editor memuat `index.html` projek lewat WebView — sunting lalu lihat tanpa keluar aplikasi, tanpa internet. Batas `file://` disebutkan di layar. |
 | **Bagikan APK lewat GitHub Release** | ✅ | Setelah APK jadi, kartu **Bagikan APK** mengunggahnya ke rilis repo Anda dan menampilkan tautan unduh. Ukuran (32 MB) dan tujuan ditampilkan sebelum tombol ditekan. |
 | **Foto langsung ke AI** | ✅ | tombol `foto-kamera` memakai kamera HP (hasil disimpan sementara lewat FileProvider), jadi layar galat bisa difoto, bukan dicari dulu di galeri |
@@ -183,8 +186,8 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 
 | Fitur | Status | Bukti |
 |---|---|---|
-| Uji unit | ✅ | 249 uji (`./gradlew test`) |
-| Uji di perangkat | ✅ | 72 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
+| Uji unit | ✅ | 252 uji (`./gradlew test`) |
+| Uji di perangkat | ✅ | 77 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
 | Analisis statis detekt, 0 temuan | ✅ | `./gradlew detekt` |
 | CI menjalankan gerbang yang sama | ✅ | `.github/workflows/ci.yml` |
 

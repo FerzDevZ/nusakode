@@ -54,6 +54,7 @@ fun BagikanApkCard(
 ) {
     val scope = rememberCoroutineScope()
     var sedang by remember(apk) { mutableStateOf(false) }
+    var terkirim by remember(apk) { mutableStateOf(0L) }
     var hasil by remember(apk) { mutableStateOf<HasilUnggah?>(null) }
     var galat by remember(apk) { mutableStateOf<String?>(null) }
 
@@ -96,6 +97,7 @@ fun BagikanApkCard(
                         sedang = true
                         galat = null
                         hasil = null
+                        terkirim = 0L
                         val judul = "KodeNusa build " + apk.name
                         val catatan = "Dibangun di HP dengan KodeNusa $versi pada " +
                             SimpleDateFormat("d MMM yyyy HH:mm", Locale("id", "ID")).format(Date())
@@ -109,6 +111,11 @@ fun BagikanApkCard(
                                         judul = judul,
                                         catatan = catatan,
                                         berkas = apk,
+                                        onProgres = { bita ->
+                                            // Pembaruan state Compose harus di thread utama; callback
+                                            // ini datang dari thread IO unggahan.
+                                            scope.launch { terkirim = bita }
+                                        },
                                     )
                                 }
                             }
@@ -126,6 +133,17 @@ fun BagikanApkCard(
                         }
                     },
                     Modifier.testTag("unggah-apk"),
+                )
+            }
+            if (sedang) {
+                Spacer(Modifier.height(6.dp))
+                val persen = if (apk.length() > 0) (terkirim * 100 / apk.length()).toInt() else 0
+                Text(
+                    "Mengunggah $persen% (${PenyimpananProjek.ringkasByte(terkirim)} dari " +
+                        PenyimpananProjek.ringkasByte(apk.length()) + ")",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(KodenusaPalette.INFO),
+                    modifier = Modifier.testTag("progres-unggah"),
                 )
             }
             hasil?.let { sukses ->

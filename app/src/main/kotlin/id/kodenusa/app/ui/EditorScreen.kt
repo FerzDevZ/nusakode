@@ -91,6 +91,10 @@ fun EditorScreen(
     // Pratinjau tersedia untuk projek apa pun yang punya halaman situs (web-murni atau
     // web-katalog), bukan hanya web-murni: aset web di dalam APK juga ingin dilihat.
     var pratinjau by remember { mutableStateOf(false) }
+    var palet by remember { mutableStateOf(false) }
+    // Pemilih berkas tidak boleh diluncurkan dari dalam onClick: di Android 11+ itu membuat main
+    // thread menunggu Binder tepat saat Compose membongkar koneksi aksesibilitas (ANR).
+    var mintaImpor by remember { mutableStateOf(false) }
     val adaSitus = remember(projectDir) {
         id.kodenusa.core.build.SitusStatis.sumber(projectDir)?.let {
             File(it, "index.html").isFile
@@ -183,7 +187,7 @@ fun EditorScreen(
                     },
                     onAmbil = {
                         pesanBerkas = null
-                        pemilihBerkas.launch(arrayOf("*/*"))
+                        mintaImpor = true
                     },
                     pesan = pesanBerkas,
                     buildable = canBuild,
@@ -199,6 +203,12 @@ fun EditorScreen(
         },
     ) {
         val hostPesan = remember { SnackbarHostState() }
+        LaunchedEffect(mintaImpor) {
+            if (mintaImpor) {
+                mintaImpor = false
+                pemilihBerkas.launch(arrayOf("*/*"))
+            }
+        }
         // Semua hasil aksi (berkas masuk, salinan, galat) sebelumnya ditulis ke `state.toast`
         // tetapi tidak pernah ditampilkan: pengguna tidak tahu apakah aksinya berhasil atau gagal.
         LaunchedEffect(state.toast) {
@@ -230,6 +240,7 @@ fun EditorScreen(
                         session.saveAll()
                         pratinjau = true
                     },
+                    onPalet = { palet = true },
                 )
 
                 TabStrip(session, onSelect = { file -> session.open(file); state.load(file) })
@@ -316,6 +327,27 @@ fun EditorScreen(
                     )
                 }
 
+                // Python: jujur di layar, bukan janji kosong. KodeNusa bisa menyunting dan
+                // membagikan berkas .py, tetapi Tier 0 hanya mengenal Java — jadi build akan gagal
+                // dan pengguna berhak tahu sebelum menekan Build APK.
+                val berkasAktif = session.active
+                if (berkasAktif != null && berkasAktif.name.endsWith(".py", ignoreCase = true)) {
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .background(Color(KodenusaPalette.WARN).copy(alpha = 0.14f))
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "Python belum bisa dijalankan atau dibuild di KodeNusa. Berkas tetap " +
+                                "bisa disunting dan dikirim ke GitHub.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(KodenusaPalette.WARN),
+                            modifier = Modifier.testTag("catatan-python"),
+                        )
+                    }
+                }
+
                 Box(Modifier.weight(1f).fillMaxWidth().background(Color(KodenusaPalette.SURFACE))) {
                     val file = session.active
                     if (file == null) {
@@ -361,6 +393,22 @@ fun EditorScreen(
     Autosave(session)
     if (pratinjau) {
         PratinjauSitusDialog(akarProjek = projectDir, onTutup = { pratinjau = false })
+    }
+    if (palet) {
+        PaletPerintahDialog(
+            perintah = daftarPerintah(
+                onSimpan = { session.saveAll(); state.toast = "Tersimpan" },
+                onCari = { state.findOpen = true },
+                onBuild = { session.saveAll(); onBuild() },
+                onSitus = { session.saveAll(); onSitus?.invoke() },
+                onPratinjau = { session.saveAll(); pratinjau = true },
+                onBerkasBaru = { aksi = FileAction.NewFile },
+                onImpor = { mintaImpor = true },
+                webMurni = webMurni,
+                adaSitus = adaSitus,
+            ),
+            onTutup = { palet = false },
+        )
     }
     if (aiTerbuka) {
         val aktif = session.active
@@ -526,6 +574,7 @@ private fun EditorTopBar(
     onSitus: () -> Unit = {},
     adaSitus: Boolean = false,
     onPratinjau: () -> Unit = {},
+    onPalet: () -> Unit = {},
 ) {
     Column(Modifier.fillMaxWidth()) {
         Row(
@@ -534,6 +583,7 @@ private fun EditorTopBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             GhostButton("☰", onMenu)
+            GhostButton("Aksi", onPalet, Modifier.testTag("buka-palet"))
             Column(Modifier.weight(1f)) {
                 Text(
                     title,

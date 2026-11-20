@@ -30,6 +30,30 @@ class GitHubGagal(val pesan: String, val saran: String = "", sebab: Throwable? =
  *   membuat tumpukan rilis kosong.
  * - Nama aset di-encode: nama berkas Indonesia sering mengandung spasi.
  */
+/** Menulis badan permintaan sedikit demi sedikit sambil melaporkan berapa bita yang sudah terkirim. */
+object AliranUnggah {
+
+    /** Ukuran potongan: besar cukup untuk jaringan cepat, kecil cukup untuk memberi kabar tiap detik. */
+    const val POTONGAN = 64 * 1024
+
+    /**
+     * Menulis [badan] ke [keluar] per potongan, memanggil [lapor] dengan jumlah bita kumulatif.
+     *
+     * Kenapa tidak `write(badan)` sekali: APK 32 MB di jaringan seluler butuh puluhan detik tanpa
+     * kabar apa pun — pengguna akan mengira aplikasi menggantung lalu menutupnya di tengah unggahan.
+     */
+    fun tulis(keluar: java.io.OutputStream, badan: ByteArray, lapor: ((Long) -> Unit)? = null) {
+        var posisi = 0
+        while (posisi < badan.size) {
+            val panjang = minOf(POTONGAN, badan.size - posisi)
+            keluar.write(badan, posisi, panjang)
+            posisi += panjang
+            lapor?.invoke(posisi.toLong())
+        }
+        keluar.flush()
+    }
+}
+
 @Suppress("TooManyFunctions") // Satu berkas = satu topik: pembuatan repo, rilis, dan aset.
 object GitHubRilis {
 
@@ -78,13 +102,22 @@ object GitHubRilis {
         judul: String,
         catatan: String,
         berkas: File,
+        onProgres: ((Long) -> Unit)? = null,
     ): HasilUnggah {
         if (!berkas.isFile) throw GitHubGagal("Berkas yang mau diunggah tidak ada: ${berkas.name}.")
         val rilisId = idRilis(token, repo, tag, judul, catatan)
         val namaAset = namaAsetAman(berkas.name)
         val url = "$UNGGAH/repos/${repo.pemilik}/${repo.nama}/releases/$rilisId/assets" +
             "?name=${java.net.URLEncoder.encode(namaAset, "UTF-8")}"
-        val jawab = kirim(token, "POST", url, berkas.readBytes(), "application/octet-stream", bacaPanjang = 600_000)
+        val jawab = kirim(
+            token,
+            "POST",
+            url,
+            berkas.readBytes(),
+            "application/octet-stream",
+            bacaPanjang = 600_000,
+            onProgres = onProgres,
+        )
         val tautan = ambilString(jawab, "browser_download_url")
             ?: "https://github.com/${repo.pemilik}/${repo.nama}/releases/tag/$tag"
         return HasilUnggah(tautan, berkas.length(), tag)
@@ -151,6 +184,7 @@ object GitHubRilis {
         tipe: String?,
         bolehGagal: Boolean = false,
         bacaPanjang: Int = 120_000,
+        onProgres: ((Long) -> Unit)? = null,
     ): String? {
         val koneksi = try {
             (URL(alamat).openConnection() as HttpURLConnection).apply {
@@ -175,7 +209,9 @@ object GitHubRilis {
         }
 
         try {
-            badan?.let { koneksi.outputStream.use { aliran -> aliran.write(it) } }
+            badan?.let { isi ->
+                koneksi.outputStream.use { aliran -> AliranUnggah.tulis(aliran, isi, onProgres) }
+            }
             val kode = koneksi.responseCode
             val aliran = if (kode in 200..299) koneksi.inputStream else koneksi.errorStream
             val teks = aliran?.use { it.readBytes().toString(Charsets.UTF_8) }.orEmpty()
