@@ -408,3 +408,30 @@ Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif
 **Mengapa tidak dipangkas:** `android.jar` adalah classpath kompilasi. Kelas yang dibuang muncul sebagai "cannot find symbol" pada kode pengguna yang sah (Bluetooth, kamera, cetak). Memangkasnya berarti mengorbankan janji "kompilasi di HP untuk kode Java apa pun" demi sekitar 10 MB. Alternatif "unduh toolchain saat build pertama" ditolak karena melanggar janji offline.
 
 **Konsekuensi:** (+) Semua template dan kode pengguna tetap bisa dikompilasi tanpa internet. (−) APK 32,3 MB, di atas target awal 30 MB; angka ini ditulis terbuka di README, bukan disembunyikan.
+
+---
+
+## ADR-029 — Bagikan APK lewat GitHub Release, bukan server sendiri
+
+**Keputusan:** APK hasil build di HP diunggah langsung ke rilis repo GitHub pengguna lewat REST API GitHub (`POST /user/repos`, `POST /releases`, `POST /releases/{id}/assets`).
+
+**Mengapa:** sasaran aplikasi ini adalah orang tanpa PC. Selama ini hasil build berhenti di folder projek; menyalinnya butuh kabel atau kartu SD. Rilis GitHub memberi tautan `https://github.com/.../releases/download/...` yang bisa dibagikan lewat WhatsApp dan diunduh siapa pun tanpa akun. Server KodeNusa sendiri ditolak: ia berarti biaya bulanan, data pengguna berpindah ke pihak ketiga, dan janji "tanpa server" gugur.
+
+**Bentuk teknis:** `GitHubRilis` di `:core:git`, hanya `HttpURLConnection` (tanpa OkHttp: 1 MB demi 100 baris tidak sepadan). Rilis memakai tag yang sama agar unggahan ulang tidak menumpuk rilis kosong. Nama aset di-encode (`?name=`) karena nama berkas Indonesia sering berspasi.
+
+**Bukti:** `GitHubRilisTest` membuat repo sungguhan, mengunggah berkas, memeriksa tautan aset, lalu menghapus repo — dijalankan dengan `GH_TOKEN` dan lulus. Tanpa `GH_TOKEN` uji ini dilewati, bukan dipalsukan.
+
+**Konsekuensi:** (+) APK bisa dibagikan tanpa PC maupun server. (−) Butuh kuota (32 MB per unggahan) dan token berizin `repo`; keduanya disebut di layar sebelum tombol ditekan.
+
+---
+
+## ADR-030 — Pratinjau situs memakai WebView `file://`, bukan server lokal
+
+**Keputusan:** pratinjau situs dimuat dengan `WebView` langsung dari `file://` folder projek (`SitusStatis.sumber()`), dengan `allowFileAccess`, `allowContentAccess`, dan JavaScript aktif.
+
+**Mengapa bukan server lokal (`127.0.0.1:PORT`):** server berarti membuka soket, memilih port, dan mematikan layanan saat aplikasi ditutup — tiga sumber kegagalan di HP 2 GB demi satu halaman statis. `file://` cukup untuk CSS, JS, dan gambar yang satu folder.
+
+**Batas yang diakui di layar:** service worker (mode offline PWA) tidak aktif di `file://`; itu aturan browser. Pesan di dialog menyebutkan hal ini supaya tidak dianggap bug.
+
+**Konsekuensi:** (+) Sunting → lihat tanpa keluar aplikasi dan tanpa internet. (−) Halaman yang memanggil `fetch()` ke berkas lokal bisa gagal sesuai kebijakan browser; untuk itu jalur "Susun situs" tetap ada.
+

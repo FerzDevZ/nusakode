@@ -88,6 +88,14 @@ fun EditorScreen(
     // Situs murni tidak punya APK. Menampilkan tombol "Build APK" di projek seperti itu hanya
     // membuat pengguna menekan tombol yang pasti gagal — jadi tombolnya diganti "Susun situs".
     val webMurni = loaded.project?.jenis == KodenusaProject.JENIS_WEB_MURNI
+    // Pratinjau tersedia untuk projek apa pun yang punya halaman situs (web-murni atau
+    // web-katalog), bukan hanya web-murni: aset web di dalam APK juga ingin dilihat.
+    var pratinjau by remember { mutableStateOf(false) }
+    val adaSitus = remember(projectDir) {
+        id.kodenusa.core.build.SitusStatis.sumber(projectDir)?.let {
+            File(it, "index.html").isFile
+        } == true
+    }
     // Daftar berkas adalah state, bukan nilai sekali baca: setelah menambah/menghapus berkas,
     // panel harus langsung berubah tanpa keluar-masuk projek.
     var nodes by remember(projectDir) { mutableStateOf(ProjectTree.list(projectDir)) }
@@ -181,6 +189,11 @@ fun EditorScreen(
                     buildable = canBuild,
                     webMurni = webMurni,
                     onSitus = { session.saveAll(); onSitus?.invoke() },
+                    adaSitus = adaSitus,
+                    onPratinjau = {
+                        session.saveAll()
+                        pratinjau = true
+                    },
                 )
             }
         },
@@ -212,6 +225,11 @@ fun EditorScreen(
                     buildable = canBuild,
                     webMurni = webMurni,
                     onSitus = { session.saveAll(); onSitus?.invoke() },
+                    adaSitus = adaSitus,
+                    onPratinjau = {
+                        session.saveAll()
+                        pratinjau = true
+                    },
                 )
 
                 TabStrip(session, onSelect = { file -> session.open(file); state.load(file) })
@@ -341,6 +359,9 @@ fun EditorScreen(
     }
 
     Autosave(session)
+    if (pratinjau) {
+        PratinjauSitusDialog(akarProjek = projectDir, onTutup = { pratinjau = false })
+    }
     if (aiTerbuka) {
         val aktif = session.active
         AiScreen(
@@ -503,6 +524,8 @@ private fun EditorTopBar(
     buildable: Boolean,
     webMurni: Boolean = false,
     onSitus: () -> Unit = {},
+    adaSitus: Boolean = false,
+    onPratinjau: () -> Unit = {},
 ) {
     Column(Modifier.fillMaxWidth()) {
         Row(
@@ -541,6 +564,9 @@ private fun EditorTopBar(
             GhostButton("AI", onAi, Modifier.testTag("buka-ai"))
             GhostButton("Cari", onFind)
             GhostButton("Simpan", onSave)
+            if (adaSitus) {
+                GhostButton("Pratinjau", onPratinjau, Modifier.testTag("buka-pratinjau"))
+            }
         }
     }
 }
@@ -609,6 +635,8 @@ private fun FilePanel(
     buildable: Boolean,
     webMurni: Boolean = false,
     onSitus: () -> Unit = {},
+    adaSitus: Boolean = false,
+    onPratinjau: () -> Unit = {},
 ) {
     val visible = ProjectTree.visible(nodes, collapsed)
     Column(Modifier.fillMaxHeight()) {

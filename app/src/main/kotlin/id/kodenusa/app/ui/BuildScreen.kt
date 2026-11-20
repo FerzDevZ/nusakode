@@ -180,6 +180,12 @@ fun BuildScreen(
                 }
             }
 
+            // Kartu unggah hanya muncul setelah ada APK: mengunggah "tidak ada apa-apa" tidak
+            // pernah jadi hal yang diinginkan pengguna.
+            state.apk?.let { apk ->
+                BagikanApkCard(apk, remember { id.kodenusa.app.GitSettingsStore(context) }, id.kodenusa.app.BuildConfig.VERSION_NAME)
+            }
+
             setupMessage?.let { pesan ->
                 Panel(Modifier.fillMaxWidth()) {
                     Column {
