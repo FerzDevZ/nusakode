@@ -2,6 +2,7 @@ package id.kodenusa.core.project
 
 import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -128,5 +129,73 @@ class ProjectFilesTest {
 
         assertTrue(kode.contains("package app.kedua;"))
         assertTrue(kode.contains("public class LayarKedua"))
+    }
+
+    @Test
+    fun berkas_bisa_dipindah_ke_folder_lain() {
+        val folder = sukses(ProjectFiles.createFolder(root, "", "komponen"))
+        val berkas = sukses(ProjectFiles.createFile(root, "", "Toko.java", "class Toko {}"))
+
+        val hasil = ProjectFiles.move(root, "Toko.java", "komponen")
+
+        assertTrue(hasil is ProjectFiles.Hasil.Sukses)
+        assertTrue(File(folder, "Toko.java").exists())
+        assertFalse(berkas.exists())
+    }
+
+    @Test
+    fun folder_tidak_bisa_dipindah_ke_dalam_dirinya_sendiri() {
+        sukses(ProjectFiles.createFolder(root, "", "induk"))
+        sukses(ProjectFiles.createFolder(root, "induk", "anak"))
+
+        val hasil = ProjectFiles.move(root, "induk", "induk/anak")
+
+        assertTrue(hasil is ProjectFiles.Hasil.Gagal)
+    }
+
+    @Test
+    fun pindah_menolak_menimpa_berkas_yang_sudah_ada() {
+        sukses(ProjectFiles.createFolder(root, "", "tujuan"))
+        sukses(ProjectFiles.createFile(root, "tujuan", "Toko.java", "lama"))
+        sukses(ProjectFiles.createFile(root, "", "Toko.java", "baru"))
+
+        val hasil = ProjectFiles.move(root, "Toko.java", "tujuan")
+
+        assertTrue(hasil is ProjectFiles.Hasil.Gagal)
+        assertEquals("baru", File(root, "Toko.java").readText())
+    }
+
+    @Test
+    fun duplikat_berkas_memakai_nama_bersufiks_salinan() {
+        sukses(ProjectFiles.createFile(root, "", "gaya.css", "body{}"))
+
+        val pertama = sukses(ProjectFiles.duplicate(root, "gaya.css"))
+        val kedua = sukses(ProjectFiles.duplicate(root, "gaya.css"))
+
+        assertEquals("gaya-salinan.css", pertama.name)
+        assertEquals("gaya-salinan-2.css", kedua.name)
+        assertEquals("body{}", pertama.readText())
+    }
+
+    @Test
+    fun duplikat_folder_menyalin_seluruh_isinya() {
+        sukses(ProjectFiles.createFolder(root, "", "paket"))
+        sukses(ProjectFiles.createFile(root, "paket", "A.java", "class A {}"))
+
+        val salinan = sukses(ProjectFiles.duplicate(root, "paket"))
+
+        assertEquals("paket-salinan", salinan.name)
+        assertEquals("class A {}", File(salinan, "A.java").readText())
+    }
+
+    @Test
+    fun pindah_menolak_folder_tujuan_di_luar_projek() {
+        sukses(ProjectFiles.createFile(root, "", "Toko.java", ""))
+        val luar = File(root.parentFile, "keluar").apply { mkdirs() }
+
+        val hasil = ProjectFiles.move(root, "Toko.java", "../keluar")
+
+        assertTrue(hasil is ProjectFiles.Hasil.Gagal)
+        luar.delete()
     }
 }

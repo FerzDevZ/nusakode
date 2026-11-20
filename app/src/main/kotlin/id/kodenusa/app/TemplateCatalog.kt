@@ -12,6 +12,8 @@ data class TemplateInfo(
     val tagline: String,
     val audience: String,
     val appIdSuffix: String = "",
+    /** "aplikasi" (Android/Java) atau "web" (HTML/CSS/JS di dalam WebView). */
+    val jenis: String = "aplikasi",
     val files: List<String> = emptyList(),
 )
 

@@ -3,6 +3,7 @@ package id.kodenusa.app.ui
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -62,12 +63,30 @@ class AiUiTest {
         layar.onNodeWithTag("muat-model").assertIsEnabled()
     }
 
+    @Test
+    fun setelan_ai_tidak_hilang_setelah_layar_ditutup() {
+        bukaEditor()
+        layar.onNodeWithTag("buka-ai").performClick()
+
+        layar.onNodeWithTag("Alamat endpoint").performTextReplacement("https://api.crown.ai.id/v1")
+        layar.onNodeWithTag("Kunci API").performTextReplacement("kunci-uji-panjang")
+        // Menutup layar tanpa menekan "Muat model" — inilah yang dulu terasa seperti reset.
+        layar.onNodeWithText("Tutup").performClick()
+        layar.waitForIdle()
+
+        layar.onNodeWithTag("buka-ai").performClick()
+        layar.onNodeWithText("https://api.crown.ai.id/v1").assertExists()
+        layar.onNodeWithTag("muat-model").assertIsEnabled()
+    }
+
     private fun bukaEditor() {
         if (layar.onAllNodesWithText("Buat projek pertama").fetchSemanticsNodes().isNotEmpty()) {
             layar.onNodeWithText("Buat projek pertama").performClick()
         } else {
             layar.onNodeWithText("Projek baru").performClick()
         }
+        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasTestTag("jenis-kosong"))
+        layar.onNodeWithTag("jenis-kosong").performClick()
         layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasText("Projek kosong"))
         layar.onNodeWithText("Projek kosong").performClick()
         layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasSetTextAction())

@@ -3,6 +3,7 @@ package id.kodenusa.app.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,15 +16,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import id.kodenusa.app.AppContainer
 import id.kodenusa.app.TemplateInfo
@@ -35,12 +39,24 @@ import id.kodenusa.ui.GhostButton
 import id.kodenusa.ui.KodeField
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
-import id.kodenusa.ui.Pill
 import id.kodenusa.ui.PrimaryButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+
+/**
+ * Tiga hal yang mau dibuat orang, ditanyakan lebih dulu daripada template.
+ *
+ * Dulu layar ini menanyakan "Nama aplikasi" dan "ID aplikasi" kepada semua orang — termasuk yang
+ * cuma mau menulis halaman web. Sekarang yang pertama ditanya adalah jenis projek, dan isian yang
+ * tidak relevan disembunyikan.
+ */
+private enum class Jenis(val label: String, val keyword: String, val contohNama: String) {
+    APLIKASI("Aplikasi Android", "aplikasi", "Nama aplikasi"),
+    WEB("Website (HTML/CSS/JS)", "web", "Nama website"),
+    KOSONG("Mulai kosong", "kosong", "Nama projek"),
+}
 
 @Composable
 fun WizardScreen(
@@ -52,10 +68,21 @@ fun WizardScreen(
     // supaya tombol "Buat projek" tidak pernah mati tanpa penjelasan.
     val dimuat = remember { container.templates.load() }
     val templates = dimuat.getOrNull().orEmpty()
-    val pilihan = remember(templates) { templates + TemplateInfoKosong }
+
+    var jenis by remember { mutableStateOf(Jenis.APLIKASI) }
+    val pilihan = remember(templates, jenis) {
+        when (jenis) {
+            Jenis.KOSONG -> listOf(TemplateInfoKosong)
+            else -> templates.filter { it.jenis == jenis.keyword }.ifEmpty {
+                // Kalau aset tidak punya template bergaya itu, projek kosong tetap harus bisa dibuat.
+                listOf(TemplateInfoKosong)
+            }
+        }
+    }
     var selected by remember(pilihan) { mutableStateOf(pilihan.firstOrNull()) }
     var name by remember { mutableStateOf("") }
     var appId by remember { mutableStateOf("") }
+    var lanjutan by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var failure by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
@@ -66,8 +93,11 @@ fun WizardScreen(
     val masalah = if (name.isBlank()) emptyList() else ProjectValidator.validate(candidate)
     val nameError = masalah.firstOrNull { it.field == "name" }
     val idError = masalah.firstOrNull { it.field == "applicationId" }
-    val masalahLain = masalah.filter { it.severity == Severity.ERROR && it.field != "name" && it.field != "applicationId" }
-    val canCreate = selected != null && name.isNotBlank() && masalah.none { it.severity == Severity.ERROR } && !busy
+    val masalahLain = masalah.filter {
+        it.severity == Severity.ERROR && it.field != "name" && it.field != "applicationId"
+    }
+    val canCreate = selected != null && name.isNotBlank() &&
+        masalah.none { it.severity == Severity.ERROR } && !busy
 
     Scaffold(
         containerColor = Color(KodenusaPalette.BACKGROUND),
@@ -110,17 +140,75 @@ fun WizardScreen(
         LazyColumn(
             Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp)
                 .testTag("daftar-wizard"),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(vertical = 20.dp),
         ) {
             item {
-                Text("Projek baru", style = MaterialTheme.typography.headlineMedium, color = Color(KodenusaPalette.TEXT))
+                Text(
+                    "Mau bikin apa?",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color(KodenusaPalette.TEXT),
+                )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Pilih template, beri nama, lalu build. Template sudah berisi kode yang bisa langsung dijalankan.",
+                    "Pilih jenisnya dulu. Isian yang tidak perlu tidak akan ditanyakan.",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(KodenusaPalette.TEXT_DIM),
                 )
+            }
+
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Jenis.entries.forEach { opsi ->
+                        val aktif = jenis == opsi
+                        Surface(
+                            color = Color(
+                                if (aktif) KodenusaPalette.SURFACE_RAISED else KodenusaPalette.SURFACE,
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    if (jenis != opsi) {
+                                        jenis = opsi
+                                        appId = ""
+                                    }
+                                }
+                                .testTag("jenis-${opsi.keyword}"),
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    if (aktif) "● " else "○ ",
+                                    color = Color(
+                                        if (aktif) KodenusaPalette.ACCENT else KodenusaPalette.TEXT_DIM,
+                                    ),
+                                )
+                                Text(
+                                    opsi.label,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color(KodenusaPalette.TEXT),
+                                    fontWeight = if (aktif) FontWeight.SemiBold else FontWeight.Normal,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                TextButton(
+                                    onClick = {
+                                        if (jenis != opsi) {
+                                            jenis = opsi
+                                            appId = ""
+                                        }
+                                    },
+                                ) {
+                                    Text(
+                                        if (aktif) "dipilih" else "pilih",
+                                        color = Color(KodenusaPalette.TEXT_DIM),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             val galatTemplate = dimuat.exceptionOrNull()
@@ -128,7 +216,8 @@ fun WizardScreen(
                 item {
                     Panel(Modifier.fillMaxWidth()) {
                         Text(
-                            "Template bawaan gagal dimuat: ${galatTemplate.message ?: "sebab tidak diketahui"}. " +
+                            "Template bawaan gagal dimuat: " +
+                                "${galatTemplate.message ?: "sebab tidak diketahui"}. " +
                                 "Kamu masih bisa mulai dari projek kosong.",
                             color = Color(KodenusaPalette.ERROR),
                             style = MaterialTheme.typography.bodySmall,
@@ -138,27 +227,24 @@ fun WizardScreen(
             }
 
             items(pilihan, key = { it.id }) { template ->
-                TemplateCard(template, selected?.id == template.id) { selected = template }
+                TemplateCard(template, selected?.id == template.id) {
+                    selected = template
+                    // Nama diisi otomatis dari template; pengguna boleh menimpanya kapan saja.
+                    if (name.isBlank() && template.id != Templates.BLANK_ID) name = template.title
+                }
             }
 
             item {
                 KodeField(
-                    label = "Nama aplikasi",
+                    label = jenis.contohNama,
                     value = name,
                     onValueChange = { name = it.take(50) },
-                    helper = nameError?.fallbackMessage ?: "Muncul di layar utama HP. Contoh: Kasir Warung Bu Sri",
+                    helper = nameError?.fallbackMessage ?: when (jenis) {
+                        Jenis.WEB -> "Judul halaman web-mu. Contoh: Katalog Toko Bu Sri"
+                        Jenis.KOSONG -> "Nama folder projek. Contoh: Percobaan Pertama"
+                        Jenis.APLIKASI -> "Muncul di layar utama HP. Contoh: Kasir Warung Bu Sri"
+                    },
                     isError = nameError != null,
-                )
-            }
-
-            item {
-                KodeField(
-                    label = "ID aplikasi",
-                    value = appId,
-                    onValueChange = { appId = it.take(60) },
-                    helper = idError?.fallbackMessage
-                        ?: "Kosongkan untuk dibuat otomatis dari nama. Yang akan dipakai: $efektifId",
-                    isError = idError != null,
                 )
             }
 
@@ -166,16 +252,55 @@ fun WizardScreen(
                 item {
                     Panel(Modifier.fillMaxWidth()) {
                         masalahLain.forEach { issue ->
-                            Text(issue.fallbackMessage, color = Color(KodenusaPalette.ERROR), style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                issue.fallbackMessage,
+                                color = Color(KodenusaPalette.ERROR),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
                         }
                     }
                 }
             }
 
-            if (failure != null) {
+            // ID aplikasi hanya relevan untuk APK, dan hampir tidak pernah perlu diubah pemula.
+            item {
+                if (jenis == Jenis.WEB || jenis == Jenis.KOSONG) {
+                    Text(
+                        "Website tetap dibungkus jadi APK, tetapi kamu tidak perlu memikirkan ID aplikasi.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(KodenusaPalette.TEXT_DIM),
+                    )
+                } else {
+                    TextButton(onClick = { lanjutan = !lanjutan }) {
+                        Text(
+                            if (lanjutan) "Sembunyikan pengaturan lanjutan" else "Pengaturan lanjutan",
+                            color = Color(KodenusaPalette.TEXT_DIM),
+                        )
+                    }
+                }
+            }
+
+            if (lanjutan && jenis == Jenis.APLIKASI) {
+                item {
+                    KodeField(
+                        label = "ID aplikasi",
+                        value = appId,
+                        onValueChange = { appId = it.take(60) },
+                        helper = idError?.fallbackMessage
+                            ?: "Kosongkan untuk dibuat otomatis dari nama. Yang akan dipakai: $efektifId",
+                        isError = idError != null,
+                    )
+                }
+            }
+
+            failure?.let { pesan ->
                 item {
                     Panel(Modifier.fillMaxWidth()) {
-                        Text(failure.orEmpty(), color = Color(KodenusaPalette.ERROR), style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            pesan,
+                            color = Color(KodenusaPalette.ERROR),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
                     }
                 }
             }
@@ -185,22 +310,35 @@ fun WizardScreen(
 
 @Composable
 private fun TemplateCard(template: TemplateInfo, selected: Boolean, onClick: () -> Unit) {
-    Panel(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
-        Column {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+    Panel(
+        Modifier.fillMaxWidth().testTag("template-${template.id}"),
+    ) {
+        Column(Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (selected) "● " else "○ ",
+                    color = Color(if (selected) KodenusaPalette.ACCENT else KodenusaPalette.TEXT_DIM),
+                )
                 Text(
                     template.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color(if (selected) KodenusaPalette.ACCENT else KodenusaPalette.TEXT),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color(KodenusaPalette.TEXT),
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f),
                 )
-                if (selected) Pill("dipilih", KodenusaPalette.ACCENT)
+                TextButton(onClick = onClick) {
+                    Text(if (selected) "dipilih" else "pilih", color = Color(KodenusaPalette.TEXT_DIM))
+                }
             }
-            Spacer(Modifier.height(6.dp))
-            Text(template.tagline, style = MaterialTheme.typography.bodyMedium, color = Color(KodenusaPalette.TEXT_DIM))
-            Spacer(Modifier.height(6.dp))
+            Text(
+                template.tagline,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(KodenusaPalette.TEXT_DIM),
+            )
+            Spacer(Modifier.height(4.dp))
             Text(
                 "Untuk ${template.audience}",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelSmall,
                 color = Color(KodenusaPalette.TEXT_DIM),
             )
         }
@@ -218,4 +356,5 @@ private val TemplateInfoKosong = TemplateInfo(
     title = "Projek kosong",
     tagline = "Manifest, satu activity, satu layout. Semua isi ditulis sendiri dari awal.",
     audience = "yang sudah tahu struktur projek Android",
+    jenis = "kosong",
 )

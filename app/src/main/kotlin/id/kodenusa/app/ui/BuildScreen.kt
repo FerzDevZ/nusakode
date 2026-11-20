@@ -238,8 +238,11 @@ fun BuildScreen(
                 galat = galatUntukAi(state, setupMessage),
                 judul = "AI · galat build",
             ),
+            kunciProjek = "build",
             onDismiss = { aiTerbuka = false },
-            onSisip = {},
+            onSisip = { _, _ ->
+                "Buka berkas yang ingin diperbaiki dulu, lalu tekan AI dari layar editor supaya kodenya masuk ke berkas itu."
+            },
         )
     }
 }

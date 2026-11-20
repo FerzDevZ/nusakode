@@ -18,6 +18,7 @@ import java.io.File
  * - Semua kegagalan dikembalikan sebagai [Result.failure] berisi pesan bahasa Indonesia; tidak ada
  *   `runCatching` yang menelan sebabnya.
  */
+@Suppress("TooManyFunctions")
 object ProjectFiles {
 
     /** Panjang maksimum satu nama berkas; jauh di bawah batas filesystem (255 byte). */
@@ -95,6 +96,71 @@ object ProjectFiles {
         } else {
             Hasil.Gagal("Berkas tidak bisa dihapus. Tutup dulu tab yang memakainya.")
         }
+    }
+
+    /**
+     * Memindahkan berkas atau folder ke folder lain di dalam projek yang sama.
+     *
+     * Dua penolakan penting: folder tidak boleh dipindah ke dalam dirinya sendiri (hasilnya folder
+     * yang hilang beserta isinya), dan pemindahan tidak boleh menimpa berkas yang sudah ada di tujuan.
+     */
+    fun move(root: File, relativePath: String, tujuanRelative: String): Hasil {
+        val sumber = resolve(root, relativePath)
+            ?: return Hasil.Gagal("Berkas yang ingin dipindahkan tidak ditemukan.")
+        if (sumber.canonicalPath == root.canonicalPath) {
+            return Hasil.Gagal("Folder projek tidak bisa dipindahkan.")
+        }
+        val tujuanAman = if (tujuanRelative.isBlank()) "" else safeRelative(root, tujuanRelative)
+        if (tujuanAman == null) return Hasil.Gagal("Folder tujuan tidak sah.")
+        val tujuan = if (tujuanAman.isEmpty()) root else File(root, tujuanAman)
+        if (!tujuan.isDirectory) return Hasil.Gagal("Folder tujuan tidak ditemukan.")
+
+        val sumberPath = sumber.canonicalPath
+        val tujuanPath = tujuan.canonicalPath
+        if (tujuanPath == sumberPath) return Hasil.Gagal("Berkas sudah ada di folder itu.")
+        if (sumber.isDirectory && tujuanPath.startsWith(sumberPath + File.separator)) {
+            return Hasil.Gagal("Folder tidak bisa dipindah ke dalam dirinya sendiri.")
+        }
+        if (sumber.parentFile?.canonicalPath == tujuanPath) {
+            return Hasil.Gagal("Berkas sudah ada di folder itu.")
+        }
+
+        val target = File(tujuan, sumber.name)
+        if (target.exists()) return Hasil.Gagal("Di folder tujuan sudah ada \"${sumber.name}\".")
+        return if (sumber.renameTo(target)) {
+            Hasil.Sukses(target)
+        } else {
+            Hasil.Gagal("Berkas tidak bisa dipindahkan. Tutup dulu tab yang memakainya.")
+        }
+    }
+
+    /** Menyalin berkas atau folder ke folder yang sama dengan nama bersufiks "-salinan". */
+    fun duplicate(root: File, relativePath: String): Hasil {
+        val sumber = resolve(root, relativePath)
+            ?: return Hasil.Gagal("Berkas yang ingin diduplikasi tidak ditemukan.")
+        if (sumber.canonicalPath == root.canonicalPath) {
+            return Hasil.Gagal("Folder projek tidak bisa diduplikasi.")
+        }
+        val induk = sumber.parentFile ?: return Hasil.Gagal("Folder induk tidak ditemukan.")
+        val target = unik(induk, sumber.name)
+        return runCatching {
+            if (sumber.isDirectory) sumber.copyRecursively(target) else sumber.copyTo(target)
+            Hasil.Sukses(target)
+        }.getOrElse { Hasil.Gagal("Berkas tidak bisa diduplikasi: ${it.message ?: "sebab tidak diketahui"}") }
+    }
+
+    /** Nama yang belum dipakai di [folder]: "gaya.css" → "gaya-salinan.css" → "gaya-salinan-2.css". */
+    private fun unik(folder: File, nama: String): File {
+        val titik = nama.lastIndexOf('.')
+        val pokok = if (titik > 0) nama.substring(0, titik) else nama
+        val akhiran = if (titik > 0) nama.substring(titik) else ""
+        var calon = File(folder, "$pokok-salinan$akhiran")
+        var nomor = 2
+        while (calon.exists()) {
+            calon = File(folder, "$pokok-salinan-$nomor$akhiran")
+            nomor++
+        }
+        return calon
     }
 
     /**

@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import androidx.compose.ui.viewinterop.AndroidView
 import id.kodenusa.app.AppContainer
 import id.kodenusa.app.EditorSession
@@ -55,7 +57,6 @@ import id.kodenusa.ui.GhostButton
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Pill
 import id.kodenusa.ui.PrimaryButton
-import kotlinx.coroutines.launch
 import java.io.File
 
 /**
@@ -75,6 +76,7 @@ fun EditorScreen(
     // Daftar berkas adalah state, bukan nilai sekali baca: setelah menambah/menghapus berkas,
     // panel harus langsung berubah tanpa keluar-masuk projek.
     var nodes by remember(projectDir) { mutableStateOf(ProjectTree.list(projectDir)) }
+    val daftarBerkas = androidx.compose.foundation.lazy.rememberLazyListState()
     val session = remember(projectDir) { EditorSession(projectDir, initialFile(projectDir, nodes)) }
     val state = rememberEditorState()
     var aksi by remember { mutableStateOf<FileAction?>(null) }
@@ -97,6 +99,7 @@ fun EditorScreen(
             ) {
                 FilePanel(
                     nodes = nodes,
+                    listState = daftarBerkas,
                     collapsed = state.collapsed,
                     activePath = session.active?.path,
                     onToggle = { node -> state.toggle(node.relativePath) },
@@ -110,10 +113,21 @@ fun EditorScreen(
                         onBuild()
                     },
                     onBack = onBack,
-                    onNewFile = { aksi = FileAction.NewFile(folderAktif(session.active, projectDir)) },
-                    onNewFolder = { aksi = FileAction.NewFolder(folderAktif(session.active, projectDir)) },
+                    onNewFile = { aksi = FileAction.NewFile },
+                    onNewFolder = { aksi = FileAction.NewFolder },
                     onRename = { node -> aksi = FileAction.Rename(node) },
                     onDelete = { node -> aksi = FileAction.Delete(node) },
+                    onMove = { node -> aksi = FileAction.Move(node) },
+                    onDuplicate = { node ->
+                        // Duplikat tidak perlu pertanyaan, jadi langsung dikerjakan.
+                        when (val hasil = ProjectFiles.duplicate(projectDir, node.relativePath)) {
+                            is ProjectFiles.Hasil.Gagal -> state.toast = hasil.pesan
+                            is ProjectFiles.Hasil.Sukses -> {
+                                segarkan()
+                                state.toast = "Salinan dibuat: ${hasil.file.name}"
+                            }
+                        }
+                    },
                     buildable = canBuild,
                 )
             }
@@ -219,10 +233,13 @@ fun EditorScreen(
                 isi = aktif?.let { session.textOf(it) },
                 judul = if (aktif == null) "Tanya AI" else "AI · ${aktif.name}",
             ),
+            kunciProjek = projectDir.name,
             onDismiss = { aiTerbuka = false },
-            onSisip = { kode ->
-                ketikaSisip(aktif, session, projectDir, kode)?.let { state.toast = it }
+            onSisip = { kode, bahasa ->
+                val pesan = ketikaSisip(aktif, session, state.editor, kode, bahasa)
+                state.toast = pesan
                 aiTerbuka = false
+                null
             },
         )
     }
@@ -234,30 +251,34 @@ fun EditorScreen(
         onBuka = { file -> session.open(file); state.load(file) },
         onTutupTab = { file -> session.close(file) },
         session = session,
+        semuaNode = nodes,
     )
 }
 
 /** Menaruh kode jawaban AI ke berkas aktif; mengembalikan pesan untuk toast. */
-private fun ketikaSisip(aktif: File?, session: EditorSession, projectDir: File, kode: String): String? {
-    if (aktif == null) return "Buka dulu satu berkas, lalu masukkan kodenya."
-    if (!aktif.name.endsWith(".java") && !aktif.name.endsWith(".xml") &&
-        !aktif.name.endsWith(".html") && !aktif.name.endsWith(".css") &&
-        !aktif.name.endsWith(".js") && !aktif.name.endsWith(".md")
-    ) {
-        return "Kode tidak dimasukkan: ${aktif.name} bukan berkas teks kode."
+private fun ketikaSisip(
+    aktif: File?,
+    session: EditorSession,
+    editor: id.kodenusa.editor.CodeEditorView?,
+    kode: String,
+    bahasa: String,
+): String {
+    if (aktif == null) return "Belum ada berkas yang dibuka. Pilih satu berkas dulu di panel, lalu tekan sisip lagi."
+    val teks = aktif.name.substringAfterLast('.', "").lowercase()
+    if (teks !in setOf("java", "xml", "html", "htm", "css", "js", "json", "md", "txt", "py", "sql")) {
+        return "Kode tidak dimasukkan: ${aktif.name} bukan berkas teks."
     }
+    // Tiga hal harus terjadi sekaligus, dulu hanya dua: teks di memori, berkas di disk, DAN isi
+    // editor yang terlihat. Tanpa yang ketiga, pengguna menekan sisip tetapi layar tidak berubah.
     session.update(aktif, kode)
-    session.save(aktif)
-    return "Kode AI dimasukkan ke ${aktif.name}. Cek lalu Build APK."
-}
-
-/** Folder tujuan untuk berkas/folder baru: folder dari berkas aktif, atau akar projek. */
-private fun folderAktif(active: File?, projectDir: File): String {
-    val parent = active?.parentFile ?: return ""
-    return runCatching {
-        val rel = parent.relativeTo(projectDir).invariantSeparatorsPath
-        if (rel.startsWith("..")) "" else rel
-    }.getOrDefault("")
+    val tersimpan = session.save(aktif)
+    editor?.setContent(kode, editor.languageOf(aktif.name))
+    val bahasaKode = if (bahasa.isBlank()) "" else " ($bahasa)"
+    return if (tersimpan) {
+        "Kode AI$bahasaKode masuk ke ${aktif.name} dan sudah disimpan."
+    } else {
+        "Kode masuk ke ${aktif.name}, tetapi gagal menulis ke penyimpanan."
+    }
 }
 
 /** Isi awal untuk berkas baru: berkas Java langsung mendapat paket dan kelas yang benar. */
@@ -278,6 +299,7 @@ private fun FileActionHost(
     onSelesai: () -> Unit,
     onBuka: (File) -> Unit,
     onTutupTab: (File) -> Unit,
+    semuaNode: List<ProjectNode>,
 ) {
     val action = aksi ?: return
     FileActionDialog(
@@ -330,6 +352,24 @@ private fun FileActionHost(
                 }
             }
         },
+        onPindah = { node, tujuan ->
+            val terbuka = session.tabs.firstOrNull { it.path == node.file.path }
+            when (val hasil = ProjectFiles.move(projectDir, node.relativePath, tujuan)) {
+                is ProjectFiles.Hasil.Gagal -> hasil.pesan
+                is ProjectFiles.Hasil.Sukses -> {
+                    // Tab yang terbuka harus dibuka ulang di jalur baru, kalau tidak penyimpanan
+                    // otomatis menulis ke lokasi yang sudah tidak ada.
+                    if (terbuka != null) {
+                        session.save(terbuka)
+                        onTutupTab(terbuka)
+                        if (!hasil.file.isDirectory) onBuka(hasil.file)
+                    }
+                    onSelesai()
+                    null
+                }
+            }
+        },
+        semuaNode = semuaNode,
     )
 }
 
@@ -426,6 +466,7 @@ private fun TabStrip(session: EditorSession, onSelect: (File) -> Unit) {
 @Composable
 private fun FilePanel(
     nodes: List<ProjectNode>,
+    listState: androidx.compose.foundation.lazy.LazyListState,
     collapsed: Set<String>,
     activePath: String?,
     onToggle: (ProjectNode) -> Unit,
@@ -436,6 +477,8 @@ private fun FilePanel(
     onNewFolder: () -> Unit,
     onRename: (ProjectNode) -> Unit,
     onDelete: (ProjectNode) -> Unit,
+    onMove: (ProjectNode) -> Unit,
+    onDuplicate: (ProjectNode) -> Unit,
     buildable: Boolean,
 ) {
     val visible = ProjectTree.visible(nodes, collapsed)
@@ -463,7 +506,10 @@ private fun FilePanel(
             GhostButton("+ Berkas", onNewFile, Modifier.weight(1f).testTag("berkas-baru"))
             GhostButton("+ Folder", onNewFolder, Modifier.weight(1f).testTag("folder-baru"))
         }
-        LazyColumn(Modifier.weight(1f).padding(top = 6.dp).testTag("daftar-berkas")) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.weight(1f).padding(top = 6.dp).testTag("daftar-berkas"),
+        ) {
             items(visible, key = { it.relativePath }) { node ->
                 FileRow(
                     node = node,
@@ -471,6 +517,8 @@ private fun FilePanel(
                     onClick = { if (node.directory) onToggle(node) else onOpen(node.file) },
                     onRename = { onRename(node) },
                     onDelete = { onDelete(node) },
+                    onMove = { onMove(node) },
+                    onDuplicate = { onDuplicate(node) },
                 )
             }
         }
@@ -487,6 +535,8 @@ private fun FileRow(
     onClick: () -> Unit,
     onRename: () -> Unit,
     onDelete: () -> Unit,
+    onMove: () -> Unit,
+    onDuplicate: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
     Row(
@@ -494,6 +544,7 @@ private fun FileRow(
             .fillMaxWidth()
             .background(if (active) Color(KodenusaPalette.SURFACE_RAISED) else Color.Transparent)
             .clickable(onClick = onClick)
+            .testTag("baris-${node.relativePath}")
             .padding(start = (8 + node.depth * 12).dp, top = 6.dp, bottom = 6.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -505,19 +556,26 @@ private fun FileRow(
             modifier = Modifier.weight(1f),
         )
         Box {
-            Text(
+            // Tombol dengan ukuran sentuh 48dp, bukan teks kecil: target 12dp tidak bisa ditekan
+            // dengan jempol dan juga gagal di uji instrumentasi ("Failed to inject touch input").
+            GhostButton(
                 "⋯",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color(KodenusaPalette.TEXT_DIM),
-                modifier = Modifier
-                    .clickable { menu = true }
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                { menu = true },
+                Modifier.width(48.dp).testTag("menu-${node.name}"),
             )
             DropdownMenu(
                 expanded = menu,
                 onDismissRequest = { menu = false },
                 containerColor = Color(KodenusaPalette.SURFACE_RAISED),
             ) {
+                DropdownMenuItem(
+                    text = { Text("Pindahkan…", color = Color(KodenusaPalette.TEXT)) },
+                    onClick = { menu = false; onMove() },
+                )
+                DropdownMenuItem(
+                    text = { Text("Duplikat", color = Color(KodenusaPalette.TEXT)) },
+                    onClick = { menu = false; onDuplicate() },
+                )
                 DropdownMenuItem(
                     text = { Text("Ganti nama", color = Color(KodenusaPalette.TEXT)) },
                     onClick = { menu = false; onRename() },

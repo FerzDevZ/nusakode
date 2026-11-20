@@ -52,6 +52,40 @@ object PromptBuilder {
         add(ChatMessage(ChatMessage.Peran.PENGGUNA, konteks.toString()))
     }
 
+    /**
+     * Perintah untuk agen yang boleh mengubah beberapa berkas lalu di-build.
+     *
+     * Format penanda ditulis eksplisit karena model yang lebih kecil sering lupa memberi nama
+     * berkas kalau hanya diminta "kirim kodenya". Tanpa nama berkas, perubahan tidak bisa
+     * diterapkan otomatis dan pengguna harus menyalin manual — persis yang ingin dihapus fitur ini.
+     */
+    fun untukAgen(tugas: String, konteksProjek: String, galatSebelumnya: String): List<ChatMessage> =
+        buildList {
+            add(pesanSistem())
+            add(ChatMessage(ChatMessage.Peran.SISTEM, ATURAN_AGEN))
+            val isi = StringBuilder("Tugas dari pengguna:\n")
+            isi.append(tugas.trim()).append("\n\nKeadaan projek sekarang:\n")
+            isi.append(potong(konteksProjek, BATAS_KONTEKS))
+            if (galatSebelumnya.isNotBlank()) {
+                isi.append("\n\nBuild sebelumnya gagal dengan galat ini:\n")
+                isi.append(potong(galatSebelumnya, 2_000))
+                isi.append("\nPerbaiki penyebabnya sekarang.")
+            }
+            add(ChatMessage(ChatMessage.Peran.PENGGUNA, isi.toString()))
+        }
+
+    /** Aturan format yang dipakai [UbahanBerkas] untuk menerapkan perubahan otomatis. */
+    const val ATURAN_AGEN: String = "Kamu mengubah projek secara langsung. Untuk SETIAP berkas yang " +
+        "berubah, tulis persis seperti ini:\n" +
+        "<<<BERKAS: jalur/relatif/NamaBerkas.java>>>\n" +
+        "```java\n" +
+        "isi berkas lengkap dari awal sampai akhir\n" +
+        "```\n" +
+        "Syarat: jalur relatif tanpa garis miring di depan dan tanpa '..'; isi harus lengkap, bukan " +
+        "potongan; jangan pernah menulis penanda untuk berkas yang tidak berubah; jangan memakai " +
+        "Kotlin, Gradle, AndroidX, atau library pihak ketiga. Kalau tugas tidak mungkin di Tier 0, " +
+        "tulis penjelasannya tanpa penanda berkas sama sekali."
+
     /** Pertanyaan bebas tanpa berkas terbuka. */
     fun untukTanya(pertanyaan: String): List<ChatMessage> = listOf(
         pesanSistem(),

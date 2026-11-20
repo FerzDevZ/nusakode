@@ -1,6 +1,5 @@
 package id.kodenusa.app.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,11 +32,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import id.kodenusa.app.AiSettingsStore
-import id.kodenusa.core.ai.AiConfig
 import id.kodenusa.core.ai.AiGagal
 import id.kodenusa.core.ai.AiModel
 import id.kodenusa.core.ai.ChatMessage
@@ -62,15 +64,19 @@ data class AiKonteks(
 /**
  * Asisten AI dengan endpoint + kunci milik pengguna sendiri.
  *
- * Tidak ada kunci bawaan dan tidak ada server perantara: kalau pengguna belum mengisi apa pun, layar
- * ini hanya menampilkan formulir dan aplikasi tetap 100% offline.
+ * Tiga hal yang harus benar dan dulu salah:
+ * 1. **Tidak reset.** Endpoint/kunci disimpan setiap kali diketik, dan obrolan disimpan per projek.
+ * 2. **Kode bisa dimasukkan ke berkas.** Tombol sisip mengembalikan kode ke pemanggil lewat [onSisip];
+ *    pemanggil itulah yang menulis ke editor (bukan layar ini) supaya teks di layar ikut berubah.
+ * 3. **Tidak ada panggilan jaringan diam-diam.** Tanpa endpoint + kunci, layar ini hanya formulir.
  */
 @Composable
 fun AiScreen(
     store: AiSettingsStore,
     konteks: AiKonteks,
+    kunciProjek: String,
     onDismiss: () -> Unit,
-    onSisip: (String) -> Unit,
+    onSisip: (kode: String, bahasa: String) -> String?,
 ) {
     val scope = rememberCoroutineScope()
     val klien = remember { OpenAiCompatClient() }
@@ -79,47 +85,70 @@ fun AiScreen(
     var endpoint by remember { mutableStateOf(config.baseUrl) }
     var kunci by remember { mutableStateOf(config.apiKey) }
     var modelList by remember { mutableStateOf(store.modelTerakhir()) }
-    var sedangAtur by remember { mutableStateOf(!config.terpasang) }
+    // Formulir tetap dibuka selama model belum dipilih: mendarat di layar obrolan tanpa model
+    // membuat orang bingung dan mengira setelannya hilang.
+    var sedangAtur by remember { mutableStateOf(!config.terpasang || config.model.isBlank()) }
     var memuatModel by remember { mutableStateOf(false) }
 
+    var riwayat by remember { mutableStateOf(store.muatPercakapan(kunciProjek)) }
     var pertanyaan by remember { mutableStateOf("") }
     var jawaban by remember { mutableStateOf("") }
-    var berpikir by remember { mutableStateOf("") }
+    var berpikir by remember { mutableStateOf(false) }
     var sibuk by remember { mutableStateOf(false) }
     var galat by remember { mutableStateOf<String?>(null) }
     var pekerjaan by remember { mutableStateOf<Job?>(null) }
-    var sudahTanya by remember { mutableStateOf(false) }
 
-    fun pesanUntuk(teks: String): List<ChatMessage> = when {
-        konteks.galat != null ->
-            PromptBuilder.untukGalat(konteks.galat.orEmpty() + "\n\nPermintaan tambahan: " + teks, konteks.jalur, konteks.isi)
-        konteks.jalur != null && konteks.isi != null -> PromptBuilder.untukBerkas(teks, konteks.jalur, konteks.isi)
-        else -> PromptBuilder.untukTanya(teks)
+    fun simpanDraf() = store.simpanDraf(endpoint, kunci)
+
+    fun pesanUntuk(teks: String): List<ChatMessage> {
+        val dasar = when {
+            konteks.galat != null ->
+                PromptBuilder.untukGalat(konteks.galat.orEmpty(), konteks.jalur, konteks.isi)
+            konteks.jalur != null && konteks.isi != null ->
+                PromptBuilder.untukBerkas(teks, konteks.jalur, konteks.isi)
+            else -> PromptBuilder.untukTanya(teks)
+        }
+        // Riwayat obrolan ikut dikirim supaya model ingat konteks percakapan sebelumnya.
+        if (riwayat.isEmpty()) return dasar
+        val lanjutan = riwayat.takeLast(6).map { (peran, isi) ->
+            ChatMessage(
+                if (peran == "user") ChatMessage.Peran.PENGGUNA else ChatMessage.Peran.ASISTEN,
+                isi,
+            )
+        }
+        return listOf(dasar.first()) + lanjutan + dasar.drop(1)
     }
 
     fun kirim(teks: String) {
         if (teks.isBlank() || sibuk) return
         galat = null
         jawaban = ""
-        berpikir = ""
+        berpikir = false
         sibuk = true
-        sudahTanya = true
+        riwayat = riwayat + ("user" to teks)
+        store.simpanPercakapan(kunciProjek, riwayat)
+        pertanyaan = ""
         pekerjaan = scope.launch {
             try {
                 val hasil = withContext(Dispatchers.IO) {
                     klien.bicara(
                         config = config,
                         pesan = pesanUntuk(teks),
-                        batalkan = { false },
-                        onReasoning = { potongan -> berpikir += potongan },
+                        onReasoning = { berpikir = true },
                         onDelta = { potongan -> jawaban += potongan },
                     )
                 }
-                if (jawaban.isEmpty()) jawaban = hasil
+                val akhir = jawaban.ifEmpty { hasil }
+                riwayat = riwayat + ("assistant" to akhir)
+                store.simpanPercakapan(kunciProjek, riwayat)
+                jawaban = ""
             } catch (gagal: AiGagal) {
                 galat = listOf(gagal.pesan, gagal.saran).filter { it.isNotBlank() }.joinToString("\n")
+                riwayat = riwayat.dropLast(1)
+                store.simpanPercakapan(kunciProjek, riwayat)
             } catch (error: Exception) {
                 galat = "Gagal memanggil AI: ${error.message ?: error.javaClass.simpleName}"
+                riwayat = riwayat.dropLast(1)
             } finally {
                 sibuk = false
                 pekerjaan = null
@@ -127,9 +156,10 @@ fun AiScreen(
         }
     }
 
-    fun sesuaikanModel(id: String) {
+    fun pilihModel(id: String) {
         config = config.denganModel(id)
         store.simpan(config)
+        sedangAtur = false
     }
 
     Dialog(
@@ -150,8 +180,10 @@ fun AiScreen(
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                         maxLines = 1,
                     )
-                    if (!sedangAtur) {
-                        GhostButton("Atur", { sedangAtur = true })
+                    if (sedangAtur) {
+                        if (config.terpasang) GhostButton("Kembali", { sedangAtur = false })
+                    } else {
+                        GhostButton("Model", { sedangAtur = true }, Modifier.testTag("ganti-model"))
                     }
                 }
 
@@ -163,9 +195,9 @@ fun AiScreen(
                         modelTerpilih = config.model,
                         memuat = memuatModel,
                         galat = galat,
-                        onEndpoint = { endpoint = it },
-                        onKunci = { kunci = it },
-                        onPilihModel = ::sesuaikanModel,
+                        onEndpoint = { endpoint = it; simpanDraf() },
+                        onKunci = { kunci = it; simpanDraf() },
+                        onPilihModel = ::pilihModel,
                         onMuatModel = {
                             galat = null
                             memuatModel = true
@@ -180,7 +212,8 @@ fun AiScreen(
                                     store.simpan(config)
                                     sedangAtur = false
                                 } catch (gagal: AiGagal) {
-                                    galat = listOf(gagal.pesan, gagal.saran).filter { it.isNotBlank() }.joinToString("\n")
+                                    galat = listOf(gagal.pesan, gagal.saran)
+                                        .filter { it.isNotBlank() }.joinToString("\n")
                                 } catch (error: Exception) {
                                     galat = "Gagal memuat model: ${error.message}"
                                 } finally {
@@ -192,22 +225,24 @@ fun AiScreen(
                 } else {
                     ChatAiPanel(
                         model = config.model,
+                        riwayat = riwayat,
                         jawaban = jawaban,
                         berpikir = berpikir,
                         sibuk = sibuk,
                         galat = galat,
-                        sudahTanya = sudahTanya,
                         adaKonteksBerkas = konteks.isi != null,
                         adaGalat = konteks.galat != null,
                         pertanyaan = pertanyaan,
                         onPertanyaan = { pertanyaan = it },
-                        onKirim = { kirim(pertanyaan.ifBlank { "Perbaiki kode ini." }) },
-                        onCepat = { teks -> pertanyaan = teks; kirim(teks) },
+                        onKirim = { kirim(pertanyaan.ifBlank { "Lanjutkan." }) },
+                        onCepat = { teks -> kirim(teks) },
                         onHentikan = { pekerjaan?.cancel(); sibuk = false },
-                        adaKode = CodeBlocks.terbesar(jawaban) != null,
-                        onSisip = {
-                            CodeBlocks.terbesar(jawaban)?.let { blok -> onSisip(blok.isi) }
+                        onBersihkan = {
+                            store.bersihkanPercakapan(kunciProjek)
+                            riwayat = emptyList()
+                            galat = null
                         },
+                        onSisip = { kode, bahasa -> onSisip(kode, bahasa)?.let { galat = it } },
                     )
                 }
             }
@@ -241,7 +276,13 @@ private fun AturAiPanel(
         IsianAi("Alamat endpoint", endpoint, onEndpoint, "https://api.crown.ai.id/v1", rahasia = false)
         Spacer(Modifier.height(8.dp))
         IsianAi("Kunci API", kunci, onKunci, "tempel kuncimu di sini", rahasia = true)
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "Yang diketik langsung tersimpan — boleh ditutup lalu dibuka lagi.",
+            style = MaterialTheme.typography.labelSmall,
+            color = Color(KodenusaPalette.TEXT_DIM),
+        )
+        Spacer(Modifier.height(10.dp))
         PrimaryButton(
             if (memuat) "Memuat model…" else "Muat model dari endpoint",
             onMuatModel,
@@ -259,11 +300,21 @@ private fun AturAiPanel(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             if (model.id == modelTerpilih) "● " else "○ ",
-                            color = Color(if (model.id == modelTerpilih) KodenusaPalette.ACCENT else KodenusaPalette.TEXT_DIM),
+                            color = Color(
+                                if (model.id == modelTerpilih) KodenusaPalette.ACCENT else KodenusaPalette.TEXT_DIM,
+                            ),
                         )
                         Column(Modifier.weight(1f)) {
-                            Text(model.label(), style = MaterialTheme.typography.bodyMedium, color = Color(KodenusaPalette.TEXT))
-                            Text(model.id, style = MaterialTheme.typography.labelSmall, color = Color(KodenusaPalette.TEXT_DIM))
+                            Text(
+                                model.label(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(KodenusaPalette.TEXT),
+                            )
+                            Text(
+                                model.id,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(KodenusaPalette.TEXT_DIM),
+                            )
                         }
                     }
                 }
@@ -294,9 +345,9 @@ private fun IsianAi(
             singleLine = true,
             placeholder = { Text(contoh, color = Color(KodenusaPalette.TEXT_DIM)) },
             visualTransformation = if (rahasia) {
-                androidx.compose.ui.text.input.PasswordVisualTransformation()
+                PasswordVisualTransformation()
             } else {
-                androidx.compose.ui.text.input.VisualTransformation.None
+                VisualTransformation.None
             },
             modifier = Modifier.fillMaxWidth().testTag(label),
             colors = TextFieldDefaults.colors(
@@ -312,11 +363,11 @@ private fun IsianAi(
 @Composable
 private fun ChatAiPanel(
     model: String,
+    riwayat: List<Pair<String, String>>,
     jawaban: String,
-    berpikir: String,
+    berpikir: Boolean,
     sibuk: Boolean,
     galat: String?,
-    sudahTanya: Boolean,
     adaKonteksBerkas: Boolean,
     adaGalat: Boolean,
     pertanyaan: String,
@@ -324,91 +375,88 @@ private fun ChatAiPanel(
     onKirim: () -> Unit,
     onCepat: (String) -> Unit,
     onHentikan: () -> Unit,
-    adaKode: Boolean,
-    onSisip: () -> Unit,
+    onBersihkan: () -> Unit,
+    onSisip: (String, String) -> Unit,
 ) {
+    val daftar = rememberLazyListState()
+    val terakhir = jawaban.ifBlank { riwayat.lastOrNull { it.first == "assistant" }?.second.orEmpty() }
+    val blok = CodeBlocks.terbesar(terakhir)
+
+    // Gulir ke bawah setiap ada potongan baru, supaya tulisan yang sedang mengalir tetap terlihat.
+    LaunchedEffect(jawaban.length, riwayat.size) {
+        if (riwayat.isNotEmpty() || jawaban.isNotEmpty()) {
+            daftar.animateScrollToItem((riwayat.size + 1).coerceAtLeast(0))
+        }
+    }
+
     Column(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
-        Text(
-            "model: $model",
-            style = MaterialTheme.typography.labelSmall,
-            color = Color(KodenusaPalette.TEXT_DIM),
-            maxLines = 1,
-        )
-        if (!sudahTanya) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "model: $model",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(KodenusaPalette.TEXT_DIM),
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+            )
+            if (riwayat.isNotEmpty()) GhostButton("Bersihkan", onBersihkan)
+        }
+
+        if (riwayat.isEmpty() && jawaban.isEmpty()) {
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (adaGalat) GhostButton("Perbaiki galat ini", { onCepat("Jelaskan penyebab galat ini dan beri berkas yang sudah diperbaiki.") })
+                if (adaGalat) {
+                    GhostButton("Perbaiki galat build", {
+                        onCepat("Jelaskan penyebab galat build ini, lalu beri isi berkas yang sudah diperbaiki lengkap.")
+                    })
+                }
                 if (adaKonteksBerkas) {
-                    GhostButton("Perbaiki berkas ini", { onCepat("Perbaiki berkas ini dan jelaskan dalam satu kalimat apa yang salah.") })
+                    GhostButton("Perbaiki berkas ini", {
+                        onCepat("Perbaiki berkas ini dan jelaskan dalam satu kalimat apa yang salah.")
+                    })
                 }
             }
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                GhostButton("Buat Activity", { onCepat("Buat Activity Android baru lengkap dengan layout XML-nya untuk Java 8 tanpa AndroidX.") })
-                GhostButton("Tanya bebas", { onCepat("Apa saja yang bisa kamu bantu di KodeNusa?") })
+                GhostButton("Buat Activity", {
+                    onCepat("Buat Activity Android baru lengkap dengan layout XML untuk Java 8 tanpa AndroidX.")
+                })
+                GhostButton("Bantu itu apa", { onCepat("Apa saja yang bisa kamu bantu di KodeNusa?") })
             }
         }
 
-        LazyColumn(Modifier.weight(1f).padding(top = 10.dp)) {
-            if (berpikir.isNotBlank() && jawaban.isBlank()) {
-                item {
-                    Text(
-                        "model sedang berpikir…",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(KodenusaPalette.TEXT_DIM),
-                    )
-                }
-            }
-            item {
-                if (jawaban.isNotBlank()) {
-                    Text(
-                        CodeBlocks.tanpaPagar(jawaban),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(KodenusaPalette.TEXT),
-                    )
-                }
-            }
-            CodeBlocks.ambil(jawaban).forEach { blok ->
-                item {
-                    Spacer(Modifier.height(8.dp))
-                    Surface(
-                        color = Color(KodenusaPalette.SURFACE),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Column(Modifier.padding(10.dp)) {
-                            Text(
-                                "kode ${blok.bahasa.ifBlank { "tanpa bahasa" }} · ${blok.isi.lines().size} baris",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color(KodenusaPalette.ACCENT),
-                            )
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                blok.isi.take(4_000),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(KodenusaPalette.TEXT_DIM),
-                            )
-                        }
-                    }
-                }
+        LazyColumn(state = daftar, modifier = Modifier.weight(1f).padding(top = 8.dp)) {
+            items(riwayat) { (peran, isi) -> PesanAi(peran, isi) }
+            if (jawaban.isNotBlank() || sibuk) {
+                item { PesanAi("assistant", jawaban.ifBlank { if (berpikir) "…" else "" }) }
             }
             galat?.let { pesan ->
                 item {
-                    Spacer(Modifier.height(10.dp))
-                    Text(pesan, style = MaterialTheme.typography.bodySmall, color = Color(KodenusaPalette.ERROR))
+                    Text(
+                        pesan,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(KodenusaPalette.ERROR),
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
                 }
             }
         }
 
-        if (adaKode) {
-            PrimaryButton("Masukkan kode ke berkas", onSisip, modifier = Modifier.fillMaxWidth().testTag("sisip-kode"))
+        blok?.let { kode ->
+            PrimaryButton(
+                "Masukkan kode ke berkas (${kode.isi.lines().size} baris)",
+                { onSisip(kode.isi, kode.bahasa) },
+                modifier = Modifier.fillMaxWidth().testTag("sisip-kode"),
+            )
             Spacer(Modifier.height(6.dp))
         }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             TextField(
                 value = pertanyaan,
                 onValueChange = onPertanyaan,
-                singleLine = false,
                 maxLines = 3,
                 placeholder = { Text("Tulis permintaan…", color = Color(KodenusaPalette.TEXT_DIM)) },
                 modifier = Modifier.weight(1f).testTag("tanya-ai"),
@@ -419,12 +467,33 @@ private fun ChatAiPanel(
                     unfocusedTextColor = Color(KodenusaPalette.TEXT),
                 ),
             )
-            if (sibuk) {
-                GhostButton("Hentikan", onHentikan)
-            } else {
-                PrimaryButton("Kirim", onKirim)
-            }
+            if (sibuk) GhostButton("Hentikan", onHentikan) else PrimaryButton("Kirim", onKirim)
         }
         Spacer(Modifier.height(8.dp))
+    }
+}
+
+@Composable
+private fun PesanAi(peran: String, isi: String) {
+    val pengguna = peran == "user"
+    Surface(
+        color = Color(if (pengguna) KodenusaPalette.SURFACE_RAISED else KodenusaPalette.SURFACE),
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+    ) {
+        Column(Modifier.padding(10.dp)) {
+            Text(
+                if (pengguna) "kamu" else "AI",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(if (pengguna) KodenusaPalette.TEXT_DIM else KodenusaPalette.ACCENT),
+            )
+            Spacer(Modifier.height(4.dp))
+            // Penjelasan ditampilkan tanpa pagar kode; isi kodenya muncul di tombol sisip di bawah.
+            Text(
+                if (pengguna) isi else CodeBlocks.tanpaPagar(isi).take(3_000),
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(KodenusaPalette.TEXT),
+            )
+        }
     }
 }

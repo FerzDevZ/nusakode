@@ -31,8 +31,10 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Tolak nama berbahaya (`/`, `..`, nama sistem) | ✅ | `ProjectFilesTest` (12 uji) |
 | Java baru langsung dapat `package` + `class` yang benar | ✅ | `ProjectFilesTest.kerangka_java_memuat_paket_dan_nama_kelas` |
 | Panel berkas menampilkan HTML/CSS/JS/PY/SQL (bukan hanya Java) | ✅ | `ProjectTree.TEXT_EXTENSIONS` |
-| Pindah berkas antar folder (drag / "Pindahkan ke…") | ⛔ | rencana berikutnya |
-| Duplikat berkas, buat dari berkas lain | ⛔ | rencana |
+| Pindah berkas/folder ke folder lain ("Pindahkan…") | ✅ | `ProjectFiles.move` (5 uji) + `FileOpsUiTest.berkas_bisa_dipindah_ke_folder_lain` |
+| Duplikat berkas/folder (`-salinan`, `-salinan-2`) | ✅ | `ProjectFiles.duplicate` + `FileOpsUiTest.berkas_bisa_diduplikasi_dari_menu` |
+| Lokasi berkas/folder baru dipilih pengguna (bawaan: akar projek) | ✅ | `FileActionDialog.LokasiField` (`testTag("pilih-lokasi")`) |
+| Berkas/folder baru tidak lagi "hilang" di dalam `src/main/java/…` | ✅ | uji memeriksa disk: `File(akar, "komponen").isDirectory` |
 | Cari di seluruh projek (bukan hanya 1 berkas) | ⛔ | rencana |
 
 ## 3. Editor
@@ -85,6 +87,9 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Model berjalan di dalam HP (offline penuh) | ⛔ | ditunda; butuh model 400–900 MB, lambat di HP 4 GB (ADR-023) |
 | Kunci bawaan dari pembuat aplikasi / server perantara | ⛔ | sengaja tidak ada — aplikasi tidak menyimpan biaya AI |
 | Enkripsi kunci dengan Android Keystore | ⛔ | rencana; sekarang di `SharedPreferences` privat aplikasi |
+| Setelan endpoint/kunci bertahan setelah layar AI ditutup | ✅ | `AiUiTest.setelan_ai_tidak_hilang_setelah_layar_ditutup` (draf disimpan tiap ketikan) |
+| Riwayat percakapan disimpan per projek | ✅ | `AiSettingsStore.simpanPercakapan` / `muatPercakapan` |
+| Kode AI benar-benar masuk ke berkas (buffer + disk) | ✅ | `EditorScreen.ketikaSisip` → `session.update` + `session.save` + `editor.setContent` |
 
 **Bukti ke endpoint sungguhan** (dijalankan terhadap endpoint milik pengguna):
 model terbaca `zai-org/GLM-5.3-Flash`, `deepseek-ai/DeepSeek-V4-Flash-0731`, `MiniMaxAI/MiniMax-M2.7`;
@@ -94,6 +99,17 @@ jawaban streaming keluar sebagai blok `java`. Perintahnya:
 AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
   ./gradlew :core:ai:test --tests '*ChatNyataTest*'
 ```
+
+## 4c. Agen build otomatis (fondasi, belum ada layarnya)
+
+| Fitur | Status | Bukti / catatan |
+|---|---|---|
+| Baca balasan model menjadi banyak berkas (`<<<BERKAS: jalur>>>`) | ✅ | `UbahanBerkasTest` (6 uji) |
+| Tolak jalur berbahaya dari model (absolut, `..`, `~`) | ✅ | `UbahanBerkas.rapikanJalur` + uji |
+| Loop tugas → ubah berkas → build → galat dikirim balik ke model | ✅ | `AgenBuildTest` (5 uji) |
+| Batas keras 3 putaran (jangan bakar kuota pengguna) | ✅ | `AgenBuildTest.berhenti_setelah_batas_putaran…` |
+| Build tidak dijalankan bila tak ada berkas tertulis | ✅ | `AgenBuildTest.build_tidak_dijalankan_bila_semua_berkas_ditolak…` |
+| Layar "Minta AI buatkan…" dengan log per putaran | ⛔ | pekerjaan berikutnya; mesinnya sudah siap |
 
 ## 5. Distribusi & keamanan
 
@@ -111,7 +127,8 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 
 | Fitur | Status | Bukti |
 |---|---|---|
-| Uji unit | ✅ | 137 uji (`./gradlew test`) |
+| Uji unit | ✅ | 167 uji (`./gradlew test`) |
+| Uji di perangkat | ✅ | 29 uji, hijau di Android 7 (API 24) **dan** Android 14 (API 34) |
 | Uji perangkat (UI + build + kebijakan exec) | ✅ | 26 uji, API 24 & API 34 |
 | Analisis statis detekt, 0 temuan | ✅ | `./gradlew detekt` |
 | CI menjalankan gerbang yang sama | ✅ | `.github/workflows/ci.yml` |
@@ -122,7 +139,8 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 
 1. **Pindahkan berkas** antar folder + duplikat (paling sering dipakai setelah tambah berkas).
 2. **Cari di seluruh projek** — pengganti "grep" yang tidak ada di HP.
-3. **Perkecil APK** 44,7 MB → di bawah 15 MB (potong `android.jar`).
+3. **Layar agen** "Minta AI buatkan…" di atas `AgenBuild` (mesin + uji sudah ada).
+4. **Perkecil APK** 44,7 MB → di bawah 15 MB (potong `android.jar`).
 4. **Uji di HP asli 4 GB** (Redmi 9A): RAM diam, waktu build, pemasangan.
 5. **Kunci tanda tangan milik pengguna** supaya APK bisa di-update di Play.
 6. **Format otomatis** untuk Java/HTML/CSS/JS.

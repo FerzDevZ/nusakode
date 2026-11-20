@@ -2,6 +2,7 @@ package id.kodenusa.app
 
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -57,6 +58,9 @@ class WizardUiTest {
 
         // Kartu template wajib ada — inilah yang hilang saat bug.
         layar.onNodeWithText("Halo Dunia").assertExists()
+        // Template web muncul setelah jenis "Website" dipilih, bukan tercampur di daftar aplikasi.
+        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasTestTag("jenis-web"))
+        layar.onNodeWithTag("jenis-web").performClick()
         layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasText("Web jadi APK"))
         layar.onNodeWithText("Web jadi APK").assertExists()
 
@@ -74,6 +78,8 @@ class WizardUiTest {
     @Test
     fun projek_kosong_bisa_dipilih_dan_dibuat() {
         bukaFormProjekBaru()
+        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasTestTag("jenis-kosong"))
+        layar.onNodeWithTag("jenis-kosong").performClick()
         layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasText("Projek kosong"))
         layar.onNodeWithText("Projek kosong").performClick()
 
