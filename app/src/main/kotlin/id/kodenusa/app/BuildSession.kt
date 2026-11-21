@@ -40,6 +40,8 @@ class BuildSession(
     private val batasLog: Int = MAX_LOG_LINES,
     /** Riwayat build (docs/13 C3); boleh null supaya uji unit tetap ringan. */
     private val riwayatBuild: RiwayatBuild? = null,
+    /** Counter versionCode otomatis (docs/14 2.3); null = versionCode dari kodenusa.json apa adanya. */
+    private val penghitungVersi: PenghitungVersi? = null,
 ) {
 
     var state: BuildUiState = BuildUiState()
@@ -55,11 +57,28 @@ class BuildSession(
     /** Nama projek yang sedang dibangun; dipakai untuk mencatat riwayat build. */
     private var projekAktif: String? = null
 
+    /** versionCode yang benar-benar dipakai build yang sedang/berhasil jalan (docs/14 2.3). */
+    private var versionCodeAktif: Int? = null
+
+    private var counterAktif: PenghitungVersi? = null
+    private var projectIdAktif: String? = null
+
     fun start(engine: () -> Result<id.kodenusa.core.build.BuildEngine>, loaded: LoadedProject) {
-        val config = loaded.config
+        var config = loaded.config
         if (config == null) {
             state = state.copy(fatal = "Projek belum bisa dibangun: ${loaded.issues.joinToString("; ") { it.fallbackMessage }}")
             return
+        }
+        // versionCode otomatis: counter per projek mengalahkan nilai beku di kodenusa.json.
+        val counter = penghitungVersi
+        counterAktif = counter
+        projectIdAktif = config.projectId
+        if (counter != null) {
+            val vc = counter.berikutnya(config.projectId, config.versionCode)
+            config = config.copy(versionCode = vc)
+            versionCodeAktif = vc
+        } else {
+            versionCodeAktif = null
         }
         job?.cancel()
         state = BuildUiState(running = true)
@@ -122,7 +141,16 @@ class BuildSession(
                         event.result.success,
                         event.result.apk?.length(),
                         event.result.durationMs,
+                        versionCodeAktif,
                     )
+                }
+                // docs/14 2.3: angka versi hanya dibakar saat build SUKSES — build gagal tidak
+                // boleh menghabiskan versionCode.
+                val vc = versionCodeAktif
+                val counter = counterAktif
+                val projectId = projectIdAktif
+                if (event.result.success && counter != null && vc != null && projectId != null) {
+                    counter.catat(projectId, vc)
                 }
             }
         }

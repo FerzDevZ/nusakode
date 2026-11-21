@@ -12,7 +12,9 @@ import id.kodenusa.core.build.BuildEvent
 import id.kodenusa.core.build.BuildRequest
 import id.kodenusa.core.build.BuildResult
 import id.kodenusa.core.project.ProjectLoader
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -202,6 +204,46 @@ class OnDeviceBuildTest {
 
     @Test
     fun template_katalog_whatsapp_terbangun_di_perangkat() = bangunTemplate("katalog-whatsapp")
+
+    /**
+     * versionCode otomatis (docs/14 2.3): dua build nyata berturut-turut lewat BuildSession asli
+     * harus menghasilkan APK dengan versionCode 1 lalu 2 — bukti yang bisa diperiksa di APK.
+     */
+    @Test
+    fun versionCode_otomatis_naik_di_dua_build_berurutan() = runBlocking {
+        val status = ToolchainInstaller(context).install()
+        check(status is ToolchainInstaller.Status.Ready) { "Toolchain tidak siap: $status" }
+        val toolchain = status.toolchain
+
+        val projek = File(context.filesDir, "projek/uji-versi").apply {
+            deleteRecursively()
+            mkdirs()
+        }
+        salinAset("templates/halo-dunia", projek)
+        gantiPlaceholder(projek)
+        val loaded = ProjectLoader.load(projek)
+        assertTrue("Projek tidak valid: ${loaded.issues}", loaded.isBuildable)
+        val projectId = loaded.config?.projectId ?: error("Konfigurasi kosong")
+
+        val counter = PenghitungVersi(File(context.filesDir, "version-code-uji")).apply {
+            catat(projectId, 0) // mulai dari nol supaya uji tidak tergantung sisa run sebelumnya
+        }
+        val session = BuildSession(this, penghitungVersi = counter)
+
+        session.start({ Result.success(Tier0BuildEngine(toolchain)) }, loaded)
+        withTimeout(300_000) { while (session.state.running) delay(250) }
+        val apk1 = session.state.apk ?: error("build 1 gagal: ${session.state.fatal}")
+        assertEquals(1, versionCodeApk(apk1))
+
+        session.start({ Result.success(Tier0BuildEngine(toolchain)) }, loaded)
+        withTimeout(300_000) { while (session.state.running) delay(250) }
+        val apk2 = session.state.apk ?: error("build 2 gagal: ${session.state.fatal}")
+        assertEquals(2, versionCodeApk(apk2))
+    }
+
+    private fun versionCodeApk(apk: File): Int =
+        context.packageManager.getPackageArchiveInfo(apk.path, 0)?.versionCode
+            ?: error("manifest APK tidak terbaca: ${apk.path}")
 
     private fun bangunTemplate(nama: String) = runBlocking {
         val status = ToolchainInstaller(context).install()

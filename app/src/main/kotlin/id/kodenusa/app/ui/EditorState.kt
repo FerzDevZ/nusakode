@@ -31,6 +31,10 @@ class EditorState {
     var pesanGanti by mutableStateOf<String?>(null)
     var wrap by mutableStateOf(false)
     var toast by mutableStateOf<String?>(null)
+    /** Kata yang sedang diketik sebelum kursor; sumber kandidat lengkapi kata (docs/14 2.5). */
+    var kataDiketik by mutableStateOf("")
+    /** Kandidat lengkapi kata aktif; kosong = panel tidak ditampilkan. */
+    var kandidat by mutableStateOf(emptyList<String>())
 
     fun toggle(path: String) {
         collapsed = if (path in collapsed) collapsed - path else collapsed + path

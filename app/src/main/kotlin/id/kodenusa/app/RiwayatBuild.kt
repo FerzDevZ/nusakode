@@ -16,6 +16,8 @@ data class CatatanBuild(
     val sukses: Boolean,
     val ukuranApk: Long? = null,
     val durasiMs: Long,
+    /** versionCode yang dipakai build ini (docs/14 2.3); null = catatan lama sebelum fitur ada. */
+    val versionCode: Int? = null,
 )
 
 /**
@@ -24,7 +26,7 @@ data class CatatanBuild(
  */
 class RiwayatBuild(private val folder: File) {
 
-    fun catat(projek: String, sukses: Boolean, ukuranApk: Long?, durasiMs: Long) {
+    fun catat(projek: String, sukses: Boolean, ukuranApk: Long?, durasiMs: Long, versionCode: Int? = null) {
         folder.mkdirs()
         val semua = muat(projek).toMutableList()
         semua.add(
@@ -34,6 +36,7 @@ class RiwayatBuild(private val folder: File) {
                 sukses = sukses,
                 ukuranApk = ukuranApk,
                 durasiMs = durasiMs,
+                versionCode = versionCode,
             ),
         )
         File(folder, namaBerkas(projek)).writeText(Json.encodeToString(semua.take(10)))

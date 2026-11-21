@@ -101,7 +101,8 @@ object Highlighter {
 
     private val NO_MATCH = Regex("(?!)")
 
-    private fun keywordsOf(language: Language): Set<String> = when (language) {
+    /** Kata kunci per bahasa; dipakai ulang oleh PenyediaKandidat (lengkapi kata). */
+    fun keywordsOf(language: Language): Set<String> = when (language) {
         Language.JAVA -> JAVA_KEYWORDS
         Language.KOTLIN -> KOTLIN_KEYWORDS
         Language.XML -> XML_KEYWORDS

@@ -216,6 +216,46 @@ class CodeEditorView @JvmOverloads constructor(
 
     val wordWrap: Boolean get() = wrap
 
+    /**
+     * Ukuran font editor (docs/14 2.6). Gutter WAJIB ikut diganti: kalau ukurannya beda, tinggi
+     * baris gutter dan editor tidak sama lagi dan nomor baris bergeser dari kodenya.
+     */
+    fun setTextSizeSp(sp: Float) {
+        editor.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
+        gutter.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
+    }
+
+    /**
+     * Kata yang sedang diketik: huruf beruntun tepat sebelum kursor. Dipakai lengkapi kata
+     * (docs/14 2.5); kosong berarti kursor tidak sedang di tengah kata.
+     */
+    fun kataSebelumKursor(): String {
+        val (awal, akhir) = batasKata()
+        return (editor.text ?: return "").substring(awal, akhir)
+    }
+
+    /** Mengganti kata yang sedang diketik dengan [kata] — aksi memilih kandidat lengkapi kata. */
+    fun gantiKataAktif(kata: String) {
+        val editable = editor.text ?: return
+        val (awal, akhir) = batasKata()
+        if (awal == akhir) return
+        editable.replace(awal, akhir, kata)
+        editor.setSelection((awal + kata.length).coerceAtMost(editable.length))
+    }
+
+    /** Batas (awal, akhir) kata di sebelah kiri kursor; akhir = posisi kursor. */
+    private fun batasKata(): Pair<Int, Int> {
+        val editable = editor.text ?: return 0 to 0
+        val akhir = editor.selectionStart.coerceIn(0, editable.length)
+        var awal = akhir
+        while (awal > 0) {
+            val c = editable[awal - 1]
+            if (!(c.isLetterOrDigit() || c == '_')) break
+            awal -= 1
+        }
+        return awal to akhir
+    }
+
     /** Jumlah kemunculan [query] (tanpa membedakan huruf besar/kecil). */
     fun countMatches(query: String): Int {
         if (query.isEmpty()) return 0

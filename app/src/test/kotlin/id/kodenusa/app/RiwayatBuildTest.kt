@@ -50,4 +50,17 @@ class RiwayatBuildTest {
         assertTrue(riwayat.muat("tidak-ada").isEmpty())
         assertTrue(riwayat.muat("tidak-ada").isEmpty())
     }
+
+    @Test
+    fun versionCode_tersimpan_dan_catatan_lama_tanpa_versionCode_tetap_terbaca() {
+        val riwayat = RiwayatBuild(folder)
+        riwayat.catat("p", sukses = true, ukuranApk = 1L, durasiMs = 1L, versionCode = 3)
+        assertEquals(3, riwayat.muat("p").single().versionCode)
+
+        // JSON lama (sebelum docs/14 2.3) tidak punya kolom versionCode: tidak boleh gagal decode.
+        val jsonLama = """[{"waktu":1,"sukses":true,"ukuranApk":null,"durasiMs":5}]"""
+        folder.resolve("p.json").writeText(jsonLama)
+        val lama = riwayat.muat("p").single()
+        assertEquals(null, lama.versionCode)
+    }
 }

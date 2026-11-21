@@ -35,6 +35,12 @@ class AppContainer(context: Context) {
     /** Riwayat build per projek (docs/13 C3): waktu, sukses, ukuran APK, durasi. */
     val riwayatBuild = RiwayatBuild(File(context.filesDir, "riwayat-build"))
 
+    /** Counter versionCode otomatis per projek (docs/14 2.3). */
+    val penghitungVersi = PenghitungVersi(File(context.filesDir, "version-code"))
+
+    /** Setelan editor kecil: ukuran font (docs/14 2.6). */
+    val setelanEditor = SetelanEditor(context)
+
     fun newEngine(toolchain: Toolchain): BuildEngine = Tier0BuildEngine(toolchain)
 
     private companion object {

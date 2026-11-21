@@ -69,6 +69,7 @@ import id.kodenusa.core.project.ProjectSearch
 import id.kodenusa.core.project.ProjectTree
 import id.kodenusa.editor.CodeEditorView
 import id.kodenusa.editor.Language
+import id.kodenusa.editor.PenyediaKandidat
 import id.kodenusa.ui.Banner
 import id.kodenusa.ui.GhostButton
 import id.kodenusa.ui.JenisBanner
@@ -159,6 +160,9 @@ fun EditorScreen(
     val scope = rememberCoroutineScope()
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val canBuild = loaded.config != null
+    // Ukuran font editor (docs/14 2.6): dibaca dari setelan sekali, diubah lewat A−/A+ di bar.
+    val setelanEditor = container.setelanEditor
+    var ukuranFont by remember { mutableStateOf(setelanEditor.ukuranFont) }
 
     ModalNavigationDrawer(
         drawerState = drawer,
@@ -384,7 +388,15 @@ fun EditorScreen(
                                 CodeEditorView(ctx).also { view ->
                                     state.editor = view
                                     view.setWordWrap(state.wrap)
-                                    view.onTextChanged = { text -> session.update(file, text) }
+                                    view.setTextSizeSp(ukuranFont)
+                                    view.onTextChanged = { text ->
+                                        session.update(file, text)
+                                        // Lengkapi kata (docs/14 2.5): dihitung dari isi berkas
+                                        // aktif saja, tanpa index projek (HP 2 GB).
+                                        val kata = view.kataSebelumKursor()
+                                        state.kataDiketik = kata
+                                        state.kandidat = PenyediaKandidat.kandidat(text, kata, Language.of(file.name))
+                                    }
                                     view.onCursorMoved = { line, column ->
                                         state.line = line
                                         state.column = column
@@ -393,6 +405,7 @@ fun EditorScreen(
                             },
                             update = { view ->
                                 view.palet = paletEditor
+                                view.setTextSizeSp(ukuranFont)
                                 if (state.loadedPath != file.path) {
                                     view.setContent(session.textOf(file), Language.of(file.name))
                                     state.loadedPath = file.path
@@ -402,8 +415,24 @@ fun EditorScreen(
                     }
                 }
 
+                // Panel kandidat lengkapi kata (docs/14 2.5): muncul hanya saat ada kandidat,
+                // di atas bar aksesori supaya tetap dekat keyboard.
+                if (state.kandidat.isNotEmpty()) {
+                    PanelKandidat(
+                        kandidat = state.kandidat,
+                        onPilih = { kata ->
+                            state.editor?.gantiKataAktif(kata)
+                            state.kandidat = emptyList()
+                            state.kataDiketik = ""
+                        },
+                    )
+                }
+
                 KeyBar(
                     position = "${state.line}:${state.column}",
+                    ukuranFont = ukuranFont,
+                    onFontKecil = { ukuranFont = setelanEditor.perkecil() },
+                    onFontBesar = { ukuranFont = setelanEditor.perbesar() },
                     onInsert = { snippet -> state.editor?.insertSnippet(snippet) },
                     onLeft = { state.editor?.moveCursor(-1) },
                     onRight = { state.editor?.moveCursor(1) },
@@ -427,7 +456,10 @@ fun EditorScreen(
     }
     if (palet) {
         PaletPerintahDialog(
-            perintah = daftarPerintah(
+            perintah = perintahBukaBerkas(nodes) { berkas ->
+                session.open(berkas)
+                state.load(berkas)
+            } + daftarPerintah(
                 onSimpan = { session.saveAll(); state.toast = "Tersimpan" },
                 onCari = { state.findOpen = true },
                 onBuild = { session.saveAll(); onBuild() },
@@ -1048,9 +1080,64 @@ private fun HasilCariPanel(hasil: List<HasilCari>, onBuka: (HasilCari) -> Unit) 
     }
 }
 
+/**
+ * Buka-berkas cepat di palet perintah (docs/14 2.7): satu perintah per berkas projek. Pencarian
+ * memakai mesin `saring` yang sama, jadi mengetik sebagian nama sudah menemukan berkasnya.
+ */
+fun perintahBukaBerkas(nodes: List<ProjectNode>, onBuka: (File) -> Unit): List<Perintah> =
+    nodes.filter { !it.directory }.map { node ->
+        Perintah(
+            id = "buka-" + node.relativePath.replace(Regex("[^A-Za-z0-9]+"), "-").trimEnd('-'),
+            judul = node.name,
+            keterangan = node.relativePath,
+            alias = listOf(node.relativePath),
+            jalankan = { onBuka(node.file) },
+        )
+    }
+
+/**
+ * Panel kandidat lengkapi kata (docs/14 2.5): maksimal 6 chip di atas bar aksesori. Memilih satu
+ * kandidat mengganti kata yang sedang diketik, buka menambahkan di belakangnya.
+ */
+@Composable
+internal fun PanelKandidat(kandidat: List<String>, onPilih: (String) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(Kode.surfaceRaised)
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 6.dp, vertical = 4.dp)
+            .testTag("panel-kandidat"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            "⇥",
+            style = MaterialTheme.typography.labelMedium,
+            color = Kode.textDim,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+        kandidat.forEach { kata ->
+            Box(
+                Modifier
+                    .background(Kode.surface, RoundedCornerShape(5.dp))
+                    .border(1.dp, Kode.accent, RoundedCornerShape(5.dp))
+                    .clickable { onPilih(kata) }
+                    .padding(horizontal = 10.dp, vertical = 8.dp)
+                    .testTag("kandidat-$kata"),
+            ) {
+                Text(kata, style = MaterialTheme.typography.labelMedium, color = Kode.text)
+            }
+        }
+    }
+}
+
 @Composable
 private fun KeyBar(
     position: String,
+    ukuranFont: Float = 14f,
+    onFontKecil: () -> Unit = {},
+    onFontBesar: () -> Unit = {},
     onInsert: (String) -> Unit,
     onLeft: () -> Unit,
     onRight: () -> Unit,
@@ -1085,6 +1172,16 @@ private fun KeyBar(
         Key("→") { onRight() }
         Key("Undo") { onUndo() }
         Key("Redo") { onRedo() }
+        // Ukuran font (docs/14 2.6): dua tombol di ujung bar yang sudah bisa digulir, jadi tidak
+        // merebut tempat dengan tombol yang lebih sering dipakai.
+        Key("A−", Modifier.testTag("font-kecil")) { onFontKecil() }
+        Key("A+", Modifier.testTag("font-besar")) { onFontBesar() }
+        Text(
+            "${ukuranFont.toInt()}sp",
+            style = MaterialTheme.typography.labelSmall,
+            color = Kode.textDim,
+            modifier = Modifier.padding(horizontal = 4.dp).testTag("ukuran-font"),
+        )
         // docs/13 C2: merapikan indentasi seluruh berkas. Hanya spasi awal baris yang berubah,
         // jadi tidak pernah merusak kode; undo tetap bisa membatalkan.
         Key("Rapikan") {
@@ -1103,13 +1200,14 @@ private fun KeyBar(
 }
 
 @Composable
-private fun Key(label: String, onClick: () -> Unit) {
+private fun Key(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
         Modifier
             .background(Kode.surface, RoundedCornerShape(5.dp))
             .border(1.dp, Kode.border, RoundedCornerShape(5.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .then(modifier),
     ) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = Kode.text)
     }

@@ -68,7 +68,7 @@ fun BuildScreen(
     val scope = rememberCoroutineScope()
     val batasHemat = remember(context) { ModeHemat.untukKonteks(context) }
     val session = remember(projectDir, batasHemat.batasLog) {
-        BuildSession(scope, batasHemat.batasLog, container.riwayatBuild)
+        BuildSession(scope, batasHemat.batasLog, container.riwayatBuild, container.penghitungVersi)
     }
     var ukuranBuild by remember(projectDir) { mutableStateOf(PenyimpananProjek.ukuranBuild(projectDir)) }
     var pesanBersih by remember(projectDir) { mutableStateOf<String?>(null) }
@@ -240,7 +240,8 @@ fun BuildScreen(
                             ) {
                                 Text(
                                     (if (catatan.sukses) "✓ " else "✗ ") +
-                                        PenyimpananProjek.waktuPendek(catatan.waktu),
+                                        PenyimpananProjek.waktuPendek(catatan.waktu) +
+                                        (catatan.versionCode?.let { " · v$it" } ?: ""),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (catatan.sukses) Kode.ok else Kode.error,
                                 )
