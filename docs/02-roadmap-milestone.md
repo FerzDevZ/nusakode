@@ -79,6 +79,19 @@ Sama seperti `.py`: saat pengguna membuka `.kt`, jelaskan bahwa Tier 0 hanya Jav
 Rencana v0.12 dan kandidat setelahnya disusun terpisah: lihat [`11-rencana-v0.12.md`](11-rencana-v0.12.md).
 
 
+## v0.15.0 — riwayat agen & prompt tahu template projek (20 November 2026)
+
+Dua saran terakhir dari [`12-saran-ui-ux-ai.md`](12-saran-ui-ux-ai.md) — daftar saran kini tuntas:
+
+- **Riwayat tulisan AI yang bisa dibuka ulang**: setiap tulisan AI (jalur "Simpan berkas" dan
+  "Sisip") dicatat per projek — tugas, berkas yang berubah, id batch undo. Dialog "Riwayat tulisan AI"
+  di layar AI menampilkannya; berkas bisa diketuk untuk langsung dibuka di editor.
+- **Prompt agen tahu struktur template projek**: projek dari template kasir-warung otomatis
+  memberi tahu model tentang `DatabaseKasir.java`/`Produk.java`, web-katalog tentang folder
+  `assets/`, dst. Template tak dikenal tidak menambah apa pun (tidak mengarang).
+- 243 uji unit · 105 uji perangkat · detekt 0.
+
+
 ## v0.14.0 — AI yang tidak merusak: pratinjau, undo, berkas sematan (20 November 2026)
 
 Lima saran teratas dari [`12-saran-ui-ux-ai.md`](12-saran-ui-ux-ai.md) dikerjakan sekaligus:

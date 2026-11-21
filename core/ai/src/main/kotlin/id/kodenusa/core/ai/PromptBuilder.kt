@@ -77,13 +77,21 @@ object PromptBuilder {
      * berkas kalau hanya diminta "kirim kodenya". Tanpa nama berkas, perubahan tidak bisa
      * diterapkan otomatis dan pengguna harus menyalin manual — persis yang ingin dihapus fitur ini.
      */
-    fun untukAgen(tugas: String, konteksProjek: String, galatSebelumnya: String): List<ChatMessage> =
+    fun untukAgen(
+        tugas: String,
+        konteksProjek: String,
+        galatSebelumnya: String,
+        templat: String? = null,
+    ): List<ChatMessage> =
         buildList {
             add(pesanSistem())
             add(ChatMessage(ChatMessage.Peran.SISTEM, ATURAN_AGEN))
             val isi = StringBuilder("Tugas dari pengguna:\n")
             isi.append(tugas.trim()).append("\n\nKeadaan projek sekarang:\n")
             isi.append(potong(konteksProjek, BATAS_KONTEKS))
+            // Struktur tipikal template membantu model mengikuti pola kelas yang sudah ada
+            // (saran #7 di docs/12) — tanpa ini model menebak struktur dari nama berkas saja.
+            if (templat != null) isi.append("\n\n").append(templat)
             if (galatSebelumnya.isNotBlank()) {
                 isi.append("\n\nBuild sebelumnya gagal dengan galat ini:\n")
                 isi.append(potong(galatSebelumnya, 2_000))
@@ -91,6 +99,37 @@ object PromptBuilder {
             }
             add(ChatMessage(ChatMessage.Peran.PENGGUNA, isi.toString()))
         }
+
+    /**
+     * Struktur tipikal tiap template projek (saran #7 docs/12). Dikirim ke model supaya ia
+     * mengikuti pola kelas yang sudah ada, bukan menebak. `null` berarti template tidak dikenal —
+     * tidak ada blok tambahan, dan jangan mengarang struktur.
+     */
+    fun templatProjek(id: String?): String? = when (id) {
+        "halo-dunia" ->
+            "Struktur template halo-dunia: satu Activity di src/main/java/app/MainActivity.java, " +
+                "layout res/layout/activity_main.xml, dan teks di res/values/strings.xml. " +
+                "Ikuti pola yang sudah ada."
+        "kasir-warung" ->
+            "Struktur template kasir-warung: MainActivity.java (layar UI), DatabaseKasir.java " +
+                "(SQLiteOpenHelper dengan tabel produk), Produk.java (model data), dan layout " +
+                "res/layout/activity_main.xml. Ikuti pola kelas yang sudah ada — jangan membuat " +
+                "basis data baru kalau bisa memakai DatabaseKasir."
+        "katalog-whatsapp" ->
+            "Struktur template katalog-whatsapp: MainActivity.java (layar daftar katalog) dan layout " +
+                "res/layout/activity_main.xml. Ikuti pola yang sudah ada."
+        "web-katalog" ->
+            "Struktur template web-katalog: WebView di src/main/java/app/MainActivity.java memuat " +
+                "halaman di src/main/assets/ (index.html, gaya.css, aplikasi.js). Ubah isi web di " +
+                "folder assets, bukan di Java, kalau perubahan hanya tampilan."
+        "situs-murni" ->
+            "Projek web murni tanpa Activity: web/index.html, web/gaya.css, web/aplikasi.js. " +
+                "Tidak ada kode Java dan tidak ada build APK di projek ini."
+        "kosong" ->
+            "Projek kosong: satu MainActivity.java di src/main/java/<paket>/, manifest Android, " +
+                "layout res/layout/activity_main.xml, dan res/values/strings.xml."
+        else -> null
+    }
 
     /** Aturan format yang dipakai [UbahanBerkas] untuk menerapkan perubahan otomatis. */
     const val ATURAN_AGEN: String = "Kamu mengubah projek secara langsung. Untuk SETIAP berkas yang " +

@@ -173,6 +173,23 @@ class AiUiTest {
     }
 
     @Test
+    fun tombol_riwayat_membuka_dialog_dengan_pesan_jujur_ketua_kosong() {
+        semaiSetelan()
+        bukaEditor()
+        layar.onNodeWithTag("buka-ai").performClick()
+        layar.waitForIdle()
+
+        // Riwayat tulisan AI (saran #6 docs/12). Projek baru belum pernah ditulis AI,
+        // jadi dialog harus jujur bilang kosong — bukan layar kosong tanpa penjelasan.
+        layar.onNodeWithTag("riwayat-ai").performClick()
+        layar.waitForIdle()
+        layar.onNodeWithTag("judul-riwayat").assertExists()
+        layar.onNodeWithText("Belum ada tulisan AI yang tercatat di projek ini.").assertExists()
+        layar.onNodeWithTag("tutup-riwayat").performClick()
+        layar.waitForIdle()
+    }
+
+    @Test
     fun berkas_sematan_maksimal_tiga_dengan_pill_dan_buang() {
         semaiSetelan()
         bukaEditor()

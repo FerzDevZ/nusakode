@@ -452,7 +452,10 @@ fun EditorScreen(
             akarProjek = projectDir,
             onDismiss = { aiTerbuka = false },
             onSisip = { kode, bahasa ->
-                val pesan = ketikaSisip(aktif, session, state.editor, kode, bahasa, projectDir, container.undoTulis)
+                val pesan = ketikaSisip(
+                    aktif, session, state.editor, kode, bahasa,
+                    projectDir, container.undoTulis, container.riwayatAgen,
+                )
                 state.toast = pesan
                 aiTerbuka = false
                 null
@@ -500,6 +503,7 @@ private fun ketikaSisip(
     bahasa: String,
     akarProjek: File,
     undo: id.kodenusa.app.UndoTulis,
+    riwayat: id.kodenusa.app.RiwayatAgen,
 ): String {
     if (aktif == null) return "Belum ada berkas yang dibuka. Pilih satu berkas dulu di panel, lalu tekan sisip lagi."
     val teks = aktif.name.substringAfterLast('.', "").lowercase()
@@ -518,6 +522,15 @@ private fun ketikaSisip(
     val tersimpan = session.save(aktif)
     editor?.setContent(kode, editor.languageOf(aktif.name))
     val bahasaKode = if (bahasa.isBlank()) "" else " ($bahasa)"
+    if (tersimpan) {
+        // Sisip juga tercatat di riwayat agen supaya bisa dibuka ulang dari layar AI.
+        riwayat.catat(
+            projek = akarProjek.name,
+            tugas = "Sisip kode AI ke $jalurRelatif",
+            berkas = listOf(jalurRelatif),
+            batch = batch,
+        )
+    }
     return if (tersimpan) {
         "Kode AI$bahasaKode masuk ke ${aktif.name} dan sudah disimpan."
     } else {

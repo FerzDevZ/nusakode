@@ -49,7 +49,7 @@ bukan karena mesinnya tak sanggup, tapi karena **prompt dan tombolnya tidak menu
 > "Penyedia AI sedang bermasalah (503)" tampil jujur di layar. Sisa verifikasi end-to-end
 > AI nyata dikerjakan saat penyedia sudah pulih.
 
-## 3. Saran lanjutan — STATUS v0.14.0: butir 1–5 SELESAI, 6–7 belum
+## 3. Saran lanjutan — STATUS: SEMUA (1–7) SELESAI di v0.13.0–v0.15.0
 
 | # | Saran | Status | Catatan |
 |---|---|---|---|
@@ -58,8 +58,8 @@ bukan karena mesinnya tak sanggup, tapi karena **prompt dan tombolnya tidak menu
 | 3 | **Daftar perintah cepat baru di chat** | ✅ v0.14.0 | chip "Buat layout XML", "Tambah layar kedua", "Jelaskan berkas ini", "Perbaiki galat build", "Perbaiki berkas ini", "Buat Activity", "Bantu itu apa" |
 | 4 | **Agen bisa membaca berkas yang dipilih pengguna** | ✅ v0.14.0 | berkas sematan maks 3, dikirim utuh via `untukBerkasSematan`; lebih dari 3 ditolak dengan pesan jujur |
 | 5 | **Indikator biaya/kuota per percakapan** | ✅ v0.14.0 | "terkirim: N karakter ke endpoint" per projek, di-nol-kan lewat "Bersihkan" |
-| 6 | **Riwayat agen yang bisa dibuka ulang** | ⛔ belum | kandidat v0.15 |
-| 7 | **Template prompt per template projek** | ⛔ belum | kandidat v0.15 |
+| 6 | **Riwayat agen yang bisa dibuka ulang** | ✅ v0.15.0 | `RiwayatAgen.kt` per projek (maks 20 catatan); dialog "Riwayat tulisan AI"; berkas bisa diketuk untuk dibuka di editor |
+| 7 | **Template prompt per template projek** | ✅ v0.15.0 | `PromptBuilder.templatProjek(id)` — struktur tipikal tiap template dikirim ke model; tak dikenal → `null` |
 
 ## 4. Saran UI/UX umum yang sudah dipenuhi sebelumnya (catatan)
 

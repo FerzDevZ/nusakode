@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.14.0** (`versionCode 26`) · **238 uji unit · 104 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.15.0** (`versionCode 27`) · **243 uji unit · 105 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -119,6 +119,8 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | **Berkas sematan — AI membaca berkas utuh pilihan pengguna** (maks 3) | ✅ | pohon berkas memilih berkas → pill `berkas-terpasang-<nama>` + tombol Buang; lebih dari 3 ditolak dengan pesan jujur; dikirim utuh via `PromptBuilder.untukBerkasSematan` (uji `PromptBuilderTest.berkas_sematan_dikirim_utuh_bukan_ringkasan`) |
 | **Chip perintah cepat baru** — "Buat layout XML", "Tambah layar kedua", "Jelaskan berkas ini", dst. | ✅ | satu baris gulir horizontal di `ChatAiPanel`; uji `AiUiTest.chip_saran_baru_tampil_di_layar_ai` |
 | **Indikator karakter terkirim ke endpoint AI** | ✅ | "terkirim: N karakter ke endpoint" (`indikator-karakter`), dihitung per projek via `AiSettingsStore.tambahKarakter`, di-nol-kan lewat "Bersihkan" |
+| **Riwayat tulisan AI yang bisa dibuka ulang** (tugas → berkas berubah) | ✅ | `RiwayatAgen.kt` (`filesDir/riwayat-agen/`, maks 20 catatan per projek, JSON); dialog "Riwayat tulisan AI" (`riwayat-ai`), berkas bisa diketuk untuk dibuka di editor; jalur Simpan & Sisip sama-sama tercatat. Uji: `RiwayatAgenTest` (5 uji), `AiUiTest.tombol_riwayat_membuka_dialog_dengan_pesan_jujur_ketua_kosong` |
+| **Prompt agen tahu struktur tipikal template projek** | ✅ | `PromptBuilder.templatProjek(id)` — kasir-warung menyebut DatabaseKasir/Produk, web-katalog menyebut assets, dst.; template tak dikenal → `null` (tidak mengarang). Uji: 3 uji baru di `PromptBuilderTest` |
 
 **Bukti ke endpoint sungguhan** (dijalankan terhadap endpoint milik pengguna):
 model terbaca `zai-org/GLM-5.3-Flash`, `deepseek-ai/DeepSeek-V4-Flash-0731`, `MiniMaxAI/MiniMax-M2.7`;

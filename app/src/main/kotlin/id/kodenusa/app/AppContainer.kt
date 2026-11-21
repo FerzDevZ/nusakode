@@ -29,6 +29,9 @@ class AppContainer(context: Context) {
     /** Cadangan sebelum AI menimpa berkas; dipakai layar AI dan editor (jalur sisip). */
     val undoTulis = UndoTulis(File(context.filesDir, "undo-tulis"))
 
+    /** Riwayat tulisan AI per projek, bisa dibuka ulang dari layar AI. */
+    val riwayatAgen = RiwayatAgen(File(context.filesDir, "riwayat-agen"))
+
     fun newEngine(toolchain: Toolchain): BuildEngine = Tier0BuildEngine(toolchain)
 
     private companion object {

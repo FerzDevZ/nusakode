@@ -52,6 +52,8 @@ import id.kodenusa.core.ai.AiGagal
 import id.kodenusa.core.ai.AiModel
 import androidx.core.content.FileProvider
 import id.kodenusa.app.GambarUntukAi
+import id.kodenusa.app.CatatanAgen
+import id.kodenusa.app.RiwayatAgen
 import id.kodenusa.app.UndoTulis
 import id.kodenusa.core.ai.ChatMessage
 import id.kodenusa.core.ai.CodeBlocks
@@ -135,6 +137,17 @@ fun AiScreen(
     var karakter by remember { mutableStateOf(store.karakterTerkirim(kunciProjek)) }
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val undo = remember(akarProjek) { UndoTulis(File(ctx.filesDir, "undo-tulis")) }
+    val riwayatAgen = remember { RiwayatAgen(File(ctx.filesDir, "riwayat-agen")) }
+    // Template projek dibaca dari kodenusa.json: prompt agen jadi tahu struktur tipikal projek
+    // (mis. DatabaseKasir di kasir-warung) tanpa pengguna perlu menjelaskannya.
+    val templatId = remember(akarProjek) {
+        runCatching {
+            id.kodenusa.core.project.ProjectJson
+                .decode(File(akarProjek, "kodenusa.json").readText())
+                .templateId
+        }.getOrNull()
+    }
+    var riwayatTerbuka by remember { mutableStateOf(false) }
     // Dibuat sebagai lambda (bukan fungsi lokal) supaya bisa dipakai launcher di bawah dan tetap
     // ringkas: satu tempat untuk "ubah uri jadi data URL", dipakai galeri maupun kamera.
     val muatGambar: (Uri) -> Unit = { uri ->
@@ -173,7 +186,12 @@ fun AiScreen(
         val dasar = when {
             // Konteks projek dipakai lebih dulu: model perlu tahu struktur folder sebelum
             // menulis berkas baru, dan hanya prompt agen yang mengajarkan format <<<BERKAS: …>>>.
-            pakaiKonteksProjek -> PromptBuilder.untukAgen(teks, papan.konteks(), "")
+            pakaiKonteksProjek -> PromptBuilder.untukAgen(
+                teks,
+                papan.konteks(),
+                "",
+                PromptBuilder.templatProjek(templatId),
+            )
             sematan.isNotEmpty() -> PromptBuilder.untukBerkasSematan(teks, sematan)
             konteks.galat != null ->
                 PromptBuilder.untukGalat(konteks.galat.orEmpty(), konteks.jalur, konteks.isi)
@@ -290,6 +308,16 @@ fun AiScreen(
             append(". Tekan Batalkan untuk mengembalikan isi lama.")
         }
         adaBatchUndo = undo.batchTerakhir() != null
+        // Catat ke riwayat agen: tugasnya adalah pesan pengguna terakhir, supaya hasil bisa
+        // dibuka ulang setelah layar ditutup (saran #6 docs/12).
+        if (ditulis > 0) {
+            riwayatAgen.catat(
+                projek = kunciProjek,
+                tugas = riwayat.lastOrNull { it.first == "user" }?.second ?: "",
+                berkas = rencana.map { it.edit.jalur },
+                batch = batch,
+            )
+        }
     }
 
     Dialog(
@@ -437,6 +465,7 @@ fun AiScreen(
                         },
                         adaTulisanBisaDibatalkan = adaBatchUndo,
                         onBuatBerkasBaru = { buatBerkasTerbuka = true },
+                        onBukaRiwayat = { riwayatTerbuka = true },
                     )
                 }
             }
@@ -460,6 +489,18 @@ fun AiScreen(
                 rencana = rencanaTulis.orEmpty(),
                 onBatal = { rencanaTulis = null },
                 onSetuju = { jalankanTulis(rencanaTulis.orEmpty()) },
+            )
+        }
+
+        if (riwayatTerbuka) {
+            DialogRiwayatAgen(
+                catatan = riwayatAgen.muat(kunciProjek),
+                akar = akarProjek,
+                onTutup = { riwayatTerbuka = false },
+                onBukaBerkas = { berkas ->
+                    riwayatTerbuka = false
+                    onBukaBerkasBaru(berkas)
+                },
             )
         }
 
@@ -789,6 +830,7 @@ private fun ChatAiPanel(
     onBatalkanTulis: () -> Unit = {},
     adaTulisanBisaDibatalkan: Boolean = false,
     onBuatBerkasBaru: () -> Unit = {},
+    onBukaRiwayat: () -> Unit = {},
 ) {
     val daftar = rememberLazyListState()
     val terakhir = jawaban.ifBlank { riwayat.lastOrNull { it.first == "assistant" }?.second.orEmpty() }
@@ -916,6 +958,15 @@ private fun ChatAiPanel(
             )
             Spacer(Modifier.height(6.dp))
         }
+
+        // Riwayat tulisan AI selalu terlihat — bukan cuma saat ada kode di jawaban — supaya
+        // pengguna bisa membuka ulang hasil agen kapan pun (saran #6 docs/12).
+        GhostButton(
+            "Riwayat tulisan AI",
+            onBukaRiwayat,
+            modifier = Modifier.fillMaxWidth().testTag("riwayat-ai"),
+        )
+        Spacer(Modifier.height(6.dp))
 
         // Satu baris chip yang bisa digulir: menghemat dua baris vertikal di layar 5 inci,
         // dan urutannya tetap konteks dulu, lalu gambar — sama seperti alur berpikir pengguna.
@@ -1080,6 +1131,82 @@ private fun DialogKonfirmasiTulis(
                         modifier = Modifier.weight(1f).testTag("tulis-setuju"),
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Riwayat tulisan AI per projek (saran #6 docs/12): tugas → berkas yang berubah. Berkas bisa
+ * diketuk untuk dibuka di editor — hasil agen tidak hilang begitu layar ditutup.
+ */
+@Composable
+private fun DialogRiwayatAgen(
+    catatan: List<CatatanAgen>,
+    akar: File,
+    onTutup: () -> Unit,
+    onBukaBerkas: (File) -> Unit,
+) {
+    val formatWaktu = remember {
+        java.text.SimpleDateFormat("d MMM HH:mm", java.util.Locale("id"))
+    }
+    Dialog(onDismissRequest = onTutup) {
+        Surface(
+            color = Kode.surface,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(max = 520.dp),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    "Riwayat tulisan AI",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Kode.text,
+                    modifier = Modifier.testTag("judul-riwayat"),
+                )
+                if (catatan.isEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Belum ada tulisan AI yang tercatat di projek ini.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Kode.textDim,
+                    )
+                } else {
+                    Spacer(Modifier.height(8.dp))
+                    LazyColumn {
+                        items(catatan.size) { indeks ->
+                            val satu = catatan[indeks]
+                            Column(Modifier.padding(vertical = 6.dp)) {
+                                Text(
+                                    formatWaktu.format(java.util.Date(satu.waktu)),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Kode.textDim,
+                                )
+                                Text(
+                                    satu.tugas.ifBlank { "(tanpa tugas)" },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Kode.text,
+                                )
+                                satu.berkas.forEach { jalur ->
+                                    Text(
+                                        "↳ $jalur",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Kode.accent,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                val aman = id.kodenusa.core.project.ProjectFiles
+                                                    .safeRelative(akar, jalur.trim())
+                                                if (aman != null) onBukaBerkas(File(akar, aman))
+                                            }
+                                            .testTag("riwayat-berkas-$jalur"),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                GhostButton("Tutup", onTutup, Modifier.testTag("tutup-riwayat"))
             }
         }
     }

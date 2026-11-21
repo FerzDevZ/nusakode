@@ -614,3 +614,26 @@ tanpa bisa dikembalikan — tidak ada Git otomatis, tidak ada sampah sistem.
 **Konsekuensi.** Kerja pengguna tidak bisa hilang permanen karena AI. Harga yang dibayar:
 satu langkah konfirmasi tambahan, dan cadangan memakai penyimpanan internal (dibatasi 5 batch).
 Undo hanya satu tingkat (batch terakhir) — riwayat berlapis ditunda sampai Git bawaan matang.
+
+### ADR-039 — Riwayat agen per projek + prompt yang tahu template projek
+
+**Tanggal.** 20 November 2026.
+
+**Konteks.** Setelah layar AI ditutup, jejak kerja agen hilang: pengguna tidak bisa melihat lagi
+tugas apa yang sudah dikerjakan AI dan berkas apa yang berubah — padahal di HP tanpa PC, itu
+satu-satunya catatan kerja. Sebaliknya, model tidak tahu struktur tipikal projek: pada projek
+template kasir-warung ia menebak sendiri ada kelas apa, meski `DatabaseKasir.java` sudah ada.
+
+**Keputusan.**
+1. Setiap tulisan AI (jalur "Simpan berkas" dan "Sisip") dicatat ke `RiwayatAgen` — satu berkas
+   JSON per projek di `filesDir/riwayat-agen/`, berisi waktu, tugas (maks 160 karakter),
+   daftar berkas yang berubah, dan id batch undo. Maks 20 catatan terbaru per projek.
+2. Dialog "Riwayat tulisan AI" di layar AI menampilkan catatan; berkas di dalamnya bisa diketuk
+   untuk langsung dibuka di editor (tetap lewat `ProjectFiles.safeRelative` — jalur `../` ditolak).
+3. `PromptBuilder.templatProjek(id)` memetakan `templateId` dari `kodenusa.json` ke blok teks
+   struktur tipikal, dikirim ke model hanya saat mode agen. Template tak dikenal menghasilkan
+   `null` — tidak ada blok tambahan, tidak mengarang struktur.
+
+**Konsekuensi.** Kerja agen bisa ditinjau dan dibuka ulang tanpa PC; model mengikuti pola kelas
+yang sudah ada. Penyimpanan dibatasi (20 catatan × ~200 byte); riwayat hilang jika aplikasi
+dihapus — diterima, karena semua data KodeNusa memang tinggal di HP pengguna (ADR-001).

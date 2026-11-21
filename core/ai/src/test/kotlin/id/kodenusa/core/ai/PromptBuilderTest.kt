@@ -167,3 +167,32 @@ class CodeBlocksTest {
         assertTrue(isi.contains("--- c.java ---"))
         assertTrue(isi.contains("isi A") && isi.contains("isi B") && isi.contains("isi C"))
     }
+
+    @Test
+    fun templat_kasir_warung_mengajarkan_database_kasir() {
+        // Saran #7 docs/12: model harus tahu struktur tipikal template, bukan menebak.
+        val templat = PromptBuilder.templatProjek("kasir-warung")
+
+        assertTrue(templat != null)
+        assertTrue(templat!!.contains("DatabaseKasir"), "harus menyebut kelas basis data yang ada")
+        assertTrue(templat.contains("Produk.java"))
+    }
+
+    @Test
+    fun templat_tak_dikenal_menghasilkan_null_tidak_mengarang() {
+        assertNull(PromptBuilder.templatProjek("template-aneh"))
+        assertNull(PromptBuilder.templatProjek(null))
+    }
+
+    @Test
+    fun pesan_agen_menyertakan_templat_bila_ada() {
+        val pesan = PromptBuilder.untukAgen(
+            "tambah layar riwayat",
+            "src/main/java/app/MainActivity.java",
+            "",
+            PromptBuilder.templatProjek("kasir-warung"),
+        )
+
+        assertTrue(pesan.last().isi.contains("DatabaseKasir"))
+        assertTrue(pesan.last().isi.contains("tambah layar riwayat"))
+    }
