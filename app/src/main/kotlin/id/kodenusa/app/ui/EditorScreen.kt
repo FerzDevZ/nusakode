@@ -62,6 +62,8 @@ import id.kodenusa.app.AppContainer
 import id.kodenusa.app.EditorSession
 import id.kodenusa.app.RiwayatBerkas
 import id.kodenusa.app.KonteksBerkas
+import id.kodenusa.app.Pelajaran
+import id.kodenusa.app.PelajaranStore
 import id.kodenusa.app.ModeTema
 import id.kodenusa.core.project.BerkasMasuk
 import id.kodenusa.core.project.HasilCari
@@ -128,6 +130,16 @@ fun EditorScreen(
     var aksi by remember { mutableStateOf<FileAction?>(null) }
     var aiTerbuka by remember { mutableStateOf(false) }
     var pesanBerkas by remember { mutableStateOf<String?>(null) }
+
+    // Mode belajar (docs/14 3.3): pelajaran dimuat dari template asal projek. Projek yang tidak
+    // berasal dari template berpelajaran tidak melihat apa-apa — bukan panel kosong.
+    val pelajaran = remember(projectDir) { container.pelajaranStore.muat(loaded.project?.templateId) }
+    var pelajaranTerbuka by remember(projectDir) {
+        mutableStateOf(pelajaran != null && container.pelajaranStore.bacaProgres(projectDir.name) <= pelajaran!!.langkah.size)
+    }
+    var langkahPelajaran by remember(projectDir) {
+        mutableStateOf(if (pelajaran != null) container.pelajaranStore.bacaProgres(projectDir.name) else 1)
+    }
     var pythonTerbuka by remember { mutableStateOf(false) }
     var riwayatTerbuka by remember { mutableStateOf(false) }
     fun segarkan() {
@@ -421,6 +433,27 @@ fun EditorScreen(
                             },
                         )
                     }
+                }
+
+                // Mode belajar (docs/14 3.3): panel kecil pelajaran di bawah editor.
+                if (pelajaran != null && pelajaranTerbuka) {
+                    PanelPelajaran(
+                        pelajaran = pelajaran,
+                        langkahSekarang = langkahPelajaran,
+                        onLangkah = { baru ->
+                            langkahPelajaran = baru
+                            container.pelajaranStore.simpanProgres(projectDir.name, baru)
+                        },
+                        onTutup = { pelajaranTerbuka = false },
+                        onSelesai = {
+                            // Progres = jumlah langkah + 1 berarti "selesai" — panel tidak
+                            // dibuka otomatis lagi, tetapi pil Pelajaran tetap tersedia.
+                            container.pelajaranStore.simpanProgres(projectDir.name, pelajaran.langkah.size + 1)
+                            pelajaranTerbuka = false
+                        },
+                    )
+                } else if (pelajaran != null) {
+                    TombolBukaPelajaran(onBuka = { pelajaranTerbuka = true })
                 }
 
                 // Panel kandidat lengkapi kata (docs/14 2.5): muncul hanya saat ada kandidat,

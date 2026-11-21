@@ -12,6 +12,9 @@ import java.io.File
  */
 class AppContainer(context: Context) {
 
+    /** Mode belajar (docs/14 3.3): pelajaran per template + progres per projek. */
+    val pelajaranStore = PelajaranStore.bawaan(context)
+
     val workspaceRoot: File = File(context.filesDir, WORKSPACE).apply { mkdirs() }
 
     val toolchainInstaller = ToolchainInstaller(context)

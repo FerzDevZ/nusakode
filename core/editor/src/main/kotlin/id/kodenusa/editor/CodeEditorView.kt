@@ -38,11 +38,10 @@ class CodeEditorView @JvmOverloads constructor(
     defStyleAttr: Int = 0,
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
-    private val gutter = TextView(context)
+    private val gutter = GutterView(context)
     private val editor = EditText(context)
 
     private var language = Language.JAVA
-    private var gutterLineCount = -1
     private var highlighting = false
     private var wrap = false
 
@@ -53,7 +52,7 @@ class CodeEditorView @JvmOverloads constructor(
     var palet: PaletInt = PaletGelapBengkel
         set(value) {
             field = value
-            gutter.setTextColor(value.textDim)
+            gutter.terapkanPalet(value)
             editor.setTextColor(value.text)
             applyHighlight()
         }
@@ -72,17 +71,12 @@ class CodeEditorView @JvmOverloads constructor(
     init {
         background = null
         gutter.apply {
-            setTextColor(palet.textDim)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-            typeface = Typeface.MONOSPACE
-            gravity = Gravity.TOP or Gravity.END
-            setPadding(0, paddingTop, dp(8), 0)
-            includeFontPadding = false
-            setLineSpacing(0f, LINE_SPACING_MULTIPLIER)
             isFocusable = false
             isClickable = false
-            setTextIsSelectable(false)
-            layoutParams = LinearLayout.LayoutParams(dp(40), ViewGroup.LayoutParams.MATCH_PARENT)
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            )
         }
 
         editor.apply {
@@ -106,7 +100,6 @@ class CodeEditorView @JvmOverloads constructor(
                 ViewGroup.LayoutParams.MATCH_PARENT,
             )
         }
-        gutter.setPadding(0, dp(10), dp(8), 0)
 
         val row = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -117,12 +110,13 @@ class CodeEditorView @JvmOverloads constructor(
             row,
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT),
         )
+        gutter.sumber = { sumberGutter() }
 
         editor.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
             override fun afterTextChanged(s: Editable?) {
-                refreshGutter()
+                gutter.segarkan()
                 applyHighlight()
                 snapshotIfNeeded()
                 onTextChanged?.invoke(s?.toString().orEmpty())
@@ -130,10 +124,15 @@ class CodeEditorView @JvmOverloads constructor(
             }
         })
 
-        editor.setOnScrollChangeListener { _: View, _: Int, scrollY: Int, _: Int, _: Int ->
-            gutter.translationY = -scrollY.toFloat()
+        editor.setOnScrollChangeListener { _: View, _: Int, _: Int, _: Int, _: Int ->
+            gutter.segarkan()
             applyHighlight()
         }
+
+        // Kunci perbaikan bug lama: begitu layout editor JADI (termasuk pertama kali setelah
+        // setText), gutter dihitung ulang. Dulu lineCount dibaca sebelum layout jadi sehingga
+        // gutter terjebak "1" karena di-cache.
+        editor.viewTreeObserver.addOnGlobalLayoutListener { gutter.segarkan() }
 
         editor.setOnClickListener { reportCursor() }
     }
@@ -147,7 +146,7 @@ class CodeEditorView @JvmOverloads constructor(
         highlighting = false
         undoStack.clear()
         redoStack.clear()
-        refreshGutter()
+        gutter.segarkan()
         applyHighlight()
         reportCursor()
     }
@@ -198,7 +197,7 @@ class CodeEditorView @JvmOverloads constructor(
         editor.setText(sesudah)
         editor.setSelection(posisi.coerceIn(0, sesudah.length))
         restoring = false
-        refreshGutter()
+        gutter.segarkan()
         applyHighlight()
         onTextChanged?.invoke(sesudah)
         reportCursor()
@@ -212,6 +211,7 @@ class CodeEditorView @JvmOverloads constructor(
         // berkas hanya menampilkan SATU baris — sisa teks seolah tertutup kotak gelap. maxLines
         // hanya membatasi jumlah baris yang dilukis, bukan cara mematikan wrap.
         editor.maxLines = Int.MAX_VALUE
+        gutter.segarkan()
     }
 
     val wordWrap: Boolean get() = wrap
@@ -222,7 +222,8 @@ class CodeEditorView @JvmOverloads constructor(
      */
     fun setTextSizeSp(sp: Float) {
         editor.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
-        gutter.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
+        gutter.aturUkuranFont(sp)
+        gutter.segarkan()
     }
 
     /**
@@ -299,7 +300,7 @@ class CodeEditorView @JvmOverloads constructor(
         editor.setText(content)
         editor.setSelection(editor.text.length)
         restoring = false
-        refreshGutter()
+        gutter.segarkan()
         applyHighlight()
         onTextChanged?.invoke(content)
         reportCursor()
@@ -317,6 +318,7 @@ class CodeEditorView @JvmOverloads constructor(
 
     private fun reportCursor() {
         onCursorMoved?.invoke(cursorLine, cursorColumn)
+        gutter.segarkan()
     }
 
     private fun lineOf(offset: Int): Int {
@@ -331,11 +333,18 @@ class CodeEditorView @JvmOverloads constructor(
     }
 
     private fun refreshGutter() {
-        val count = editor.lineCount
-        if (count == gutterLineCount) return
-        gutterLineCount = count
-        gutter.text = (1..max(count, 1)).joinToString("\n")
+        gutter.segarkan()
     }
+
+    /** Keadaan editor untuk gutter; dipanggil saat gutter dilukis. */
+    private fun sumberGutter(): GutterView.Sumber = GutterView.Sumber(
+        layout = editor.layout,
+        teks = editor.text ?: "",
+        scrollY = editor.scrollY,
+        tinggiEditor = editor.height,
+        paddingAtasEditor = editor.paddingTop,
+        barisKursor = if (editor.layout == null) 0 else lineOf(editor.selectionStart),
+    )
 
     private fun applyHighlight() {
         if (highlighting) return

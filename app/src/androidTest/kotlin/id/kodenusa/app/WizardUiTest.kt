@@ -204,4 +204,34 @@ class WizardUiTest {
         layar.onNodeWithTag("batal-galeri").performClick()
         layar.waitForIdle()
     }
+
+    @Test
+    fun projek_dari_halodunia_menampilkan_pelajaran_di_editor() {
+        // Mode belajar (docs/14 3.3): projek dari template halo-dunia membuka editor dengan
+        // panel pelajaran langkah 1 dari 5 — pelajaran tidak muncul di projek lain.
+        bukaFormProjekBaru()
+        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasTestTag("template-halo-dunia"))
+        layar.onNodeWithTag("template-halo-dunia").performClick()
+        layar.waitForIdle()
+
+        layar.onAllNodes(hasSetTextAction())[0].performTextReplacement("Belajar Halo")
+        layar.waitForIdle()
+        layar.onNodeWithTag("tombol-buat").performClick()
+        layar.waitForIdle()
+
+        layar.onNodeWithTag("pelajaran-panel").assertExists()
+        layar.onNodeWithText("Pelajaran 1/5").assertExists()
+        layar.onNodeWithText("1. Kenali layar editor").assertExists()
+
+        // Maju satu langkah: nomor berubah, isi langkah 2 tampil.
+        layar.onNodeWithTag("pelajaran-berikut").performClick()
+        layar.waitForIdle()
+        layar.onNodeWithText("Pelajaran 2/5").assertExists()
+
+        // Tutup panel → pil kecil "Pelajaran" untuk membuka kembali.
+        layar.onNodeWithTag("pelajaran-tutup").performClick()
+        layar.waitForIdle()
+        layar.onNodeWithTag("pelajaran-panel").assertDoesNotExist()
+        layar.onNodeWithTag("pelajaran-buka").assertExists()
+    }
 }

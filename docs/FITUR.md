@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.19.0** (`versionCode 31`) · **312 uji unit · 127 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.20.0** (`versionCode 32`) · **354 uji unit · 140 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -46,6 +46,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Fitur | Status | Bukti / catatan |
 |---|---|---|
 | Editor kode dengan penyorotan sintaks | ✅ | `HighlighterTest` |
+| **Gutter nomor baris digambar ulang penuh (perombakan 0.20.0)** | ✅ | Keluhan pengguna "nomor cuma 1 / 1–33 lalu hitam" — akar: cache `lineCount` dibaca sebelum layout dibangun. Kini `GutterView` custom View melukis dari `Layout` hidup tiap gambar; angka hanya untuk baris terlihat, benar saat wrap (baris lanjutan tanpa nomor), baris kursor disorot, lebar menyesuaikan digit. Uji: `GutterModelTest` (8), `GutterDeviceTest` (3) + bukti layar `bukti/gutter-sesudah.png` |
 | Tab banyak berkas + penanda belum disimpan | ✅ | `EditorSession` (maks 8 tab untuk RAM) |
 | Simpan manual + simpan otomatis | ✅ | `AutoSave`, `KeyBar` |
 | Cari dalam berkas + lompat antar hasil | ✅ | `FindBar` |
@@ -102,6 +103,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Fitur | Status | Bukti / catatan |
 |---|---|---|
 | Isi endpoint sendiri (mis. `https://api.crown.ai.id/v1`) + kunci sendiri | ✅ | `AiUiTest` — tombol terkunci sebelum diisi |
+| **Konteks OTOMATIS — AI mempelajari seluruh projek tanpa pilih berkas 1-1 (0.20.0)** | ✅ | `PetaProjek` menyusun peta (identitas, daftar berkas berperan, kerangka kelas/metode/resource via regex murah — tanpa server); `PemilihKonteks` memilih berkas relevan dari isi pertanyaan (skor leksikal + bobot kepentingan, manifest & berkas aktif selalu ikut, deterministik). Tombol **"Pelajari projek"** sekali ketuk → AI meringkas pemahamannya. Info jujur di layar: "N dari M berkas · X karakter". Uji: `PetaProjekTest` (5), `PemilihKonteksTest` (6), `KonteksOtomatisTest` (4), `AiUiTest` chip |
 | Baca daftar model otomatis dari endpoint | ✅ | `OpenAiCompatClientTest.daftar_model_dibaca_dari_endpoint_pengguna` |
 | Ganti model kapan saja | ✅ | Layar AI → Atur → pilih model |
 | Jawaban mengalir (streaming) huruf demi huruf | ✅ | `aliran_sse_content_dan_reasoning_dirakit_benar` |
@@ -228,7 +230,7 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 
 | Fitur | Status | Bukti |
 |---|---|---|
-| Uji unit | ✅ | 312 uji unik (`./gradlew test`; varian debug — debug+release menghitung ganda) |
+| Uji unit | ✅ | 354 uji unik (`./gradlew test`; varian debug — debug+release menghitung ganda) |
 | Uji di perangkat | ✅ | 127 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
 | Analisis statis detekt, 0 temuan | ✅ | `./gradlew detekt` |
 | CI menjalankan gerbang yang sama | ✅ | `.github/workflows/ci.yml` |

@@ -15,6 +15,9 @@ object PromptBuilder {
     /** Batas saat mode hemat kuota (docs/13 C5): setengah ukuran normal. */
     const val BATAS_KONTEKS_HEMAT = 2_500
 
+    /** Batas peta projek otomatis (docs/14 — AI paham seluruh projek tanpa pilih 1-1). */
+    const val BATAS_PETA = 12_000
+
     const val SISTEM: String = "Kamu asisten koding di dalam KodeNusa, IDE Android untuk HP kelas " +
         "bawah di Indonesia. Pengguna memegang HP, bukan komputer, jadi jawaban harus bisa langsung " +
         "dipakai.\n\n" +
@@ -59,6 +62,46 @@ object PromptBuilder {
         konteks.append("Permintaan pengguna: ").append(permintaan.trim())
         add(ChatMessage(ChatMessage.Peran.PENGGUNA, konteks.toString()))
     }
+
+    /**
+     * Pertanyaan umum dengan konteks OTOMATIS: peta projek + berkas pilihan mesin dikirim
+     * lebih dulu (awalan stabil — ramah kuota), pertanyaan pengguna paling akhir.
+     */
+    fun untukTanyaOtomatis(
+        pertanyaan: String,
+        petaProjek: String,
+        berkas: List<Pair<String, String>>,
+        hemat: Boolean = false,
+    ): List<ChatMessage> = buildList {
+        add(pesanSistem())
+        val isi = StringBuilder()
+        isi.append(potong(petaProjek, if (hemat) BATAS_KONTEKS_HEMAT else BATAS_PETA))
+        if (berkas.isNotEmpty()) {
+            isi.append("\n\nISI BERKAS YANG RELEVAN (dipilih otomatis dari pertanyaan):")
+            for ((jalur, teks) in berkas) {
+                isi.append("\n\n--- ").append(jalur).append(" ---\n")
+                isi.append(potong(teks, if (hemat) 2_500 else 5_000))
+            }
+        }
+        isi.append("\n\nPertanyaan pengguna: ").append(pertanyaan.trim())
+        add(ChatMessage(ChatMessage.Peran.PENGGUNA, isi.toString()))
+    }
+
+    /**
+     * Perintah "pelajari projek": model membaca peta + berkas kunci lalu diminta
+     * meringkas pemahamannya. Ringkasan itu tampil ke pengguna sebagai bukti AI benar-benar
+     * membaca — bukan sekadar mengaku paham.
+     */
+    fun untukPelajari(petaProjek: String, berkas: List<Pair<String, String>>): List<ChatMessage> =
+        untukTanyaOtomatis(
+            "Pelajari seluruh source code projek ini dari peta dan berkas di atas. " +
+                "Lalu jawab dengan ringkasan singkat: (1) aplikasi ini apa dan bagaimana alurnya, " +
+                "(2) daftar berkas penting beserta tugasnya satu baris, (3) hal yang perlu " +
+                "diketahui sebelum mengubah kode (pola, nama, jebakan). Maksimal 15 baris.",
+            petaProjek,
+            berkas,
+            hemat = false,
+        )
 
     /**
      * Berkas yang disematkan pengguna (maksimal 3) dikirim utuh — bukan ringkasan 2.400 karakter.

@@ -104,6 +104,15 @@ class AiUiTest {
         layar.onNodeWithTag("muat-model").assertIsEnabled()
     }
 
+    @Test
+    fun tombol_pelajari_projek_tampil_dan_info_konteks_otomatis_setelah_ditekan() {
+        // Chip bar hanya tampil di mode obrolan — semai setelan agar tidak berhenti di formulir.
+        semaiSetelan()
+        bukaEditor()
+        layar.onNodeWithTag("buka-ai").performClick()
+        layar.onNodeWithTag("pelajari-projek").assertExists()
+    }
+
     private fun bukaEditor() {
         if (layar.onAllNodesWithText("Buat projek pertama").fetchSemanticsNodes().isNotEmpty()) {
             layar.onNodeWithText("Buat projek pertama").performClick()

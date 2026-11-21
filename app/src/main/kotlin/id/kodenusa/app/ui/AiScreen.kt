@@ -52,6 +52,7 @@ import androidx.compose.ui.window.DialogProperties
 import id.kodenusa.app.MAKS_BYTE_BERKAS_AI
 import id.kodenusa.app.AiProjectBoard
 import id.kodenusa.app.AiSettingsStore
+import id.kodenusa.app.KonteksOtomatis
 import id.kodenusa.core.ai.AiGagal
 import id.kodenusa.core.ai.AiModel
 import androidx.core.content.FileProvider
@@ -132,6 +133,11 @@ fun AiScreen(
     // baru — dan itu yang membuat "AI-nya belum bisa buka folder source".
     val papan = remember(akarProjek) { AiProjectBoard(akarProjek) }
     var pakaiKonteksProjek by remember { mutableStateOf(false) }
+    // Konteks OTOMATIS (docs/14): AI memindai seluruh projek dan memilih berkas relevan sendiri —
+    // pengguna tidak lagi memilih berkas satu per satu. Hasil terakhir disimpan untuk info jujur.
+    val konteksOtomatis = remember(akarProjek) { KonteksOtomatis(akarProjek) }
+    var hasilOtomatis by remember { mutableStateOf<KonteksOtomatis.Hasil?>(null) }
+    var mintaPelajari by remember { mutableStateOf(false) }
     // Mode hemat kuota (docs/13 C5): dipangkas konteks yang dikirim ke AI. Default dari setelan
     // tersimpan supaya pilihan pengguna tidak hilang saat layar ditutup.
     var hematKuota by remember { mutableStateOf(store.hematKuota()) }
@@ -189,7 +195,7 @@ fun AiScreen(
         if (berkas.isFile && berkas.length() <= MAKS_BYTE_BERKAS_AI) berkas.readText() else null
     }.getOrNull()
 
-    fun pesanUntuk(teks: String): List<ChatMessage> {
+    fun pesanUntuk(teks: String, pelajari: Boolean = false): List<ChatMessage> {
         val sematan = berkasSematan.mapNotNull { jalur -> isiBerkas(jalur)?.let { jalur to it } }
         val dasar = when {
             // Konteks projek dipakai lebih dulu: model perlu tahu struktur folder sebelum
@@ -201,12 +207,22 @@ fun AiScreen(
                 PromptBuilder.templatProjek(templatId),
                 hematKuota,
             )
+            // "Pelajari projek": baca peta + berkas kunci, lalu minta ringkasan pemahaman.
+            pelajari -> {
+                val hasil = konteksOtomatis.kumpulkan("", hematKuota, konteks.jalur)
+                hasilOtomatis = hasil
+                PromptBuilder.untukPelajari(hasil.peta, hasil.berkas)
+            }
             sematan.isNotEmpty() -> PromptBuilder.untukBerkasSematan(teks, sematan, hematKuota)
             konteks.galat != null ->
                 PromptBuilder.untukGalat(konteks.galat.orEmpty(), konteks.jalur, konteks.isi)
-            konteks.jalur != null && konteks.isi != null ->
-                PromptBuilder.untukBerkas(teks, konteks.jalur, konteks.isi, hematKuota)
-            else -> PromptBuilder.untukTanya(teks)
+            // BAWAAN: konteks otomatis. Berkas aktif selalu ikut; berkas lain dipilih mesin
+            // dari isi pertanyaan — bukan dari pilihan manual pengguna.
+            else -> {
+                val hasil = konteksOtomatis.kumpulkan(teks, hematKuota, konteks.jalur)
+                hasilOtomatis = hasil
+                PromptBuilder.untukTanyaOtomatis(teks, hasil.peta, hasil.berkas, hematKuota)
+            }
         }
         // Riwayat obrolan ikut dikirim supaya model ingat konteks percakapan sebelumnya.
         if (riwayat.isEmpty()) return dasar
@@ -219,20 +235,21 @@ fun AiScreen(
         return listOf(dasar.first()) + lanjutan + dasar.drop(1)
     }
 
-    fun kirim(teks: String) {
-        if (teks.isBlank() || sibuk) return
+    fun kirim(teks: String, pelajari: Boolean = false) {
+        if ((teks.isBlank() && !pelajari) || sibuk) return
         galat = null
         jawaban = ""
         berpikir = false
         sibuk = true
-        riwayat = riwayat + ("user" to teks)
+        val tampil = if (pelajari) "Pelajari seluruh projek ini." else teks
+        riwayat = riwayat + ("user" to tampil)
         store.simpanPercakapan(kunciProjek, riwayat)
         pertanyaan = ""
         pekerjaan = scope.launch {
             try {
                 val hasil = withContext(Dispatchers.IO) {
                     val lampiran = gambar
-                    val pesan = pesanUntuk(teks).let { daftar ->
+                    val pesan = pesanUntuk(teks, pelajari).let { daftar ->
                         if (lampiran == null) daftar else daftar.dropLast(1) +
                             daftar.last().copy(gambar = listOf(lampiran))
                     }
@@ -403,6 +420,7 @@ fun AiScreen(
                         onPertanyaan = { pertanyaan = it },
                         onKirim = { kirim(pertanyaan.ifBlank { "Lanjutkan." }) },
                         onCepat = { teks -> kirim(teks) },
+                        onPelajari = { kirim("", pelajari = true) },
                         onHentikan = { pekerjaan?.cancel(); sibuk = false },
                         onBersihkan = {
                             store.bersihkanPercakapan(kunciProjek)
@@ -446,6 +464,7 @@ fun AiScreen(
                             }
                         },
                         onBuangGambar = { gambar = null },
+                        hasilOtomatis = hasilOtomatis,
                         adaKonteksProjek = pakaiKonteksProjek,
                         berkasSematan = berkasSematan,
                         hasilTulis = hasilTulis,
@@ -825,6 +844,8 @@ private fun ChatAiPanel(
     onPertanyaan: (String) -> Unit,
     onKirim: () -> Unit,
     onCepat: (String) -> Unit,
+    onPelajari: () -> Unit = {},
+    hasilOtomatis: KonteksOtomatis.Hasil? = null,
     onHentikan: () -> Unit,
     onBersihkan: () -> Unit,
     onSisip: (String, String) -> Unit,
@@ -894,6 +915,17 @@ private fun ChatAiPanel(
                 style = MaterialTheme.typography.labelSmall,
                 color = Kode.textDim,
                 modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+            )
+        }
+
+        // Info jujur konteks otomatis: berapa berkas yang benar-benar dipilih mesin dan berapa
+        // karakter yang dikirim — bukan klaim "AI sudah paham semuanya".
+        hasilOtomatis?.let { hasil ->
+            Text(
+                "Konteks otomatis: ${hasil.jumlahBerkasDipilih} dari ${hasil.jumlahBerkasProjek} berkas · ${hasil.jumlahKarakter} karakter",
+                style = MaterialTheme.typography.labelSmall,
+                color = Kode.textDim,
+                modifier = Modifier.fillMaxWidth().testTag("info-konteks-otomatis"),
             )
         }
 
@@ -1010,6 +1042,12 @@ private fun ChatAiPanel(
                 if (adaKonteksProjek) "Konteks projek ✓" else "Konteks projek + bikin berkas",
                 onKonteksProjek,
                 modifier = Modifier.testTag("konteks-projek"),
+            )
+            GhostButton(
+                "Pelajari projek",
+                onPelajari,
+                modifier = Modifier.testTag("pelajari-projek"),
+                enabled = !sibuk,
             )
             GhostButton(
                 "Pilih berkas…",

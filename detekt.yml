@@ -19,6 +19,7 @@ complexity:
   TooManyFunctions:
     thresholdInFiles: 20
     thresholdInClasses: 20
+    thresholdInObjects: 20
 
 exceptions:
   TooGenericExceptionCaught:

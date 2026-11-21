@@ -11,6 +11,7 @@ import id.kodenusa.core.build.BuildRequest
 import id.kodenusa.core.project.ProjectLoader
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -48,7 +49,18 @@ class PasangApkDeviceTest {
 
         // 4. Ikuti alur pemasang sistem sampai paket benar-benar terdaftar. Pemindaian Play
         // Protect bisa memakan waktu, jadi jendelanya 3 menit — bukan 30 detik.
-        assertTrue("Paket $paketUji tidak terdaftar setelah pemasangan", ikutiAlurPemasang())
+        if (!ikutiAlurPemasang()) {
+            // Bukti, bukan tebakan: saat gagal, rekam aplikasi yang fokus + hierarki UI
+            // supaya penyebabnya terbaca dari laporan uji (mis. dialog tak terduga).
+            // Catatan: executeShellCommand tidak memproses pipa — pakai perintah polos.
+            val fokus = perangkat.currentPackageName
+            perangkat.executeShellCommand("uiautomator dump /sdcard/pasang-gagal.xml")
+            val tampilan = perangkat.executeShellCommand("cat /sdcard/pasang-gagal.xml").take(1_500)
+            fail(
+                "Paket $paketUji tidak terdaftar setelah pemasangan.\n" +
+                    "Aplikasi fokus: $fokus\nTampilan: $tampilan",
+            )
+        }
 
         // 5. Beres-beres supaya uji berikutnya mulai dari nol.
         perangkat.executeShellCommand("pm uninstall $paketUji")
@@ -106,7 +118,6 @@ class PasangApkDeviceTest {
     private fun ikutiAlurPemasang(): Boolean {
         val batas = System.currentTimeMillis() + 180_000
         var sudahIzin = false
-        var backDitekan = false
         while (System.currentTimeMillis() < batas) {
             if (paketTerdaftar()) return true
             val teksTombol = tombolTerlihat()
@@ -126,10 +137,13 @@ class PasangApkDeviceTest {
                     sudahIzin = true
                     Thread.sleep(1_500)
                 }
-                // Setelah izin diberikan, pemasang kadang tidak kembali sendiri: tekan back sekali.
-                sudahIzin && !backDitekan && teksTombol == null -> {
+                // HANYA kembali dari Setelan ke pemasang — bukan back buta. Bukti uji: back
+                // otomatis saat transisi pemasang (tombol belum tampak) MEMBATALKAN pemasangan
+                // dan loop berakhir di launcher tanpa paket. Back aman hanya bila fokusnya
+                // memang aplikasi Setelan.
+                sudahIzin && teksTombol == null && perangkat.currentPackageName == "com.android.settings" -> {
                     perangkat.pressBack()
-                    backDitekan = true
+                    Thread.sleep(1_500)
                 }
             }
             Thread.sleep(1_000)

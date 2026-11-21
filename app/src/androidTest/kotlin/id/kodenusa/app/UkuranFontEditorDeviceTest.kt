@@ -25,9 +25,9 @@ class UkuranFontEditorDeviceTest {
 
         view.setTextSizeSp(20f)
 
-        val (editor, gutter) = editTextDanGutter(view)
+        val (editor, angkaGutter) = editTextDanGutter(view)
         assertEquals(20f * density, editor.textSize, 0.5f)
-        assertEquals("gutter harus sama dengan editor", editor.textSize, gutter.textSize, 0.5f)
+        assertEquals("gutter harus sama dengan editor", editor.textSize, angkaGutter.textSize, 0.5f)
     }
 
     @Test
@@ -35,17 +35,21 @@ class UkuranFontEditorDeviceTest {
         val view = CodeEditorView(konteks)
         view.setTextSizeSp(16f)
         view.setContent("int a = 1;", Language.JAVA)
-        val (editor, gutter) = editTextDanGutter(view)
+        val (editor, angkaGutter) = editTextDanGutter(view)
         assertEquals(16f * density, editor.textSize, 0.5f)
-        assertEquals(16f * density, gutter.textSize, 0.5f)
+        assertEquals(16f * density, angkaGutter.textSize, 0.5f)
     }
 
-    private fun editTextDanGutter(view: CodeEditorView): Pair<android.widget.EditText, android.widget.TextView> {
+    private fun editTextDanGutter(view: CodeEditorView): Pair<android.widget.EditText, android.graphics.Paint> {
         val editorField = CodeEditorView::class.java.getDeclaredField("editor")
         editorField.isAccessible = true
         val gutterField = CodeEditorView::class.java.getDeclaredField("gutter")
         gutterField.isAccessible = true
-        return (editorField.get(view) as android.widget.EditText) to
-            (gutterField.get(view) as android.widget.TextView)
+        // Gutter kini custom View (bukan TextView) — uji ukuran font lewat paintAngka-nya.
+        val gutter = gutterField.get(view) as id.kodenusa.editor.GutterView
+        val paintField = id.kodenusa.editor.GutterView::class.java.getDeclaredField("paintAngka")
+        paintField.isAccessible = true
+        val paintAngka = paintField.get(gutter) as android.graphics.Paint
+        return (editorField.get(view) as android.widget.EditText) to paintAngka
     }
 }
