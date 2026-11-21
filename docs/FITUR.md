@@ -68,7 +68,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | **Situs murni bisa dipasang & dibuka tanpa internet (PWA)** | ✅ | tombol `siapkan-pwa` → `manifest.json` + `service-worker.js` + pendaftar di `index.html`; 9 uji `SitusPwaTest` + 1 uji layar |
 | **Kabar hasil aksi berkas** | ✅ | `pesan-berkas` di panel + snackbar `pesan-aksi`; dulu semua pesan ditulis tetapi tidak pernah tampil |
 | Multi-kursor, lipat kode (code folding) | ⛔ | rencana |
-| Format otomatis (prettier/google-java-format) | ⛔ | rencana |
+| Format otomatis (prettier/google-java-format) | 🟡 | sebagian: tombol **Rapikan** merapikan indentasi (konservatif, hanya spasi depan — `Rapikan.kt`, 6 uji). Formatter penuh (prettier/gjf) tetap ⛔ — pustakanya berat untuk HP 2 GB |
 
 ## 4. Build APK (Tier 0 — tanpa Gradle, tanpa internet)
 
@@ -105,7 +105,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Prompt mengunci batas projek (Java 8, tanpa Gradle/AndroidX/Kotlin) | ✅ | `PromptBuilderTest` |
 | Model berjalan di dalam HP (offline penuh) | ⛔ | ditunda; butuh model 400–900 MB, lambat di HP 4 GB (ADR-023) |
 | Kunci bawaan dari pembuat aplikasi / server perantara | ⛔ | sengaja tidak ada — aplikasi tidak menyimpan biaya AI |
-| Enkripsi kunci dengan Android Keystore | ⛔ | rencana; sekarang di `SharedPreferences` privat aplikasi |
+| Enkripsi kunci dengan Android Keystore | ✅ | `KunciAman` AES-256-GCM (lihat baris 67); baris ini tadinya ⛔ dan basi — diperbaiki audit "tanpa todo tersisa" v0.16 |
 | Setelan endpoint/kunci bertahan setelah layar AI ditutup | ✅ | `AiUiTest.setelan_ai_tidak_hilang_setelah_layar_ditutup` (draf disimpan tiap ketikan) |
 | Riwayat percakapan disimpan per projek | ✅ | `AiSettingsStore.simpanPercakapan` / `muatPercakapan` |
 | Kode AI benar-benar masuk ke berkas (buffer + disk) | ✅ | `EditorScreen.ketikaSisip` → `session.update` + `session.save` + `editor.setContent` |
@@ -214,10 +214,12 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 
 | Fitur | Status | Bukti |
 |---|---|---|
-| Uji unit | ✅ | 252 uji (`./gradlew test`) |
-| Uji di perangkat | ✅ | 77 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
+| Uji unit | ✅ | 253 uji (`./gradlew test`) |
+| Uji di perangkat | ✅ | 106 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
 | Analisis statis detekt, 0 temuan | ✅ | `./gradlew detekt` |
 | CI menjalankan gerbang yang sama | ✅ | `.github/workflows/ci.yml` |
+| Template bawaan terbukti jadi APK | ✅ | `scripts/prove/build-templates.sh`: 6/6 APK sah tanda tangannya (web-murni dilewati — memang tanpa APK) |
+| Tulisan AI nyata end-to-end | 🟡 | jalur klien teruji unit (`ChatNyataTest` lewat env), tetapi verifikasi tulis-nyata di layar AI tertunda gangguan penyedia: `api.crown.ai.id` 503 untuk semua model pada 21 Nov 2026 (daftar model 200, chat completion 503). Pesan galat jujur "Penyedia AI sedang bermasalah (503)" terverifikasi |
 
 ---
 
@@ -231,6 +233,7 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | 4 | ~~Catatan "Kotlin belum didukung" saat membuka `.kt`~~ ✅ | Selesai di 0.10.0: `catatan-kotlin`, sejajar catatan Python | Selesai |
 | 5 | ~~Tombol "buat repo" di layar Git~~ ✅ | Selesai di 0.10.0: `BuatRepoCard` tersambung ke `GitHubRilis.buatRepo` | Selesai |
 | 6 | Ukur di HP 4 GB fisik + `AI_EVAL=1` | Satu-satunya angka yang belum bisa saya ukur sendiri | Butuh perangkat/kunci pengguna |
+| 7 | Ulangi verifikasi tulisan AI nyata saat penyedia pulih | Cukup jalankan `AI_ENDPOINT=… AI_KEY=… ./gradlew :core:ai:test --tests '*ChatNyataTest*'` lalu uji manual "Simpan berkas" di layar AI | Menunggu penyedia (503) |
 
 Yang **tidak** akan dikerjakan tanpa bukti kebutuhan nyata: Kotlin di perangkat (ADR-003), Tier 1
 build di server (ADR-001/007), model AI di dalam HP (ADR-023).

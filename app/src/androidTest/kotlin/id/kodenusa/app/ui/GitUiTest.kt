@@ -60,8 +60,10 @@ class GitUiTest {
 
         layar.onNodeWithTag("pesan-commit").performScrollTo().performTextReplacement("Commit pertama")
         layar.onNodeWithTag("simpan-perubahan").performScrollTo().performClick()
+        // Teks "Commit pertama" juga ada di field pesan, jadi menunggu teks itu tidak membuktikan
+        // apa pun (bug balapan yang ditemukan saat rerun). Tunggu kondisi nyata: commit masuk repo.
         layar.waitUntil(timeoutMillis = 15_000) {
-            layar.onAllNodesWithText("Commit pertama").fetchSemanticsNodes().isNotEmpty()
+            RepoGit.adalahRepo(projek) && RepoGit.daftarCommit(projek).isNotEmpty()
         }
         assertTrue(RepoGit.adalahRepo(projek))
         assertEquals(1, RepoGit.daftarCommit(projek).size)

@@ -54,7 +54,7 @@ Proyek Gradle multi-modul, JDK 17, SDK 35, `detekt.yml` (maxIssues 0), CI yang m
 Tier 1 (worker Gradle) dan Tier 2 (proot/JDK) **tidak dibangun**. Alasannya ADR-001 dan ADR-007: server berarti data pengguna berpindah dan janji "tanpa server" gugur. Konsekuensinya projek Gradle tidak bisa dibuild, dan itu harus dikatakan di UI (lihat rencana #1 di [roadmap](02-roadmap-milestone.md)).
 
 ### M6 — Kolaborasi ✅ sebagian
-Git nyata di HP (JGit 3.7.1), commit, kirim ke GitHub, riwayat, terbit situs ke `gh-pages` lewat repo sementara. **Belum**: klon projek dari GitHub (kode ada, UI belum).
+Git nyata di HP (JGit 3.7.1), commit, kirim ke GitHub, riwayat, terbit situs ke `gh-pages` lewat repo sementara. **Klon dari GitHub juga tuntas** (v0.13): `KlonProjekDialog` di layar projek (tombol "Dari GitHub", tag `buka-klon`) — menolak alamat bukan-HTTPS dengan kalimat yang jelas, dan klon dari remote terbuka langsung di editor (`LaporanKlonUiTest`).
 
 ### M7 — Rilis ✅
 v0.1.0 → v0.9.6 di GitHub Releases, APK arm-only ditandatangani debug keystore perangkat, `-PsemuaAbi` untuk emulator, setiap rilis dipasang dan dibuka sebelum dibagikan.
