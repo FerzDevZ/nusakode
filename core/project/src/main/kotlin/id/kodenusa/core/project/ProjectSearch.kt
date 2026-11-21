@@ -31,7 +31,7 @@ object ProjectSearch {
     private const val MAKS_PANJANG_BARIS = 160
 
     private val FOLDER_DILEWATI = setOf(
-        "build", ".git", ".gradle", ".idea", "dex", "gen", "classes", "node_modules", ".tools", "dist",
+        "build", ".git", ".gradle", ".idea", "dex", "gen", "classes", "node_modules", ".tools", "dist", ".riwayat",
     )
 
     private val EKSTENSI_TEKS = setOf(

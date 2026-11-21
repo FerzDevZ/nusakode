@@ -124,6 +124,7 @@ object ProjectLoader {
                 resourceDirs = existingDirs(root, RES_ROOT),
                 assetDirs = existingDirs(root, ASSETS_ROOT),
                 manifest = manifest,
+                warnaIkon = project.warnaIkon,
                 extraJars = extraJars,
                 incremental = true,
             )

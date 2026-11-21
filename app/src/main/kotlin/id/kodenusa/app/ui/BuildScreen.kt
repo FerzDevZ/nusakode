@@ -102,7 +102,16 @@ fun BuildScreen(
         when (status) {
             is id.kodenusa.app.ToolchainInstaller.Status.Ready -> {
                 val engine = container.newEngine(status.toolchain)
-                session.start({ Result.success(engine) }, loaded)
+                // Ikon aplikasi (docs/14 2.2): resource ikon + manifest dipatch di folder kerja
+                // sebelum build; folder projek pengguna tidak pernah disentuh.
+                val config = loaded.config
+                val loadedIkon = if (config != null) {
+                    val denganIkon = withContext(Dispatchers.IO) { container.pembuatIkon.siapkan(config) }
+                    loaded.copy(config = denganIkon)
+                } else {
+                    loaded
+                }
+                session.start({ Result.success(engine) }, loadedIkon)
             }
 
             is id.kodenusa.app.ToolchainInstaller.Status.Missing -> {

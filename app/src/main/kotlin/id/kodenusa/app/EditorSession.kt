@@ -15,7 +15,12 @@ import java.io.File
  * menekan tombol kembali. Isi memori dibatasi oleh jumlah tab yang dibuka (maksimal [MAX_TABS]),
  * jadi bukan cache tanpa batas.
  */
-class EditorSession(private val projectDir: File, initial: File?) {
+class EditorSession(
+    private val projectDir: File,
+    initial: File?,
+    /** Riwayat berkas (docs/14 2.8); null = tanpa riwayat (uji unit lama tetap ringan). */
+    private val riwayat: RiwayatBerkas? = null,
+) {
 
     val tabs = mutableStateListOf<File>()
     var active by mutableStateOf<File?>(null)
@@ -58,6 +63,12 @@ class EditorSession(private val projectDir: File, initial: File?) {
     fun save(file: File): Boolean {
         val text = texts[file.path] ?: return false
         return runCatching {
+            // Riwayat berkas (docs/14 2.8): isi lama disalin dulu, tapi hanya kalau benar-benar
+            // berubah — simpan-ulang tanpa perubahan tidak boleh membakar slot versi.
+            if (riwayat != null && file.isFile) {
+                val lama = runCatching { file.readText() }.getOrNull()
+                if (lama != null && lama != text) riwayat.catat(file, lama)
+            }
             file.writeText(text)
             dirtyFlags[file.path] = false
             true

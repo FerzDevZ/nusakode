@@ -2,6 +2,7 @@ package id.kodenusa.app
 
 import android.content.Context
 import android.util.Log
+import id.kodenusa.core.project.ProjectJson
 import java.io.File
 
 /**
@@ -27,8 +28,14 @@ class Templates(private val context: Context) {
      * Menyalin template ke [target] dan mengganti penanda `__APP_NAME__` serta `__APP_ID__`.
      * Gagal dengan pesan jelas kalau template tidak dikenal, bukan membuat projek setengah jadi.
      */
-    fun create(templateId: String, target: File, appName: String, appId: String): Result<File> = runCatching {
-        if (templateId == BLANK_ID) return@runCatching BlankProject.create(target, appName, appId)
+    fun create(
+        templateId: String,
+        target: File,
+        appName: String,
+        appId: String,
+        warnaIkon: String? = null,
+    ): Result<File> = runCatching {
+        if (templateId == BLANK_ID) return@runCatching BlankProject.create(target, appName, appId, warnaIkon)
 
         val info = list().firstOrNull { it.id == templateId }
             ?: error("Template '$templateId' tidak ada di paket ini")
@@ -46,6 +53,11 @@ class Templates(private val context: Context) {
                 text.replace("__APP_NAME__", appName)
                     .replace("__APP_ID__", appId),
             )
+        }
+        if (warnaIkon != null) {
+            val manifest = File(target, "kodenusa.json")
+            val proyek = ProjectJson.decode(manifest.readText())
+            manifest.writeText(ProjectJson.encode(proyek.copy(warnaIkon = warnaIkon)))
         }
         target
     }

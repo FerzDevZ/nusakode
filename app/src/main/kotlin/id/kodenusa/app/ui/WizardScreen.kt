@@ -14,6 +14,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -28,11 +32,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import id.kodenusa.app.AppContainer
+import id.kodenusa.app.IkonAplikasi
 import id.kodenusa.app.TemplateInfo
 import id.kodenusa.app.Templates
 import id.kodenusa.core.build.Severity
@@ -87,6 +93,7 @@ fun WizardScreen(
     var selected by remember(pilihan) { mutableStateOf(pilihan.firstOrNull()) }
     var name by remember { mutableStateOf("") }
     var appId by remember { mutableStateOf("") }
+    var warnaIkon by remember { mutableStateOf(IkonAplikasi.WARNA_BAWAAN) }
     var lanjutan by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var failure by remember { mutableStateOf<String?>(null) }
@@ -163,6 +170,7 @@ fun WizardScreen(
                                             target = container.projectStore.uniqueFolder(name.trim()),
                                             appName = name.trim(),
                                             appId = efektifId,
+                                            warnaIkon = if (jenis == Jenis.WEB) null else warnaIkon,
                                         )
                                     }
                                     busy = false
@@ -333,6 +341,45 @@ fun WizardScreen(
                             ?: "Kosongkan untuk dibuat otomatis dari nama. Yang akan dipakai: $efektifId",
                         isError = idError != null,
                     )
+                }
+            }
+
+            // Pemilih warna ikon (docs/14 2.2): 8 warna kontras-teruji, tersimpan di kodenusa.json
+            // dan dipakai saat build untuk menggambar ikon aplikasi hasil.
+            if (jenis != Jenis.WEB) {
+                item {
+                    Text(
+                        "Warna ikon aplikasi",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = Kode.text,
+                        modifier = Modifier.testTag("label-warna-ikon"),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        IkonAplikasi.PILIHAN_WARNA.forEach { pilihan ->
+                            val dipilih = pilihan.hex == warnaIkon
+                            val latar = IkonAplikasi.warnaLatar(pilihan.hex)
+                            Box(
+                                Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(latar))
+                                    .border(
+                                        BorderStroke(if (dipilih) 3.dp else 1.dp, if (dipilih) Kode.accent else Kode.border),
+                                        CircleShape,
+                                    )
+                                    .clickable { warnaIkon = pilihan.hex }
+                                    .testTag("warna-ikon-${pilihan.hex.removePrefix("#")}"),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    pilihan.label.first().toString(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Color(IkonAplikasi.warnaTeks(latar)),
+                                )
+                            }
+                        }
+                    }
                 }
             }
 

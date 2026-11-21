@@ -41,6 +41,9 @@ class AppContainer(context: Context) {
     /** Setelan editor kecil: ukuran font (docs/14 2.6). */
     val setelanEditor = SetelanEditor(context)
 
+    /** Pembuat ikon aplikasi hasil build (docs/14 2.2); hasilnya di cache, bukan folder projek. */
+    val pembuatIkon = PembuatIkon(File(context.cacheDir, "ikon-build"))
+
     fun newEngine(toolchain: Toolchain): BuildEngine = Tier0BuildEngine(toolchain)
 
     private companion object {

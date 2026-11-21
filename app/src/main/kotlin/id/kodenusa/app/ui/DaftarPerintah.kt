@@ -22,6 +22,8 @@ fun daftarPerintah(
     onTemaGelap: () -> Unit,
     onTemaTerang: () -> Unit,
     onTemaSistem: () -> Unit,
+    /** Riwayat berkas (docs/14 2.8); null = perintah tidak ditampilkan. */
+    onRiwayat: (() -> Unit)? = null,
     webMurni: Boolean,
     adaSitus: Boolean,
 ): List<Perintah> {
@@ -100,6 +102,15 @@ fun daftarPerintah(
             keterangan = "Membuka index.html projek tanpa keluar aplikasi.",
             alias = listOf("lihat", "preview", "browser"),
             jalankan = onPratinjau,
+        )
+    }
+    if (onRiwayat != null) {
+        hasil += Perintah(
+            id = "riwayat-berkas",
+            judul = "Riwayat berkas",
+            keterangan = "10 versi terakhir berkas aktif, siap dipulihkan.",
+            alias = listOf("history", "backup", "undo berkas"),
+            jalankan = onRiwayat,
         )
     }
     return hasil

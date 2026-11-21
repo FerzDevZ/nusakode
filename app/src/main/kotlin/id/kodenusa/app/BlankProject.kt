@@ -11,11 +11,11 @@ object BlankProject {
 
     const val ID = "kosong"
 
-    fun create(target: File, appName: String, appId: String): File {
+    fun create(target: File, appName: String, appId: String, warnaIkon: String? = null): File {
         require(!target.exists()) { "Folder ${target.name} sudah dipakai" }
         val paket = appId
         val berkas = mapOf(
-            "kodenusa.json" to manifestProjek(appName, appId),
+            "kodenusa.json" to manifestProjek(appName, appId, warnaIkon),
             "src/main/AndroidManifest.xml" to manifestAndroid(paket),
             "src/main/java/${paket.replace('.', '/')}/MainActivity.java" to activityKosong(paket),
             "src/main/res/layout/activity_main.xml" to LAYOUT,
@@ -29,11 +29,13 @@ object BlankProject {
         return target
     }
 
-    private fun manifestProjek(appName: String, appId: String): String = """
+    private fun manifestProjek(appName: String, appId: String, warnaIkon: String?): String {
+        val barisWarna = if (warnaIkon != null) "\n          \"warnaIkon\": \"$warnaIkon\"," else ""
+        return """
         {
           "format": 1,
           "name": ${kutip(appName)},
-          "applicationId": ${kutip(appId)},
+          "applicationId": ${kutip(appId)},$barisWarna
           "versionName": "1.0.0",
           "versionCode": 1,
           "minSdk": 24,
@@ -45,6 +47,7 @@ object BlankProject {
           "dependencies": { "files": [] }
         }
     """.trimIndent() + "\n"
+    }
 
     private fun manifestAndroid(paket: String): String = """
         <?xml version="1.0" encoding="utf-8"?>

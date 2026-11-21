@@ -22,6 +22,8 @@ data class KodenusaProject(
     val buildEngine: String = ENGINE_TIER0,
     /** `aplikasi`, `web` (WebView jadi APK), atau `web-murni` (situs tanpa APK). */
     val jenis: String = "aplikasi",
+    /** Warna latar ikon aplikasi (docs/14 2.2), contoh "#0E7490"; null = warna bawaan. */
+    val warnaIkon: String? = null,
     @SerialName("templateId") val templateId: String? = null,
     val dependencies: ProjectDependencies = ProjectDependencies(),
 ) {

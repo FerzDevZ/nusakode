@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -36,6 +37,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
@@ -58,6 +60,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.viewinterop.AndroidView
 import id.kodenusa.app.AppContainer
 import id.kodenusa.app.EditorSession
+import id.kodenusa.app.RiwayatBerkas
 import id.kodenusa.app.KonteksBerkas
 import id.kodenusa.app.ModeTema
 import id.kodenusa.core.project.BerkasMasuk
@@ -80,6 +83,9 @@ import id.kodenusa.ui.PrimaryButton
 import id.kodenusa.ui.Kode
 import id.kodenusa.ui.LocalKodenusaTokens
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Ruang kerja kode: panel berkas, tab, editor, dan bar tombol simbol.
@@ -116,12 +122,14 @@ fun EditorScreen(
     // panel harus langsung berubah tanpa keluar-masuk projek.
     var nodes by remember(projectDir) { mutableStateOf(ProjectTree.list(projectDir)) }
     val daftarBerkas = androidx.compose.foundation.lazy.rememberLazyListState()
-    val session = remember(projectDir) { EditorSession(projectDir, initialFile(projectDir, nodes)) }
+    val riwayat = remember(projectDir) { RiwayatBerkas(projectDir) }
+    val session = remember(projectDir) { EditorSession(projectDir, initialFile(projectDir, nodes), riwayat) }
     val state = rememberEditorState()
     var aksi by remember { mutableStateOf<FileAction?>(null) }
     var aiTerbuka by remember { mutableStateOf(false) }
     var pesanBerkas by remember { mutableStateOf<String?>(null) }
     var pythonTerbuka by remember { mutableStateOf(false) }
+    var riwayatTerbuka by remember { mutableStateOf(false) }
     fun segarkan() {
         nodes = ProjectTree.list(projectDir)
     }
@@ -454,6 +462,26 @@ fun EditorScreen(
     if (pratinjau) {
         PratinjauSitusDialog(akarProjek = projectDir, onTutup = { pratinjau = false })
     }
+    if (riwayatTerbuka) {
+        val aktif = session.active
+        if (aktif != null) {
+            DialogRiwayatBerkas(
+                riwayat = riwayat,
+                berkas = aktif,
+                onPulihkan = { isi ->
+                    session.update(aktif, isi)
+                    // Paksa editor memuat ulang isi berkas: loadedPath = null membuat blok
+                    // update AndroidView memanggil setContent dengan teks yang dipulihkan.
+                    state.loadedPath = null
+                    riwayatTerbuka = false
+                    state.toast = "Versi dipulihkan — periksa lalu simpan"
+                },
+                onTutup = { riwayatTerbuka = false },
+            )
+        } else {
+            riwayatTerbuka = false
+        }
+    }
     if (palet) {
         PaletPerintahDialog(
             perintah = perintahBukaBerkas(nodes) { berkas ->
@@ -470,6 +498,7 @@ fun EditorScreen(
                 onTemaGelap = { onGantiTema(ModeTema.GELAP) },
                 onTemaTerang = { onGantiTema(ModeTema.TERANG) },
                 onTemaSistem = { onGantiTema(ModeTema.SISTEM) },
+                onRiwayat = { palet = false; riwayatTerbuka = true },
                 webMurni = webMurni,
                 adaSitus = adaSitus,
             ),
@@ -1303,4 +1332,83 @@ private fun Pesan(teks: String) {
     ) {
         Text(teks, style = MaterialTheme.typography.bodySmall, color = Kode.text)
     }
+}
+
+/**
+ * Dialog riwayat berkas (docs/14 2.8): daftar versi lama berkas aktif, terbaru dulu.
+ *
+ * Memulihkan TIDAK langsung menimpa: isi versi masuk ke editor sebagai perubahan belum disimpan,
+ * supaya pengguna bisa memeriksa dulu lalu menekan simpan — atau membuangnya tanpa kehilangan
+ * apa pun.
+ */
+@Composable
+internal fun DialogRiwayatBerkas(
+    riwayat: RiwayatBerkas,
+    berkas: File,
+    onPulihkan: (String) -> Unit,
+    onTutup: () -> Unit,
+) {
+    val versi = remember(berkas) { riwayat.daftar(berkas) }
+    val formatWaktu = remember { SimpleDateFormat("d MMM HH:mm", Locale("id")) }
+    AlertDialog(
+        onDismissRequest = onTutup,
+        title = { Text("Riwayat berkas") },
+        text = {
+            Column {
+                Text(
+                    berkas.name,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Kode.textDim,
+                )
+                Spacer(Modifier.height(10.dp))
+                if (versi.isEmpty()) {
+                    Text(
+                        "Belum ada versi lama. Versi muncul setiap kali Anda menyimpan perubahan.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Kode.textDim,
+                        modifier = Modifier.testTag("riwayat-kosong"),
+                    )
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
+                        items(versi.size) { indeks ->
+                            val satu = versi[indeks]
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("riwayat-${satu.nomor}")
+                                    .clickable {
+                                        riwayat.isi(berkas, satu.nomor)?.let(onPulihkan)
+                                    }
+                                    .padding(vertical = 10.dp),
+                            ) {
+                                Text(
+                                    "v${satu.nomor}",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = Kode.text,
+                                    modifier = Modifier.width(56.dp),
+                                )
+                                Column {
+                                    Text(
+                                        formatWaktu.format(Date(satu.waktu)),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Kode.text,
+                                    )
+                                    Text(
+                                        "${satu.ukuran / 1024} KB",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Kode.textDim,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onTutup) { Text("Tutup") }
+        },
+    )
 }

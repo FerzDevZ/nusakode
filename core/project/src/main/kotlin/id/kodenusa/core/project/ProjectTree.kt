@@ -32,7 +32,7 @@ object ProjectTree {
     )
 
     /** Folder yang tidak pernah ditampilkan karena isinya hasil build. */
-    val IGNORED_DIRS = setOf("build", ".gradle", ".git", "dex", "gen", "classes", ".tools")
+    val IGNORED_DIRS = setOf("build", ".gradle", ".git", "dex", "gen", "classes", ".tools", ".riwayat")
 
     private const val MAX_ENTRIES = 500
 

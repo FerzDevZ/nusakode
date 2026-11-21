@@ -135,6 +135,28 @@ class WizardUiTest {
     }
 
     /** Projek yang baru dibuat: folder dengan `kodenusa.json` paling baru diubah. */
+    /**
+     * docs/14 2.2: memilih warna ikon di wizard harus benar-benar tersimpan di kodenusa.json,
+     * bukan sekadar swatch yang berubah warna tanpa efek.
+     */
+    @Test
+    fun warna_ikon_terpilih_tersimpan_di_kodenusa_json() {
+        bukaFormProjekBaru()
+        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasTestTag("warna-ikon-1F2937"))
+        layar.onNodeWithTag("warna-ikon-1F2937").performClick()
+
+        layar.onAllNodes(hasSetTextAction())[0].performTextInput("Ikon Arang")
+        layar.waitForIdle()
+
+        layar.onNodeWithTag("tombol-buat").assertIsEnabled().performClick()
+        layar.waitUntil(timeoutMillis = 20_000) {
+            layar.onAllNodes(hasText("Ikon Arang", substring = true)).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        val isi = java.io.File(projekTerbaru(), "kodenusa.json").readText()
+        assertTrue("warnaIkon arang harus tersimpan", isi.contains("\"warnaIkon\": \"#1F2937\""))
+    }
+
     private fun projekTerbaru(): java.io.File {
         val akar = InstrumentationRegistry.getInstrumentation().targetContext.filesDir
         val kandidat = akar.walkTopDown()
