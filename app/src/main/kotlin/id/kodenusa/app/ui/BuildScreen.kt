@@ -63,6 +63,7 @@ fun BuildScreen(
     onSitus: () -> Unit,
     onGit: () -> Unit,
     onAgen: () -> Unit,
+    onKunci: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -101,7 +102,9 @@ fun BuildScreen(
         val status = withContext(Dispatchers.IO) { container.toolchainInstaller.install() }
         when (status) {
             is id.kodenusa.app.ToolchainInstaller.Status.Ready -> {
-                val engine = container.newEngine(status.toolchain)
+                // Kunci pengguna (docs/14 2.1) dipasang ke toolchain bila ada; kalau tidak,
+                // toolchain tetap memakai keystore debug — perilaku lama tidak berubah.
+                val engine = container.newEngine(container.kunciPengguna.terapkan(status.toolchain))
                 // Ikon aplikasi (docs/14 2.2): resource ikon + manifest dipatch di folder kerja
                 // sebelum build; folder projek pengguna tidak pernah disentuh.
                 val config = loaded.config
@@ -162,6 +165,7 @@ fun BuildScreen(
                 GhostButton("Situs", onSitus, Modifier.weight(1f).testTag("buka-situs"))
                 GhostButton("Git", onGit, Modifier.weight(1f).testTag("buka-git"))
                 GhostButton("Agen", onAgen, Modifier.weight(1f).testTag("buka-agen"))
+                GhostButton("Kunci", onKunci, Modifier.weight(1f).testTag("buka-kunci"))
             }
 
             if (batasHemat.hemat) {
@@ -341,7 +345,9 @@ fun BuildScreen(
                                 val loaded = ProjectLoader.load(projectDir)
                                 val status = withContext(Dispatchers.IO) { container.toolchainInstaller.install() }
                                 if (status is id.kodenusa.app.ToolchainInstaller.Status.Ready) {
-                                    val engine = container.newEngine(status.toolchain)
+                                    val engine = container.newEngine(
+                                        container.kunciPengguna.terapkan(status.toolchain),
+                                    )
                                     session.start({ Result.success(engine) }, loaded)
                                 } else {
                                     setupMessage = "Tool build belum lengkap. Cek pesan di atas."

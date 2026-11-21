@@ -29,8 +29,11 @@ class PasangApkDeviceTest {
     @Test
     fun apk_hasil_build_terpasang_lewat_pemasang_android() {
         // 0. Layar "App installed." dari alur sebelumnya MEMBLOKIR pemasang baru — tutup dulu.
+        // Layar setelan "Install unknown apps" yang lama juga menyimpan uid lama aplikasi
+        // (setelah reinstall uid berubah) sehingga tombol izinnya gagal — matikan paksa.
         perangkat.executeShellCommand("am force-stop com.google.android.packageinstaller")
         perangkat.executeShellCommand("am force-stop com.android.packageinstaller")
+        perangkat.executeShellCommand("am force-stop com.android.settings")
         perangkat.pressHome()
         Thread.sleep(1_000)
         // 1. Build APK nyata di perangkat.

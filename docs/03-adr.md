@@ -661,3 +661,36 @@ bukan lewat kode.
 **Konsekuensi.** 6 template APK dibuktikan terbangun + sah tanda tangannya (6/6 lulus, 1
 web-murni dilewati). Bug "Panel tanpa Column" dicegah dengan kontrak tertulis di sini; uji
 perangkat `BerkasHpUiTest` mengunci teks kartu izin.
+
+### ADR-041 — Kunci tanda tangan milik pengguna (v0.17 bagian 2)
+
+**Konteks.** Semua APK dibangun dengan debug keystore yang dibuat per pemasangan (ADR lama).
+Hapus aplikasi / ganti HP → kunci hilang → APK baru tidak bisa memperbarui APK lama
+(`INSTALL_FAILED_UPDATE_INCOMPATIBLE`). Bagi pengguna yang membagikan aplikasi ke pelanggan,
+ini pemutus. docs/14 2.1 menetapkan kunci milik pengguna sebagai prioritas tertinggi v0.17.
+
+**Keputusan.**
+1. `KunciPengguna` menyimpan keystore PKCS12 di `filesDir/kunci-ttd/kunci.p12`; sandi
+   dienskripsi lewat `KunciAman` (`enc1:`, AES-256-GCM) — tidak pernah polos di disk.
+   Validitas 10.000 hari; alias `[a-zA-Z0-9._-]{1,40}`; sandi minimal 6 karakter.
+2. `KunciPengguna.terapkan(toolchain)` mengganti `toolchain.debugKeystore` dengan kunci
+   pengguna saat kunci terbaca; bila rusak/tidak terbaca → **fallback senyap** ke debug
+   keystore per pemasangan (perilaku lama utuh — Chesterton's Fence).
+3. Layar `KunciScreen` (rute `Screen.Kunci` dari BuildScreen "Kunci"): status, buat kunci
+   (alias + sandi + sandi ulang), ekspor `.p12` lewat SAF `CreateDocument`, hapus dengan
+   konfirmasi tekan-dua-kali. Peringatan jujur: menimpa kunci = APK lama tak bisa diperbarui.
+4. **Sidik jari cache langkah SIGN wajib memuat keystore**: `cacheInputs` Tier0Planner kini
+   menyertakan `toolchain.debugKeystore`. Tanpa ini, ganti kunci dengan masukan identik
+   memakai ulang APK lama yang masih bertanda tangan kunci lama — bug nyata yang ditemukan
+   saat menyusun uji.
+5. Bukti (uji perangkat + skrip host): build dengan kunci pengguna → sertifikat APK == 
+   sertifikat keystore pengguna ≠ keystore debug; `apksigner verify` exit 0 lewat launcher
+   toolchain yang sama dengan pipeline; build kedua (versionCode 2) menghasilkan sertifikat
+   identik; `scripts/prove/kunci-ttd.sh` → `pm install` v1 Success lalu `pm install -r` v2
+   **Success** — signature match lintas build terbukti di pemasang sistem.
+
+**Konsekuensi.** Pengguna punya APK yang benar-benar miliknya dan bisa memperbarui aplikasi
+yang sudah tersebar. Kunci tetap terikat satu HP (ekspor `.p12` manual lewat SAF); impor
+`.jks` ditunda ke rilis berikutnya. Uji otomatis tidak boleh mengandalkan redireksi `>` lewat
+`UiDevice.executeShellCommand` — shell UiAutomator tidak menafsirkan shell meta-karakter;
+orkestrasi semacam itu pindah ke skrip host (`scripts/prove/kunci-ttd.sh`).

@@ -1,7 +1,14 @@
 # Hasil build — selalu bisa dibangun ulang, jangan masuk riwayat git.
-build/
-*/build/
+# Pengecualian: build/tier0 dan build/hostcli adalah MODUL SUMBER Gradle (settings.gradle.kts
+# memuat :build:tier0 dan :build:hostcli) — tanpa ini CI tidak bisa konfigurasi. Keluaran
+# build di dalamnya tetap diabaikan.
+build/*
+!build/tier0
+!build/hostcli
+build/tier0/build/
+build/hostcli/build/
 app/build/
+core/*/build/
 .gradle/
 .kotlin/
 local.properties
@@ -40,3 +47,4 @@ app/src/main/jniLibs/*/libaapt2.so
 
 # Tangkapan layar uji manual (tidak perlu di repo)
 screens/
+examples/build/

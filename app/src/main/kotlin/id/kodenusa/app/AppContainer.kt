@@ -44,6 +44,9 @@ class AppContainer(context: Context) {
     /** Pembuat ikon aplikasi hasil build (docs/14 2.2); hasilnya di cache, bukan folder projek. */
     val pembuatIkon = PembuatIkon(File(context.cacheDir, "ikon-build"))
 
+    /** Kunci tanda tangan milik pengguna (docs/14 2.1, ADR-041). */
+    val kunciPengguna = KunciPengguna(context)
+
     fun newEngine(toolchain: Toolchain): BuildEngine = Tier0BuildEngine(toolchain)
 
     private companion object {

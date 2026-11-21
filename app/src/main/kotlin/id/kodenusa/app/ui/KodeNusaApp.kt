@@ -26,6 +26,7 @@ sealed interface Screen {
     data class Situs(val projectDir: File) : Screen
     data class Git(val projectDir: File) : Screen
     data class Agen(val projectDir: File) : Screen
+    data object Kunci : Screen
 }
 
 /**
@@ -98,6 +99,7 @@ fun KodeNusaApp(container: AppContainer, tokensAwal: KodenusaTokens) {
                 onSitus = { screen = Screen.Situs(current.projectDir) },
                 onGit = { screen = Screen.Git(current.projectDir) },
                 onAgen = { screen = Screen.Agen(current.projectDir) },
+                onKunci = { screen = Screen.Kunci },
             )
 
             is Screen.Situs -> SitusScreen(
@@ -114,6 +116,11 @@ fun KodeNusaApp(container: AppContainer, tokensAwal: KodenusaTokens) {
                 container = container,
                 projectDir = current.projectDir,
                 onBack = { screen = Screen.Editor(current.projectDir) },
+            )
+
+            is Screen.Kunci -> KunciScreen(
+                kunciPengguna = container.kunciPengguna,
+                onBack = { screen = Screen.Workspace },
             )
             }
         }

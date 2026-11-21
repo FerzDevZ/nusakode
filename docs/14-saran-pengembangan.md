@@ -44,9 +44,11 @@ Play Store, kunci debug bahkan tidak diterima.
 4. Catatan jujur di layar: "Kunci disimpan di HP ini saja. Pindahkan berkas .jks kalau Anda
    pindah HP." + tombol ekspor `.jks` (SAF).
 
-**Bukti selesai:** uji perangkat — build dengan kunci pengguna → `apksigner verify` sah →
-`adb install -r` APK lama diperbarui oleh APK baru (signature match). Uji JVM: enkripsi sandi,
-fallback tanpa kunci.
+**Bukti selesai (v0.17 bagian 2, ADR-041):** uji perangkat `KunciPenggunaDeviceTest` —
+build dengan kunci pengguna → sertifikat APK == sertifikat keystore pengguna ≠ keystore debug;
+`apksigner verify` exit 0; build kedua (versionCode 1→2) sertifikat identik;
+`scripts/prove/kunci-ttd.sh` → `pm install` v1 Success, `pm install -r` v2 Success
+(aapt badging mengonfirmasi versionCode 1 lalu 2). Uji JVM: enkripsi sandi, fallback tanpa kunci.
 
 ### 2.2 Ikon aplikasi hasil build (M)
 
