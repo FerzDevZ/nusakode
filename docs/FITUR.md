@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.16.0** (`versionCode 28`) · **253 uji unit · 106 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.17.0** (`versionCode 29`) · **390 uji unit · 126 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -67,6 +67,10 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | **Kunci AI & token GitHub tersandi (Android Keystore)** | ✅ | `KunciAman` AES-256-GCM, format `enc1:`; migrasi otomatis dari teks biasa; 7 uji perangkat `KunciAmanDeviceTest` memeriksa isi `shared_prefs` |
 | **Situs murni bisa dipasang & dibuka tanpa internet (PWA)** | ✅ | tombol `siapkan-pwa` → `manifest.json` + `service-worker.js` + pendaftar di `index.html`; 9 uji `SitusPwaTest` + 1 uji layar |
 | **Kabar hasil aksi berkas** | ✅ | `pesan-berkas` di panel + snackbar `pesan-aksi`; dulu semua pesan ditulis tetapi tidak pernah tampil |
+| **Ukuran font editor bisa diatur** | ✅ | `SetelanEditor` (14–24 sp, tersimpan), `UkuranFontEditorDeviceTest` memeriksa nilai di disk |
+| **Buka berkas cepat dari editor** | ✅ | `BukaBerkasPaletUiTest`: palet mencari nama berkas di seluruh projek, hasil teratas terbuka |
+| **Lengkapi kata dari berkas terbuka** | ✅ | `PenyediaKandidat` + `PenyediaKandidatTest`; panel kandidat diuji `PanelKandidatUiTest` |
+| **Riwayat berkas terakhir dibuka** | ✅ | `RiwayatBerkas` LRU berdasar nomor versi; `.riwayat` dikecualikan dari build/pohon/cari |
 | Multi-kursor, lipat kode (code folding) | ⛔ | rencana |
 | Format otomatis (prettier/google-java-format) | 🟡 | sebagian: tombol **Rapikan** merapikan indentasi (konservatif, hanya spasi depan — `Rapikan.kt`, 6 uji). Formatter penuh (prettier/gjf) tetap ⛔ — pustakanya berat untuk HP 2 GB |
 
@@ -77,7 +81,11 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Build APK di HP untuk projek Java | ✅ | `OnDeviceBuildTest`, 1,4–1,9 detik/template |
 | Build projek web (HTML/CSS/JS) jadi APK | ✅ | `build-templates.sh` (4/4), `ExecPolicyDeviceTest` |
 | Tanda tangan APK | ✅ | apksigner 0.8, v2-only |
-| Kunci tanda tangan dibuat per pemasangan | ✅ | `DebugKeystoreTest`, ADR-019 |
+| Kunci tanda tangan dibuat per pemasangan (cadangan) | ✅ | `DebugKeystoreTest`, ADR-019 — dipakai bila kunci pengguna tidak ada/tidak terbaca |
+| **Kunci tanda tangan milik pengguna (ADR-041)** | ✅ | buat kunci (alias+sandi, 10.000 hari), sandi terenskripsi `KunciAman`, ekspor `.p12` lewat SAF. Bukti: `KunciPenggunaDeviceTest` (sertifikat APK == keystore pengguna ≠ debug; `apksigner verify` exit 0; build kedua sertifikat identik) + `scripts/prove/kunci-ttd.sh` (`pm install` v1 lalu `pm install -r` v2 **Success** — signature match) |
+| **versionCode otomatis naik tiap build** | ✅ | `PenghitungVersi` + `BuildSessionVersiTest` |
+| **Ikon aplikasi hasil build + pilih warna** | ✅ | ikon dibuat saat build (huruf awal nama aplikasi); 8 warna di wizard, kontras WCAG diuji `IkonAplikasiTest` (7 uji) |
+| **Tombol Pasang dari layar Build** | ✅ | `ApkInstaller` → pemasang Android; bukti ujung-ke-ujung `PasangApkDeviceTest` (paket benar-benar terdaftar) |
 | Jalan di Android 7 **dan** Android 14 | ✅ | 22 uji perangkat hijau di API 24 dan API 34 |
 | Pesan galat bahasa Indonesia + saran perbaikan | ✅ | `ErrorCatalog` (26 entri), `SpecificDiagnosticTest` |
 | Cache build (hanya bangun ulang yang berubah) | ✅ | `BuildCacheTest` |
@@ -207,15 +215,16 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | Tidak mengeksekusi perintah lewat shell | ✅ | `ProcessRunnerTest`, semua `ProcessBuilder(List)` |
 | Verifikasi SHA-256 toolchain sebelum dijalankan | ✅ | `ToolchainInstaller` |
 | Path projek tidak bisa keluar folder | ✅ | `ProjectFilesTest`, `ProjectArchiveTest` |
-| Kunci tanda tangan milik pengguna (impor/ekspor `.jks`) | ⛔ | rencana P3 |
+| Kunci tanda tangan milik pengguna — buat/ekspor/hapus | ✅ | lihat bagian 4 (ADR-041) |
+| Impor `.jks`/`.keystore` milik pengguna | ⛔ | rencana rilis berikutnya |
 | F-Droid / Play Store | ⛔ | rencana milestone |
 
 ## 6. Kualitas
 
 | Fitur | Status | Bukti |
 |---|---|---|
-| Uji unit | ✅ | 253 uji (`./gradlew test`) |
-| Uji di perangkat | ✅ | 106 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
+| Uji unit | ✅ | 390 uji (`./gradlew test`) |
+| Uji di perangkat | ✅ | 126 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
 | Analisis statis detekt, 0 temuan | ✅ | `./gradlew detekt` |
 | CI menjalankan gerbang yang sama | ✅ | `.github/workflows/ci.yml` |
 | Template bawaan terbukti jadi APK | ✅ | `scripts/prove/build-templates.sh`: 6/6 APK sah tanda tangannya (web-murni dilewati — memang tanpa APK) |
