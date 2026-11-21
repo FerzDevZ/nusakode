@@ -255,6 +255,10 @@ class OnDeviceBuildTest {
             mkdirs()
         }
         salinAset("templates/$nama", projek)
+        // Tiru perilaku Templates.create: template butuhCsv menerima Csv.java bersama.
+        if (File(projek, "kodenusa.json").readText().contains("\"butuhCsv\": true")) {
+            salinAset("templates/bersama", File(projek, "src/main/java/app"))
+        }
         gantiPlaceholder(projek)
 
         val loaded = ProjectLoader.load(projek)

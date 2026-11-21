@@ -114,6 +114,47 @@ class ProjectArchiveTest {
         assertEquals("tokoku-2", hasil.name)
     }
 
+    @Test
+    fun cadangkan_semua_membawa_semua_projek_dan_bisa_dibuka_kembali() {
+        val satu = projek("warung-a")
+        val dua = projek("warung-b")
+        val target = File(sementara, "cadangan.zip")
+
+        val jumlah = ProjectArchive.exportSemua(listOf(satu, dua), target).getOrThrow()
+        assertEquals(2, jumlah)
+
+        val entri = bacaEntri(target)
+        assertTrue(entri.any { it == "projek/warung-a/kodenusa.json" })
+        assertTrue(entri.any { it == "projek/warung-b/src/main/java/app/MainActivity.java" })
+        assertFalse(entri.any { it.startsWith("projek/warung-a/build/") })
+
+        val akarBuka = File(sementara, "akar-buka").apply { mkdirs() }
+        val dibuka = ProjectArchive.importSemua(target, akarBuka).getOrThrow()
+        assertEquals(2, dibuka.size)
+        assertEquals(
+            setOf("warung-a", "warung-b"),
+            dibuka.map { it.name }.toSet(),
+        )
+        for (folder in dibuka) {
+            assertTrue(File(folder, "kodenusa.json").isFile)
+            assertTrue(File(folder, "src/main/java/app/MainActivity.java").isFile)
+        }
+    }
+
+    @Test
+    fun cadangkan_semua_menolak_daftar_kosong() {
+        val hasil = ProjectArchive.exportSemua(emptyList(), File(sementara, "x.zip"))
+        assertTrue(hasil.isFailure)
+    }
+
+    @Test
+    fun impor_semua_menolak_zip_tanpa_projek() {
+        val zip = zip("bukan-projek.zip", mapOf("acak/berkas.txt" to "isi"))
+        val akarBuka = File(sementara, "akar-buka-2").apply { mkdirs() }
+        val hasil = ProjectArchive.importSemua(zip, akarBuka)
+        assertTrue(hasil.isFailure)
+    }
+
     private fun bacaEntri(zip: File): List<String> = java.util.zip.ZipFile(zip).use { berkas ->
         berkas.entries().toList().map { it.name }
     }

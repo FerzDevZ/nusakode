@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/teks_skor"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/skor_awal" />
+
+    <TextView
+        android:id="@+id/teks_soal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/jawab_a"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:enabled="false"
+        android:tag="0"
+        android:text="@string/kosong_jawaban" />
+
+    <Button
+        android:id="@+id/jawab_b"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:enabled="false"
+        android:tag="1"
+        android:text="@string/kosong_jawaban" />
+
+    <Button
+        android:id="@+id/jawab_c"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:enabled="false"
+        android:tag="2"
+        android:text="@string/kosong_jawaban" />
+
+    <Button
+        android:id="@+id/jawab_d"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:enabled="false"
+        android:tag="3"
+        android:text="@string/kosong_jawaban" />
+
+    <Button
+        android:id="@+id/tombol_mulai"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/tombol_mulai" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/judul_riwayat" />
+
+    <ListView
+        android:id="@+id/daftar_riwayat"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">__APP_NAME__</string>
+    <string name="petunjuk_isi">Apa yang terjadi hari ini?</string>
+    <string name="tombol_simpan">Simpan catatan</string>
+    <string name="kosong">Belum ada catatan. Tulis hari pertamamu!</string>
+    <string name="isi_kosong">Tulis isi catatan dulu.</string>
+    <string name="belum_tulis_hari_ini">Hari ini belum menulis.</string>
+    <string name="ringkasan_hari_ini">Rata-rata mood hari ini: %1$d dari 5</string>
+    <string name="mood_1">1</string>
+    <string name="mood_2">2</string>
+    <string name="mood_3">3</string>
+    <string name="mood_4">4</string>
+    <string name="mood_5">5</string>
+</resources>

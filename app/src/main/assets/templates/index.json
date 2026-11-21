@@ -20,6 +20,7 @@
       "tagline": "Catat barang, hitung total, simpan transaksi ke database HP. Jalan tanpa internet.",
       "audience": "pemilik warung dan toko kelontong",
       "jenis": "aplikasi",
+      "butuhCsv": true,
       "files": [
         "kodenusa.json",
         "src/main/AndroidManifest.xml",
@@ -65,11 +66,58 @@
       "tagline": "Catat uang masuk dan keluar tiap hari, lihat total dan sisa secara langsung. Tanpa internet.",
       "audience": "pemilik warung yang ingin pembukuan sederhana",
       "jenis": "aplikasi",
+      "butuhCsv": true,
       "files": [
         "kodenusa.json",
         "src/main/AndroidManifest.xml",
         "src/main/java/app/MainActivity.java",
         "src/main/java/app/DatabaseLaporan.java",
+        "src/main/res/layout/activity_main.xml",
+        "src/main/res/values/strings.xml"
+      ]
+    },
+    {
+      "id": "jurnal-harian",
+      "title": "Jurnal Harian",
+      "tagline": "Tulis catatan tiap hari plus mood 1–5, lihat rata-rata mood hari ini. Data tersimpan di HP.",
+      "audience": "pelajar yang ingin mencatat harian",
+      "jenis": "aplikasi",
+      "files": [
+        "kodenusa.json",
+        "src/main/AndroidManifest.xml",
+        "src/main/java/app/MainActivity.java",
+        "src/main/java/app/DatabaseJurnal.java",
+        "src/main/res/layout/activity_main.xml",
+        "src/main/res/values/strings.xml"
+      ]
+    },
+    {
+      "id": "stok-barang",
+      "title": "Stok Barang",
+      "tagline": "Catat barang masuk dan keluar, sisa stok langsung dihitung, barang yang tipis diberi tanda.",
+      "audience": "pemilik toko yang ingin kendali stok",
+      "jenis": "aplikasi",
+      "files": [
+        "kodenusa.json",
+        "src/main/AndroidManifest.xml",
+        "src/main/java/app/MainActivity.java",
+        "src/main/java/app/DatabaseStok.java",
+        "src/main/res/layout/activity_main.xml",
+        "src/main/res/values/strings.xml"
+      ]
+    },
+    {
+      "id": "kuis-pelajaran",
+      "title": "Kuis Pelajaran",
+      "tagline": "Paket soal pilihan ganda di dalam APK, skor akhir dan riwayat kuis tersimpan di HP.",
+      "audience": "pelajar dan guru",
+      "jenis": "aplikasi",
+      "files": [
+        "kodenusa.json",
+        "src/main/AndroidManifest.xml",
+        "src/main/java/app/MainActivity.java",
+        "src/main/java/app/DatabaseKuis.java",
+        "src/main/assets/soal.json",
         "src/main/res/layout/activity_main.xml",
         "src/main/res/values/strings.xml"
       ]

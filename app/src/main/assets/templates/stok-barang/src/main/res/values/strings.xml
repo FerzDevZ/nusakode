@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">__APP_NAME__</string>
+    <string name="petunjuk_nama">Nama barang (mis. gula 1 kg)</string>
+    <string name="petunjuk_jumlah">Jumlah</string>
+    <string name="petunjuk_minimum">Minimum</string>
+    <string name="tombol_masuk">Barang masuk</string>
+    <string name="tombol_keluar">Barang keluar</string>
+    <string name="kosong">Belum ada barang. Isi nama lalu tekan Barang masuk.</string>
+    <string name="nama_kosong">Isi nama barang dulu.</string>
+    <string name="jumlah_tak_sah">Jumlah harus angka lebih dari nol.</string>
+</resources>

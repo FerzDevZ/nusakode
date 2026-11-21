@@ -7,4 +7,7 @@
     <string name="tombol_tambah">Tambah</string>
     <string name="kosong">Belum ada transaksi. Isi nama dan harga, lalu tekan Tambah.</string>
     <string name="format_rupiah">Rp %1$d</string>
+    <string name="tombol_ekspor">Ekspor CSV</string>
+    <string name="csv_tersimpan">Tersimpan di folder Unduhan: %1$s</string>
+    <string name="csv_gagal">Ekspor gagal: %1$s</string>
 </resources>

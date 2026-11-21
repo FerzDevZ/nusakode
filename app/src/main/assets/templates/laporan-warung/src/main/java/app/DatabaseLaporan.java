@@ -75,6 +75,30 @@ public class DatabaseLaporan extends SQLiteOpenHelper {
         return hasil;
     }
 
+    /** Semua catatan (bukan hanya hari ini) untuk ekspor CSV: {tanggal, keterangan, jenis, jumlah}. */
+    public List<String[]> semuaUntukCsv() {
+        List<String[]> hasil = new ArrayList<>();
+        Cursor kursor = getReadableDatabase().query(
+            TABEL, null, null, null, null, null, "_id ASC");
+        try {
+            int kolomKeterangan = kursor.getColumnIndexOrThrow(KOLOM_KETERANGAN);
+            int kolomJumlah = kursor.getColumnIndexOrThrow(KOLOM_JUMLAH);
+            int kolomMasuk = kursor.getColumnIndexOrThrow(KOLOM_MASUK);
+            int kolomWaktu = kursor.getColumnIndexOrThrow(KOLOM_WAKTU);
+            while (kursor.moveToNext()) {
+                hasil.add(new String[]{
+                    kursor.getString(kolomWaktu),
+                    kursor.getString(kolomKeterangan),
+                    kursor.getInt(kolomMasuk) == 1 ? "MASUK" : "KELUAR",
+                    String.valueOf(kursor.getLong(kolomJumlah)),
+                });
+            }
+        } finally {
+            kursor.close();
+        }
+        return hasil;
+    }
+
     public long totalMasuk() {
         return total(true);
     }

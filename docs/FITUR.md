@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.17.0** (`versionCode 29`) · **390 uji unit · 126 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.18.0** (`versionCode 30`) · **404 uji unit · 127 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -13,12 +13,14 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
 | Fitur | Status | Bukti / catatan |
 |---|---|---|
-| Buat projek dari 4 template (Halo Dunia, Kasir Warung, Katalog WhatsApp, Web jadi APK) | ✅ | `TemplatesDeviceTest`, `build-templates.sh` (4/4 lulus) |
+| Buat projek dari 9 template (Halo Dunia, Kasir Warung, Katalog WhatsApp, Absensi Kelas, Laporan Warung, Jurnal Harian, Stok Barang, Kuis Pelajaran, Web jadi APK) | ✅ | `TemplatesDeviceTest`, `build-templates.sh` (9/9 lulus) |
 | Buat projek kosong dari nol | ✅ | `BlankProject`, `TemplateCatalogTest` |
 | ID aplikasi otomatis dari nama | ✅ | `WizardScreen.efektifId`, `WizardUiTest` |
 | Daftar projek + buka + hapus | ✅ | `WorkspaceScreen` |
 | Ekspor projek ke `.zip` di lokasi pilihan (Unduhan/Drive/kartu SD) | ✅ | `ProjectArchiveTest` (6 uji) |
+| **Cadangkan semua projek jadi satu `.zip`** | ✅ | `ProjectArchive.exportSemua` + tombol "Cadangkan semua" di layar projek; `ProjectArchiveTest` (9 uji: isi zip, buka kembali jadi beberapa projek, penolakan zip tanpa projek) |
 | Impor projek dari `.zip` milik sendiri | ✅ | `ProjectArchiveTest`, penolakan zip jahat ikut diuji |
+| **Ekspor data ke CSV** (template Kasir Warung & Laporan Warung) | ✅ | tombol "Ekspor CSV" — Android 10+ langsung ke folder Unduhan via `MediaStore` (tanpa izin), di bawahnya lewat bagikan teks; escape RFC 4180 diuji `CsvTemplateTest` (8 uji, mengompilasi `Csv.java` aset sungguhan dengan javac) |
 | Pilih folder sembarang sebagai tempat projek | ⛔ | Android 11+ melarang aplikasi menulis ke folder bebas tanpa izin; build juga butuh folder yang boleh mengeksekusi biner. Jalan yang jujur: ekspor/impor zip (ADR-022) |
 | Pindah lokasi penyimpanan seluruh aplikasi | ⛔ | ditunda; butuh SAF + salinan penuh |
 
@@ -79,7 +81,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Fitur | Status | Bukti / catatan |
 |---|---|---|
 | Build APK di HP untuk projek Java | ✅ | `OnDeviceBuildTest`, 1,4–1,9 detik/template |
-| Build projek web (HTML/CSS/JS) jadi APK | ✅ | `build-templates.sh` (4/4), `ExecPolicyDeviceTest` |
+| Build projek web (HTML/CSS/JS) jadi APK | ✅ | `build-templates.sh` (9/9), `ExecPolicyDeviceTest` |
 | Tanda tangan APK | ✅ | apksigner 0.8, v2-only |
 | Kunci tanda tangan dibuat per pemasangan (cadangan) | ✅ | `DebugKeystoreTest`, ADR-019 — dipakai bila kunci pengguna tidak ada/tidak terbaca |
 | **Kunci tanda tangan milik pengguna (ADR-041)** | ✅ | buat kunci (alias+sandi, 10.000 hari), sandi terenskripsi `KunciAman`, ekspor `.p12` lewat SAF. Bukti: `KunciPenggunaDeviceTest` (sertifikat APK == keystore pengguna ≠ debug; `apksigner verify` exit 0; build kedua sertifikat identik) + `scripts/prove/kunci-ttd.sh` (`pm install` v1 lalu `pm install -r` v2 **Success** — signature match) |
@@ -223,11 +225,11 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 
 | Fitur | Status | Bukti |
 |---|---|---|
-| Uji unit | ✅ | 390 uji (`./gradlew test`) |
-| Uji di perangkat | ✅ | 126 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
+| Uji unit | ✅ | 404 uji (`./gradlew test`) |
+| Uji di perangkat | ✅ | 127 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
 | Analisis statis detekt, 0 temuan | ✅ | `./gradlew detekt` |
 | CI menjalankan gerbang yang sama | ✅ | `.github/workflows/ci.yml` |
-| Template bawaan terbukti jadi APK | ✅ | `scripts/prove/build-templates.sh`: 6/6 APK sah tanda tangannya (web-murni dilewati — memang tanpa APK) |
+| Template bawaan terbukti jadi APK | ✅ | `scripts/prove/build-templates.sh`: 9/9 APK sah tanda tangannya (web-murni dilewati — memang tanpa APK) |
 | Tulisan AI nyata end-to-end | 🟡 | jalur klien teruji unit (`ChatNyataTest` lewat env), tetapi verifikasi tulis-nyata di layar AI tertunda gangguan penyedia: `api.crown.ai.id` 503 untuk semua model pada 21 Nov 2026 (daftar model 200, chat completion 503). Pesan galat jujur "Penyedia AI sedang bermasalah (503)" terverifikasi |
 
 ---

@@ -54,6 +54,17 @@ class Templates(private val context: Context) {
                     .replace("__APP_ID__", appId),
             )
         }
+        // Template yang meminta ekspor CSV menerima berkas Csv.java bersama (satu sumber,
+        // diuji lewat CsvTemplateTest yang mengompilasi berkas aset ini).
+        val butuhCsv = info.butuhCsv
+        if (butuhCsv) {
+            val csv = File(target, "src/main/java/app/Csv.java")
+            csv.parentFile?.mkdirs()
+            val teks = context.assets.open("templates/bersama/Csv.java").use { input ->
+                input.readBytes().decodeToString()
+            }
+            csv.writeText(teks.replace("__APP_ID__", appId))
+        }
         if (warnaIkon != null) {
             val manifest = File(target, "kodenusa.json")
             val proyek = ProjectJson.decode(manifest.readText())

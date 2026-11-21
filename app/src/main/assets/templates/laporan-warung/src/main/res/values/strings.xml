@@ -9,4 +9,7 @@
     <string name="kosong">Belum ada catatan hari ini.</string>
     <string name="isi_belum_lengkap">Isi keterangan dan jumlah dulu.</string>
     <string name="jumlah_tak_sah">Jumlah harus angka lebih dari nol.</string>
+    <string name="tombol_ekspor">Ekspor CSV</string>
+    <string name="csv_tersimpan">Tersimpan di folder Unduhan: %1$s</string>
+    <string name="csv_gagal">Ekspor gagal: %1$s</string>
 </resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">__APP_NAME__</string>
+    <string name="tombol_mulai">Mulai kuis</string>
+    <string name="pembuka">Siap mengerjakan %1$d soal? Tekan Mulai kuis.</string>
+    <string name="soal_nomor">Soal %1$d. %2$s</string>
+    <string name="skor_awal">Skor: 0</string>
+    <string name="skor_berjalan">Skor: %1$d</string>
+    <string name="jawaban_benar">Benar!</string>
+    <string name="jawaban_salah">Salah.</string>
+    <string name="hasil_akhir">Selesai! Skor kamu %1$d dari %2$d.</string>
+    <string name="judul_riwayat">Riwayat kuis</string>
+    <string name="kosong_jawaban">—</string>
+    <string name="soal_gagal">Soal gagal dimuat: %1$s</string>
+</resources>

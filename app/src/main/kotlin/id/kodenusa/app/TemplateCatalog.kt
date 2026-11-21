@@ -15,6 +15,8 @@ data class TemplateInfo(
     /** "aplikasi" (Android/Java) atau "web" (HTML/CSS/JS di dalam WebView). */
     val jenis: String = "aplikasi",
     val files: List<String> = emptyList(),
+    /** true = template butuh ekspor CSV → berkas Csv.java bersama disalin ke projek. */
+    val butuhCsv: Boolean = false,
 )
 
 /** Bentuk resmi `assets/templates/index.json`: `{"templates": [...]}`. */

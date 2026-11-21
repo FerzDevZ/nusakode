@@ -139,8 +139,24 @@ object PromptBuilder {
         "laporan-warung" ->
             "Struktur template laporan-warung: MainActivity.java (layar catatan uang masuk/keluar), " +
                 "DatabaseLaporan.java (SQLiteOpenHelper dengan tabel catatan: keterangan, jumlah, " +
-                "masuk, waktu), dan layout res/layout/activity_main.xml. Ikuti pola kelas yang " +
+                "masuk, waktu), Csv.java (pembuat CSV RFC 4180 untuk tombol Ekspor CSV), dan layout " +
+                "res/layout/activity_main.xml. Ikuti pola kelas yang " +
                 "sudah ada — jangan membuat basis data baru kalau bisa memakai DatabaseLaporan."
+        "jurnal-harian" ->
+            "Struktur template jurnal-harian: MainActivity.java (layar catatan + mood 1-5), " +
+                "DatabaseJurnal.java (SQLiteOpenHelper dengan tabel catatan: tanggal, isi, mood), " +
+                "dan layout res/layout/activity_main.xml. Ikuti pola kelas yang sudah ada — jangan " +
+                "membuat basis data baru kalau bisa memakai DatabaseJurnal."
+        "stok-barang" ->
+            "Struktur template stok-barang: MainActivity.java (layar barang masuk/keluar), " +
+                "DatabaseStok.java (SQLiteOpenHelper dengan tabel barang: nama, stok, minimum), " +
+                "dan layout res/layout/activity_main.xml. Ikuti pola kelas yang sudah ada — jangan " +
+                "membuat basis data baru kalau bisa memakai DatabaseStok."
+        "kuis-pelajaran" ->
+            "Struktur template kuis-pelajaran: MainActivity.java (layar kuis dari assets/soal.json), " +
+                "DatabaseKuis.java (SQLiteOpenHelper dengan tabel riwayat: skor, total, waktu), " +
+                "dan layout res/layout/activity_main.xml. Soal baru cukup ditambah ke soal.json, " +
+                "bukan mengubah kode Java."
         "web-katalog" ->
             "Struktur template web-katalog: WebView di src/main/java/app/MainActivity.java memuat " +
                 "halaman di src/main/assets/ (index.html, gaya.css, aplikasi.js). Ubah isi web di " +

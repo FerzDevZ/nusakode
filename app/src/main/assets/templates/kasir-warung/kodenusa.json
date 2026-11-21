@@ -8,5 +8,6 @@
   "targetSdk": 34,
   "javaVersion": 8,
   "buildEngine": "tier0",
-  "templateId": "kasir-warung"
+  "templateId": "kasir-warung",
+  "butuhCsv": true
 }

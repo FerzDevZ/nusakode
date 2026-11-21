@@ -45,6 +45,13 @@
         android:layout_marginTop="8dp"
         android:text="@string/tombol_tambah" />
 
+    <Button
+        android:id="@+id/tombol_ekspor"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/tombol_ekspor" />
+
     <TextView
         android:id="@+id/teks_kosong"
         android:layout_width="match_parent"

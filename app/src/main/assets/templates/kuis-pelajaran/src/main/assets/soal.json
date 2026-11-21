@@ -1,0 +1,27 @@
+[
+  {
+    "pertanyaan": "Ibu kota Provinsi Jawa Barat adalah ...",
+    "pilihan": ["Bandung", "Semarang", "Surabaya", "Serang"],
+    "jawaban": 0
+  },
+  {
+    "pertanyaan": "Hasil dari 12 x 8 + 4 adalah ...",
+    "pilihan": ["100", "96", "104", "92"],
+    "jawaban": 0
+  },
+  {
+    "pertanyaan": "Planet yang paling dekat dengan Matahari adalah ...",
+    "pilihan": ["Venus", "Merkurius", "Bumi", "Mars"],
+    "jawaban": 1
+  },
+  {
+    "pertanyaan": "Proklamasi Kemerdekaan Indonesia dibacakan pada tanggal ...",
+    "pilihan": ["17 Agustus 1945", "1 Juni 1945", "28 Oktober 1928", "10 November 1945"],
+    "jawaban": 0
+  },
+  {
+    "pertanyaan": "Hewan berikut yang termasuk mamalia adalah ...",
+    "pilihan": ["Buaya", "Ayam", "Lumba-lumba", "Katak"],
+    "jawaban": 2
+  }
+]

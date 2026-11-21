@@ -52,6 +52,11 @@ for entry in index["templates"]:
         out.parent.mkdir(parents=True, exist_ok=True)
         text = (templates / entry["id"] / relative).read_text()
         out.write_text(text.replace("__APP_NAME__", entry["title"]).replace("__APP_ID__", app_id))
+    # Template yang butuh ekspor CSV menerima Csv.java bersama (satu sumber dengan aplikasi).
+    if entry.get("butuhCsv"):
+        csv = target / "src/main/java/app/Csv.java"
+        csv.parent.mkdir(parents=True, exist_ok=True)
+        csv.write_text((templates / "bersama/Csv.java").read_text().replace("__APP_ID__", app_id))
     print(f"siap: {entry['id']} -> {app_id}")
 PY
 

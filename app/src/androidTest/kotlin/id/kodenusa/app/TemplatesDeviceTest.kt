@@ -2,6 +2,7 @@ package id.kodenusa.app
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,6 +58,21 @@ class TemplatesDeviceTest {
         val paket = File(hasil, "src/main/java/id/kodenusa/projeksaya/MainActivity.java")
         assertTrue("activity harus ada di paket applicationId", paket.exists())
         target.parentFile?.deleteRecursively()
+    }
+
+    @Test
+    fun template_csv_membawa_berkas_csv_bersama_dan_tanpa_csv_tidak() {
+        val target = File(context.cacheDir, "uji-csv-${System.nanoTime()}/laporan-warung")
+        val hasil = templates.create("laporan-warung", target, "Laporan Bu Sri", "id.kodenusa.laporanbusri").getOrThrow()
+        val csv = File(hasil, "src/main/java/app/Csv.java")
+        assertTrue("Csv.java harus ikut disalin", csv.isFile)
+        assertTrue("paket Csv.java harus diganti", csv.readText().contains("id.kodenusa.laporanbusri"))
+        target.parentFile?.deleteRecursively()
+
+        val targetHalo = File(context.cacheDir, "uji-csv-${System.nanoTime()}/halo-dunia")
+        val hasilHalo = templates.create("halo-dunia", targetHalo, "Halo", "id.kodenusa.halocsv").getOrThrow()
+        assertFalse("halo-dunia tidak butuh CSV", File(hasilHalo, "src/main/java/app/Csv.java").exists())
+        targetHalo.parentFile?.deleteRecursively()
     }
 
     @Test

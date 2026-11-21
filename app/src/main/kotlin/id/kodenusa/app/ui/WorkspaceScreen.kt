@@ -125,6 +125,34 @@ fun WorkspaceScreen(
         }
     }
 
+    // Cadangkan semua projek jadi satu zip ke lokasi pilihan pengguna.
+    var mintaCadangkan by remember { mutableStateOf(false) }
+    val pemilihCadangkan = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip"),
+    ) { uri ->
+        mintaCadangkan = false
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val hasil = withContext(Dispatchers.IO) {
+                runCatching {
+                    val sementara = java.io.File(container.workspaceRoot, ".cadangan-semua.zip")
+                    val jumlah = ProjectArchive.exportSemua(
+                        container.projectStore.list().map { it.dir }, sementara,
+                    ).getOrThrow()
+                    konteks.contentResolver.openOutputStream(uri)?.use { keluar ->
+                        sementara.inputStream().use { it.copyTo(keluar) }
+                    } ?: throw IllegalStateException("Lokasi tujuan tidak bisa ditulis.")
+                    sementara.delete()
+                    jumlah
+                }
+            }
+            pesan = hasil.fold(
+                onSuccess = { "Cadangan $it projek tersimpan." },
+                onFailure = { "Cadangan gagal: ${it.message}" },
+            )
+        }
+    }
+
     Scaffold(containerColor = Kode.background) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp)) {
             Spacer(Modifier.height(20.dp))
@@ -260,6 +288,12 @@ fun WorkspaceScreen(
                 verticalArrangement = Arrangement.Bottom,
                 horizontalAlignment = Alignment.End,
             ) {
+                GhostButton(
+                    "Cadangkan semua",
+                    { pemilihCadangkan.launch("kodenusa-cadangan.zip") },
+                    Modifier.testTag("cadangkan-semua"),
+                )
+                Spacer(Modifier.height(8.dp))
                 PrimaryButton("Projek baru", onNewProject)
             }
         }

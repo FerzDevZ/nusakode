@@ -3,7 +3,13 @@ package __APP_ID__.app;
 import __APP_ID__.R;
 
 import android.app.Activity;
+import android.content.ContentValues;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -12,8 +18,12 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -52,6 +62,14 @@ public class MainActivity extends Activity {
             }
         });
 
+        Button ekspor = findViewById(R.id.tombol_ekspor);
+        ekspor.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                eksporCsv();
+            }
+        });
+
         muatUlang();
     }
 
@@ -85,6 +103,63 @@ public class MainActivity extends Activity {
         inputNama.setText("");
         inputHarga.setText("");
         muatUlang();
+    }
+
+    /** Semua transaksi jadi CSV: Android 10+ langsung ke folder Unduhan, di bawahnya lewat bagikan teks. */
+    private void eksporCsv() {
+        List<String> barisSemua = new ArrayList<>();
+        barisSemua.add(Csv.baris("tanggal", "nama", "harga"));
+        SimpleDateFormat tanggal = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+        for (Produk produk : database.semua()) {
+            barisSemua.add(Csv.baris(
+                tanggal.format(new Date(produk.waktu)),
+                produk.nama,
+                String.valueOf(produk.harga)));
+        }
+        String isi = Csv.dokumen(barisSemua);
+        if (Build.VERSION.SDK_INT >= 29) {
+            simpanKeUnduhan(isi);
+        } else {
+            Intent kirim = new Intent(Intent.ACTION_SEND);
+            kirim.setType("text/plain");
+            kirim.putExtra(Intent.EXTRA_TEXT, isi);
+            startActivity(Intent.createChooser(kirim, getString(R.string.tombol_ekspor)));
+        }
+    }
+
+    /** Menulis CSV ke folder Unduhan lewat MediaStore — tanpa izin penyimpanan (Android 10+). */
+    private void simpanKeUnduhan(String isi) {
+        ContentValues nilai = new ContentValues();
+        nilai.put(MediaStore.MediaColumns.DISPLAY_NAME, "kasir-warung.csv");
+        nilai.put(MediaStore.MediaColumns.MIME_TYPE, "text/csv");
+        nilai.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+        Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, nilai);
+        if (uri == null) {
+            Toast.makeText(this, getString(R.string.csv_gagal, "berkas tidak bisa dibuat"),
+                Toast.LENGTH_SHORT).show();
+            return;
+        }
+        OutputStream keluaran = null;
+        try {
+            keluaran = getContentResolver().openOutputStream(uri);
+            if (keluaran == null) {
+                throw new IOException("berkas tidak bisa dibuka");
+            }
+            keluaran.write(isi.getBytes("UTF-8"));
+            Toast.makeText(this, getString(R.string.csv_tersimpan, "kasir-warung.csv"),
+                Toast.LENGTH_LONG).show();
+        } catch (IOException galat) {
+            Toast.makeText(this, getString(R.string.csv_gagal, galat.getMessage()),
+                Toast.LENGTH_SHORT).show();
+        } finally {
+            if (keluaran != null) {
+                try {
+                    keluaran.close();
+                } catch (IOException diabaikan) {
+                    // Berkas sudah ditulis; kegagalan tutup tidak mengubah isi.
+                }
+            }
+        }
     }
 
     private void muatUlang() {
