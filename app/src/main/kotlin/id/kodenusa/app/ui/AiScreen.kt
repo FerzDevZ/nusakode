@@ -2,16 +2,20 @@ package id.kodenusa.app.ui
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -66,6 +70,7 @@ import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
 import id.kodenusa.ui.Pill
 import id.kodenusa.ui.PrimaryButton
+import id.kodenusa.ui.angkaTabular
 import id.kodenusa.ui.Kode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -127,6 +132,9 @@ fun AiScreen(
     // baru — dan itu yang membuat "AI-nya belum bisa buka folder source".
     val papan = remember(akarProjek) { AiProjectBoard(akarProjek) }
     var pakaiKonteksProjek by remember { mutableStateOf(false) }
+    // Mode hemat kuota (docs/13 C5): dipangkas konteks yang dikirim ke AI. Default dari setelan
+    // tersimpan supaya pilihan pengguna tidak hilang saat layar ditutup.
+    var hematKuota by remember { mutableStateOf(store.hematKuota()) }
     var buatBerkasTerbuka by remember { mutableStateOf(false) }
     var cariBerkas by remember { mutableStateOf("") }
     var berkasSematan by remember { mutableStateOf(listOf<String>()) }
@@ -191,12 +199,13 @@ fun AiScreen(
                 papan.konteks(),
                 "",
                 PromptBuilder.templatProjek(templatId),
+                hematKuota,
             )
-            sematan.isNotEmpty() -> PromptBuilder.untukBerkasSematan(teks, sematan)
+            sematan.isNotEmpty() -> PromptBuilder.untukBerkasSematan(teks, sematan, hematKuota)
             konteks.galat != null ->
                 PromptBuilder.untukGalat(konteks.galat.orEmpty(), konteks.jalur, konteks.isi)
             konteks.jalur != null && konteks.isi != null ->
-                PromptBuilder.untukBerkas(teks, konteks.jalur, konteks.isi)
+                PromptBuilder.untukBerkas(teks, konteks.jalur, konteks.isi, hematKuota)
             else -> PromptBuilder.untukTanya(teks)
         }
         // Riwayat obrolan ikut dikirim supaya model ingat konteks percakapan sebelumnya.
@@ -466,6 +475,11 @@ fun AiScreen(
                         adaTulisanBisaDibatalkan = adaBatchUndo,
                         onBuatBerkasBaru = { buatBerkasTerbuka = true },
                         onBukaRiwayat = { riwayatTerbuka = true },
+                        hematKuota = hematKuota,
+                        onHematKuota = {
+                            hematKuota = !hematKuota
+                            store.simpanHematKuota(hematKuota)
+                        },
                     )
                 }
             }
@@ -831,6 +845,8 @@ private fun ChatAiPanel(
     adaTulisanBisaDibatalkan: Boolean = false,
     onBuatBerkasBaru: () -> Unit = {},
     onBukaRiwayat: () -> Unit = {},
+    hematKuota: Boolean = false,
+    onHematKuota: () -> Unit = {},
 ) {
     val daftar = rememberLazyListState()
     val terakhir = jawaban.ifBlank { riwayat.lastOrNull { it.first == "assistant" }?.second.orEmpty() }
@@ -857,13 +873,28 @@ private fun ChatAiPanel(
                 if (karakter > 0) {
                     Text(
                         "terkirim: $karakter karakter ke endpoint",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelSmall.angkaTabular(),
                         color = Kode.textDim,
                         modifier = Modifier.testTag("indikator-karakter"),
                     )
                 }
             }
             if (riwayat.isNotEmpty()) GhostButton("Bersihkan", onBersihkan)
+            GhostButton(
+                if (hematKuota) "hemat kuota: on" else "hemat kuota: off",
+                onHematKuota,
+                Modifier.testTag("mode-hemat-kuota"),
+            )
+        }
+
+        if (hematKuota) {
+            // Penjelasan satu baris di bawah kepala: pengguna tahu apa yang dikorbankan (docs/13 C5).
+            Text(
+                "Hemat kuota aktif: berkas dipotong lebih pendek, maksimal 2 berkas disematkan.",
+                style = MaterialTheme.typography.labelSmall,
+                color = Kode.textDim,
+                modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+            )
         }
 
         if (riwayat.isEmpty() && jawaban.isEmpty()) {
@@ -1043,24 +1074,39 @@ private fun ChatAiPanel(
 @Composable
 private fun PesanAi(peran: String, isi: String) {
     val pengguna = peran == "user"
-    Surface(
-        color = if (pengguna) Kode.surfaceRaised else Kode.surface,
-        shape = RoundedCornerShape(10.dp),
-        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+    // Hierarki lewat bentuk, bukan warna baru (B5 docs/13): pesan pengguna menjorok + garis kiri
+    // tipis redup; jawaban AI rata kiri dengan garis aksen tipis. Warna latar tetap dua token
+    // yang sudah ada — tidak menambah palet.
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        horizontalArrangement = if (pengguna) Arrangement.End else Arrangement.Start,
     ) {
-        Column(Modifier.padding(10.dp)) {
-            Text(
-                if (pengguna) "kamu" else "AI",
-                style = MaterialTheme.typography.labelSmall,
-                color = if (pengguna) Kode.textDim else Kode.accent,
-            )
-            Spacer(Modifier.height(4.dp))
-            // Penjelasan ditampilkan tanpa pagar kode; isi kodenya muncul di tombol sisip di bawah.
-            Text(
-                if (pengguna) isi else CodeBlocks.tanpaPagar(isi).take(3_000),
-                style = MaterialTheme.typography.bodySmall,
-                color = Kode.text,
-            )
+        Box(
+            Modifier
+                .width(if (pengguna) 3.dp else 2.dp)
+                .height(IntrinsicSize.Min)
+                .background(if (pengguna) Kode.borderStrong else Kode.accent, RoundedCornerShape(2.dp)),
+        )
+        Spacer(Modifier.width(8.dp))
+        Surface(
+            color = if (pengguna) Kode.surfaceRaised else Kode.surface,
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.weight(1f, fill = false),
+        ) {
+            Column(Modifier.padding(10.dp)) {
+                Text(
+                    if (pengguna) "kamu" else "AI",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (pengguna) Kode.textDim else Kode.accent,
+                )
+                Spacer(Modifier.height(4.dp))
+                // Penjelasan ditampilkan tanpa pagar kode; isi kodenya muncul di tombol sisip di bawah.
+                Text(
+                    if (pengguna) isi else CodeBlocks.tanpaPagar(isi).take(3_000),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Kode.text,
+                )
+            }
         }
     }
 }

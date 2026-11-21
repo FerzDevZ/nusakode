@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">__APP_NAME__</string>
+    <string name="judul_rekap">Rekap hari ini</string>
+    <string name="petunjuk_nama">Nama siswa</string>
+    <string name="tombol_hadir">Hadir</string>
+    <string name="tombol_tidak_hadir">Tidak hadir</string>
+    <string name="kosong">Belum ada siswa dicatat hari ini.</string>
+    <string name="nama_kosong">Isi nama siswa dulu.</string>
+    <string name="format_rekap">Hadir %1$d · Tidak hadir %2$d</string>
+</resources>

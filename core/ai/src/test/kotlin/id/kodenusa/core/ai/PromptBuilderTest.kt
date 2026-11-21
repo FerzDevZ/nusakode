@@ -196,3 +196,41 @@ class CodeBlocksTest {
         assertTrue(pesan.last().isi.contains("DatabaseKasir"))
         assertTrue(pesan.last().isi.contains("tambah layar riwayat"))
     }
+
+@Test
+fun hemat_kuota_memangkas_konteks_berkas() {
+    val isi = "x".repeat(4_000)
+    val normal = PromptBuilder.untukBerkas("perbaiki", "a.java", isi)
+    val hemat = PromptBuilder.untukBerkas("perbaiki", "a.java", isi, hemat = true)
+    // Mode hemat mengirim sekitar setengah konteks: pastikan jelas lebih pendek dan penanda
+    // pemotongan tetap jujur muncul.
+    assertTrue(hemat.last().isi.length < normal.last().isi.length)
+    assertTrue(hemat.last().isi.contains("hemat kuota"))
+}
+
+@Test
+fun hemat_kuota_membatasi_sematan_maksimal_dua_berkas() {
+    val berkas = (1..3).map { "b$it.java" to "isi$it" }
+    val normal = PromptBuilder.untukBerkasSematan("ubah", berkas)
+    val hemat = PromptBuilder.untukBerkasSematan("ubah", berkas, hemat = true)
+    assertTrue(normal.last().isi.contains("b3.java"))
+    // docs/13 C5: maksimal 2 berkas saat hemat — berkas ketiga tidak dikirim.
+    assertTrue(!hemat.last().isi.contains("b3.java"))
+    assertTrue(hemat.last().isi.contains("b2.java"))
+}
+
+@Test
+fun hemat_kuota_memangkas_konteks_agen() {
+    val konteks = "y".repeat(4_000)
+    val normal = PromptBuilder.untukAgen("tugas", konteks, "")
+    val hemat = PromptBuilder.untukAgen("tugas", konteks, "", hemat = true)
+    assertTrue(hemat.last().isi.length < normal.last().isi.length)
+}
+
+@Test
+fun templat_baru_v0_16_dikenali() {
+    // docs/13 C4: dua template baru. Prompt agen harus menyebut kelas datanya supaya model
+    // mengikuti pola yang sudah ada, bukan membuat basis data sendiri.
+    assertTrue(PromptBuilder.templatProjek("absensi-kelas")!!.contains("DatabaseAbsensi"))
+    assertTrue(PromptBuilder.templatProjek("laporan-warung")!!.contains("DatabaseLaporan"))
+}

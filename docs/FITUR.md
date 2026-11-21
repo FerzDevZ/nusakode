@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.15.0** (`versionCode 27`) · **243 uji unit · 105 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.16.0** (`versionCode 28`) · **253 uji unit · 106 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 

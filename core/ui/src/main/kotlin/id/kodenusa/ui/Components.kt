@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.clickable
@@ -96,15 +97,24 @@ fun GhostButton(
 ) {
     // Tombol sekunder PUNYA wujud: latar naik satu tingkat + garis tepi. Dulu ini TextButton
     // polos sehingga "Impor .zip", "AI", "Simpan" terlihat seperti teks biasa — pengguna tidak
-    // tahu bahwa baris itu bisa ditekan (temuan audit UX 0.9.8).
+    // tahu bahwa baris itu bisa ditekan (temuan audit UX 0.9.8). Garis tepi menebal aksen saat
+    // fokus keyboard (B4 docs/13) supaya navigasi DEX/keyboard OTG tetap terlihat.
     val interaksiTombol = remember { MutableInteractionSource() }
+    val fokusKeyboard by interaksiTombol.collectIsFocusedAsState()
     Box(
         modifier
             .height(48.dp)
             .tekan(interaksiTombol)
             .background(Kode.surfaceRaised, RoundedCornerShape(KodenusaPalette.RADIUS_SMALL.dp))
             .border(
-                BorderStroke(1.dp, if (enabled) Kode.borderStrong else Kode.border),
+                BorderStroke(
+                    if (fokusKeyboard && enabled) 2.dp else 1.dp,
+                    when {
+                        fokusKeyboard && enabled -> Kode.accent
+                        enabled -> Kode.borderStrong
+                        else -> Kode.border
+                    },
+                ),
                 RoundedCornerShape(KodenusaPalette.RADIUS_SMALL.dp),
             )
             .clickable(interactionSource = interaksiTombol, enabled = enabled, onClick = onClick),
@@ -306,13 +316,21 @@ fun GhostIconButton(
     enabled: Boolean = true,
 ) {
     val interaksiTombol = remember { MutableInteractionSource() }
+    val fokusKeyboard by interaksiTombol.collectIsFocusedAsState()
     Box(
         modifier
             .size(48.dp)
             .tekan(interaksiTombol)
             .background(Kode.surfaceRaised, RoundedCornerShape(KodenusaPalette.RADIUS_SMALL.dp))
             .border(
-                BorderStroke(1.dp, if (enabled) Kode.borderStrong else Kode.border),
+                BorderStroke(
+                    if (fokusKeyboard && enabled) 2.dp else 1.dp,
+                    when {
+                        fokusKeyboard && enabled -> Kode.accent
+                        enabled -> Kode.borderStrong
+                        else -> Kode.border
+                    },
+                ),
                 RoundedCornerShape(KodenusaPalette.RADIUS_SMALL.dp),
             )
             .clickable(interactionSource = interaksiTombol, enabled = enabled, onClick = onClick),
@@ -327,9 +345,16 @@ fun GhostIconButton(
     }
 }
 
-/** Skala tekan 0,98 saat ditekan — mikrointeraksi standar tombol KodeNusa (150 ms). */
+/** Skala tekan 0,96 saat ditekan (DESIGN.md §6) — mikrointeraksi standar tombol KodeNusa, 100 ms. */
 fun Modifier.tekan(interaksi: MutableInteractionSource): Modifier = composed {
     val ditekan by interaksi.collectIsPressedAsState()
-    val skala by animateFloatAsState(if (ditekan) 0.98f else 1f, animationSpec = tween(150), label = "tekan")
+    val skala by animateFloatAsState(if (ditekan) 0.96f else 1f, animationSpec = tween(100), label = "tekan")
     this.graphicsLayer { scaleX = skala; scaleY = skala }
 }
+
+/**
+ * Digit tabular (`tnum`): angka yang berubah — nomor, ukuran, penghitung — tidak lagi "berjalan"
+ * karena lebar tiap digit disamakan. Dipakai di metadata projek, ukuran build, dan indikator AI.
+ */
+fun androidx.compose.ui.text.TextStyle.angkaTabular(): androidx.compose.ui.text.TextStyle =
+    copy(fontFeatureSettings = "tnum")

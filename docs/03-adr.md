@@ -637,3 +637,27 @@ template kasir-warung ia menebak sendiri ada kelas apa, meski `DatabaseKasir.jav
 **Konsekuensi.** Kerja agen bisa ditinjau dan dibuka ulang tanpa PC; model mengikuti pola kelas
 yang sudah ada. Penyimpanan dibatasi (20 catatan × ~200 byte); riwayat hilang jika aplikasi
 dihapus — diterima, karena semua data KodeNusa memang tinggal di HP pengguna (ADR-001).
+
+### ADR-040 — Panel adalah Box: kontrak tata letak & template v0.16.0
+
+**Konteks.** Audit perangkat v0.16 menemukan dua bug tata letak yang sama persis: kartu
+penjelasan izin dan `ProjectRow` menaruh beberapa anak langsung di dalam `Panel`. Karena
+`Panel` dibangun di atas `Box`, anak-anak itu menumpuk di titik yang sama — teks bertindih
+dan uiautomator bahkan kehilangan satu node. Terdeteksi lewat screenshot + `uiautomator dump`,
+bukan lewat kode.
+
+**Keputusan.**
+1. Kontrak tata letak: **isi `Panel` yang lebih dari satu baris wajib dibungkus `Column`/`Row`**
+   secara eksplisit. `Panel` tidak berubah jadi `Column` — perilaku `Box` dipakai sengaja
+   untuk kartu satu-anak (mis. `StepsPanel`).
+2. Dua template baru ditambahkan untuk audiens pendidikan & UMKM: `absensi-kelas` (SQLite
+   `DatabaseAbsensi`) dan `laporan-warung` (SQLite `DatabaseLaporan`, rupiah, rekap harian).
+   Keduanya terdaftar di `templates/index.json` dan `PromptBuilder.templatProjek` supaya agen
+   AI mengikuti kelas data yang sudah ada.
+3. `scripts/prove/build-templates.sh` menghitung jumlah template dari `index.json` (bukan angka
+   mati) dan melewati template `jenis: web-murni` secara eksplisit — mereka memang tidak
+   menghasilkan APK, jadi bukan kegagalan.
+
+**Konsekuensi.** 6 template APK dibuktikan terbangun + sah tanda tangannya (6/6 lulus, 1
+web-murni dilewati). Bug "Panel tanpa Column" dicegah dengan kontrak tertulis di sini; uji
+perangkat `BerkasHpUiTest` mengunci teks kartu izin.

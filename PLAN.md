@@ -2,7 +2,7 @@
 
 > **Satu kalimat:** IDE Android native yang menghasilkan APK asli di dalam HP 2–4 GB RAM / 32–64 GB penyimpanan — tanpa PC, tanpa Gradle, tanpa internet wajib — sepenuhnya berbahasa Indonesia.
 
-**Status: v0.15.0** · 243 uji unit · 105 uji perangkat · detekt 0 temuan · Android 7.0+
+**Status: v0.16.0** · 253 uji unit · 106 uji perangkat · detekt 0 temuan · Android 7.0+
 
 Dokumen ini adalah **indeks dan peta status**. Detail ada di `docs/`.
 
@@ -77,6 +77,7 @@ Milestone **tidak** ditandai selesai tanpa exit criteria dijalankan dan exit cod
 | 0.9.6 | Palet perintah, progres unggah bertahap, catatan jujur soal Python |
 | 0.9.9 | Perapatan tampilan (ADR-033): tombol sekunder berwujud, kolom nama wizard selalu terlihat, kelompok pilihan berjudul, Git menyuruh siapkan repo dulu |
 | 0.10.0 | Python bisa dijalankan (ADR-034): MicroPython dibawa di APK, tombol Jalankan + konsol di editor, 5 uji perangkat nyata |
+| 0.16.0 | **Polesan UI/UX penuh + 2 template baru** (docs/13 tuntas): sentuhan lebih hidup (tekan 0.96×, haptic sekali saat build sukses), angka tabel rapi (tnum), titik status build ala Linear, ProjectRow asimetris, fokus ring keyboard/OTG, pesan AI bertata letak, pencarian projek lintas berkas, tombol **Rapikan** indentasi, **riwayat build** per projek (10 terakhir), **mode hemat kuota** AI, template **absensi-kelas** & **laporan-warung** (total 7 template), kartu izin tidak bertumpuk |
 | 0.15.0 | **Riwayat agen + prompt tahu template** (ADR-039): tulisan AI tercatat per projek (tugas → berkas berubah → batch undo) dan bisa dibuka ulang dari layar AI; prompt agen otomatis diberi struktur tipikal template projek (kasir-warung → DatabaseKasir, dst.) |
 | 0.14.0 | **AI tidak bisa lagi merusak kerja** (ADR-038): pratinjau tulis wajib (daftar berkas baru/timpa + ukuran), cadangan otomatis + tombol "Batalkan tulisan AI" (jalur Simpan & Sisip), berkas sematan maks 3 dikirim utuh, chip perintah cepat baru, indikator karakter terkirim |
 | 0.13.0 | **AI bisa membuat berkas baru di sub-folder** — bug `createFile` (folder belum ada ditolak) diperbaiki, tombol "Buat berkas baru dari kode" di jawaban AI, prompt agen eksplisit izin berkas baru, pemilih berkas AI jadi pohon + pencarian |

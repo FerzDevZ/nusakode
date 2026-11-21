@@ -183,6 +183,28 @@ class CodeEditorView @JvmOverloads constructor(
         restore(next)
     }
 
+    /**
+     * Merapikan indentasi seluruh berkas (tombol "Rapikan", docs/13 C2). Mengembalikan true
+     * bila isi berubah. Snapshot undo dipaksa satu kali supaya hasil rapikan bisa dibatalkan.
+     */
+    fun rapikan(): Boolean {
+        val sebelum = text
+        val sesudah = Rapikan.rapikan(sebelum, language)
+        if (sesudah == sebelum) return false
+        lastSnapshotAt = 0L
+        snapshotIfNeeded()
+        val posisi = editor.selectionStart.coerceAtLeast(0)
+        restoring = true
+        editor.setText(sesudah)
+        editor.setSelection(posisi.coerceIn(0, sesudah.length))
+        restoring = false
+        refreshGutter()
+        applyHighlight()
+        onTextChanged?.invoke(sesudah)
+        reportCursor()
+        return true
+    }
+
     fun setWordWrap(enabled: Boolean) {
         wrap = enabled
         editor.setHorizontallyScrolling(!enabled)

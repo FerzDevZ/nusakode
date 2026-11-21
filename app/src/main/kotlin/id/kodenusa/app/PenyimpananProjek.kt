@@ -51,4 +51,8 @@ object PenyimpananProjek {
         byte < 1024L * 1024L * 1024L -> String.format(java.util.Locale("id", "ID"), "%.1f MB", byte / 1024.0 / 1024.0)
         else -> String.format(java.util.Locale("id", "ID"), "%.1f GB", byte / 1024.0 / 1024.0 / 1024.0)
     }
+
+    /** Waktu pendek untuk riwayat build: "21 Nov 05:24" (docs/13 C3). */
+    fun waktuPendek(millis: Long): String =
+        java.text.SimpleDateFormat("d MMM HH:mm", java.util.Locale("id", "ID")).format(java.util.Date(millis))
 }

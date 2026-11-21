@@ -127,6 +127,17 @@ class AiSettingsStore(
         prefs.edit().remove(KUNCI_KARAKTER + kunciProjek).apply()
     }
 
+    /**
+     * Mode hemat kuota (docs/13 C5): konteks yang dikirim ke AI dipangkas — berkas dipotong
+     * lebih pendek, sematan dibatasi 2, dan konteks agen lebih kecil. Default mati supaya
+     * jawaban AI memakai konteks penuh; pengguna kuota terbatas yang menyalakannya sendiri.
+     */
+    fun hematKuota(): Boolean = prefs.getBoolean(KUNCI_HEMAT_KUOTA, false)
+
+    fun simpanHematKuota(aktif: Boolean) {
+        prefs.edit().putBoolean(KUNCI_HEMAT_KUOTA, aktif).apply()
+    }
+
     private companion object {
         const val KUNCI_ENDPOINT = "endpoint"
         const val KUNCI_RAHASIA = "kunci"
@@ -134,5 +145,6 @@ class AiSettingsStore(
         const val KUNCI_DAFTAR = "daftar_model"
         const val KUNCI_PERCAKAPAN = "percakapan_"
         const val KUNCI_KARAKTER = "karakter_"
+        const val KUNCI_HEMAT_KUOTA = "hemat_kuota"
     }
 }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">__APP_NAME__</string>
+    <string name="judul_ringkasan">Masuk %1$d · Keluar %2$d · Sisa %3$d</string>
+    <string name="petunjuk_keterangan">Keterangan (mis. jual telur)</string>
+    <string name="petunjuk_jumlah">Jumlah (Rp)</string>
+    <string name="tombol_masuk">Uang masuk</string>
+    <string name="tombol_keluar">Uang keluar</string>
+    <string name="kosong">Belum ada catatan hari ini.</string>
+    <string name="isi_belum_lengkap">Isi keterangan dan jumlah dulu.</string>
+    <string name="jumlah_tak_sah">Jumlah harus angka lebih dari nol.</string>
+</resources>

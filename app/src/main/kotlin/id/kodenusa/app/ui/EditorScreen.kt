@@ -409,6 +409,11 @@ fun EditorScreen(
                     onRight = { state.editor?.moveCursor(1) },
                     onUndo = { state.editor?.undo() },
                     onRedo = { state.editor?.redo() },
+                    onRapikan = {
+                        val berubah = state.editor?.rapikan() ?: false
+                        if (berubah) state.toast = "Indentasi dirapikan"
+                        berubah
+                    },
                     onSave = { session.saveAll(); state.toast = "Tersimpan" },
                     onBuild = { session.saveAll(); onBuild() },
                 )
@@ -1051,6 +1056,7 @@ private fun KeyBar(
     onRight: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
+    onRapikan: () -> Boolean,
     onSave: () -> Unit,
     onBuild: () -> Unit,
 ) {
@@ -1079,6 +1085,12 @@ private fun KeyBar(
         Key("→") { onRight() }
         Key("Undo") { onUndo() }
         Key("Redo") { onRedo() }
+        // docs/13 C2: merapikan indentasi seluruh berkas. Hanya spasi awal baris yang berubah,
+        // jadi tidak pernah merusak kode; undo tetap bisa membatalkan.
+        Key("Rapikan") {
+            val berubah = onRapikan()
+            if (berubah) onSave()
+        }
         Key("Simpan") { onSave() }
         Key("Build") { onBuild() }
         Text(

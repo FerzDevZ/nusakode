@@ -40,6 +40,11 @@ templates = pathlib.Path(sys.argv[1])
 kerja = pathlib.Path(sys.argv[2])
 index = json.loads((templates / "index.json").read_text())
 for entry in index["templates"]:
+    # Template web-murni tidak punya APK (tidak ada manifest, tidak ada Java) — dilewati,
+    # bukan dihitung gagal. Kualitasnya dijaga oleh uji SitusPwa di core/build.
+    if entry.get("jenis") == "web-murni":
+        print(f"lewati (web-murni, tanpa APK): {entry['id']}")
+        continue
     app_id = f"id.kodenusa.{entry['id'].replace('-', '')}"
     target = kerja / entry["id"]
     for relative in entry["files"]:
@@ -74,4 +79,6 @@ done
 
 echo
 echo "HASIL TEMPLATE: $lulus lulus, $gagal gagal"
-[[ "$lulus" -eq 3 && "$gagal" -eq 0 ]]
+# Jumlah template dibaca dari index.json supaya menambah template tidak lupa mengubah skrip.
+jumlah="$(python3 -c "import json; ts=json.load(open('$TEMPLATE/index.json'))['templates']; print(len([t for t in ts if t.get('jenis') != 'web-murni']))")"
+[[ "$lulus" -eq "$jumlah" && "$gagal" -eq 0 ]]

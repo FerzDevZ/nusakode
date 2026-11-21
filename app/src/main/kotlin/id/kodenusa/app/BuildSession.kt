@@ -38,6 +38,8 @@ class BuildSession(
     private val scope: CoroutineScope,
     /** Batas baris log; diturunkan di mode hemat supaya RAM tidak habis untuk teks. */
     private val batasLog: Int = MAX_LOG_LINES,
+    /** Riwayat build (docs/13 C3); boleh null supaya uji unit tetap ringan. */
+    private val riwayatBuild: RiwayatBuild? = null,
 ) {
 
     var state: BuildUiState = BuildUiState()
@@ -50,6 +52,9 @@ class BuildSession(
 
     private var job: Job? = null
 
+    /** Nama projek yang sedang dibangun; dipakai untuk mencatat riwayat build. */
+    private var projekAktif: String? = null
+
     fun start(engine: () -> Result<id.kodenusa.core.build.BuildEngine>, loaded: LoadedProject) {
         val config = loaded.config
         if (config == null) {
@@ -58,6 +63,7 @@ class BuildSession(
         }
         job?.cancel()
         state = BuildUiState(running = true)
+        projekAktif = config.appName
         job = scope.launch {
             val built = engine()
             val buildEngine = built.getOrElse { error ->
@@ -99,13 +105,26 @@ class BuildSession(
 
             is BuildEvent.Artifact -> Unit
 
-            is BuildEvent.Finished -> state = state.copy(
-                running = false,
-                currentStep = null,
-                completedSteps = state.completedSteps + event.result.stepsExecuted,
-                result = event.result,
-                log = (state.log + ringkasan(event.result)).takeLast(batasLog),
-            )
+            is BuildEvent.Finished -> {
+                state = state.copy(
+                    running = false,
+                    currentStep = null,
+                    completedSteps = state.completedSteps + event.result.stepsExecuted,
+                    result = event.result,
+                    log = (state.log + ringkasan(event.result)).takeLast(batasLog),
+                )
+                // docs/13 C3: catat setiap build yang tuntas (sukses maupun gagal) beserta
+                // ukuran APK-nya, supaya riwayat tetap terlihat setelah layar ditutup.
+                val projek = projekAktif
+                if (riwayatBuild != null && projek != null) {
+                    riwayatBuild.catat(
+                        projek,
+                        event.result.success,
+                        event.result.apk?.length(),
+                        event.result.durationMs,
+                    )
+                }
+            }
         }
     }
 

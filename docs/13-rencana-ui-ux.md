@@ -1,6 +1,6 @@
 # 13 — Rencana UI/UX & Polesan Desain (v0.16.0+)
 
-**Tanggal:** 21 November 2026 · **Status:** draf untuk disetujui
+**Tanggal:** 21 November 2026 · **Status:** tuntas di v0.16.0 — semua paket A, B, dan C terlaksana (lihat catatan rilis)
 **Dasar:** audit visual nyata (screenshot + pengukuran DOM di emulator API 35), `DESIGN.md`
 (bengkel kode), skills `make-interfaces-feel-better`, `design-minimal-sleek-linear`,
 `antislop-ui`, `accessibility`, dan agents `@design-director`, `@design-architect`,

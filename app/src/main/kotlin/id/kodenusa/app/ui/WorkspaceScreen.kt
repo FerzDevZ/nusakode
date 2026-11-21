@@ -39,6 +39,7 @@ import id.kodenusa.app.ProjectArchive
 import id.kodenusa.app.ProjectSummary
 import id.kodenusa.ui.EmptyState
 import id.kodenusa.ui.GhostButton
+import id.kodenusa.ui.angkaTabular
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
 import id.kodenusa.ui.Pill
@@ -143,41 +144,85 @@ fun WorkspaceScreen(
             )
             Spacer(Modifier.height(16.dp))
 
-            // Laporan galat dari proses yang mati sebelumnya. Ditempatkan paling atas supaya
-            // terlihat sebelum pengguna mulai bekerja, dan hilang begitu dihapus.
-            LaporanGalatCard(onHapus = { refresh += 1 })
+            Spacer(Modifier.height(16.dp))
 
-            if (projects.isEmpty()) {
-                // Keadaan kosong mendapat panggung utama: CTA besar di tengah, tanpa pesaing.
-                Panel(Modifier.fillMaxWidth()) {
-                    EmptyState(
-                        title = "Belum ada projek",
-                        body = "Mulai dari template kasir, katalog, atau aplikasi halo dunia. Tidak perlu koneksi internet.",
-                        action = { PrimaryButton("Buat projek pertama", onNewProject) },
+            // Penjelasan jujur kenapa TIDAK ada dialog izin penyimpanan saat aplikasi dibuka.
+            // Pengguna Android biasa mengharapkan dialog "izinkan akses penyimpanan" dan menganggap
+            // aplikasinya rusak bila tidak muncul (laporan dari Samsung A17 5G, Android 15).
+            // Ini keputusan desain ADR-022: SAF butuh nol izin, dan itu justru lebih aman.
+            // DULU ada dua tempat yang menjelaskan hal yang sama (kartu ini + teks redup di bawah
+            // tombol impor) — kini satu sumber saja supaya layar tidak boros ruang.
+            Panel(Modifier.fillMaxWidth().testTag("info-tanpa-izin")) {
+                // Panel adalah Box: tanpa Column, judul dan isi menumpuk di titik yang sama
+                // (bug yang sama dengan ProjectRow — ditemukan lewat screenshot + bounds v0.16).
+                Column {
+                    Text(
+                        "Tidak ada dialog izin penyimpanan? Itu memang disengaja.",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = Kode.text,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Projek disimpan di folder privat aplikasi, jadi tidak butuh izin apa pun. " +
+                            "Berkas masuk dan keluar lewat pemilih berkas Android (Impor .zip, Ekspor, " +
+                            "Foto) — Anda yang memilih berkas mana yang dibuka, bukan aplikasi. " +
+                            "Lebih aman dan tetap bekerja di semua Android.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Kode.textDim,
                     )
                 }
             }
 
             Spacer(Modifier.height(16.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Peluncur pemilih berkas TIDAK dipanggil langsung di dalam onClick: di Android 11+,
-                // peluncuran intent di tengah pembongkaran koneksi aksesibilitas Compose membuat
-                // main thread menunggu Binder dan berakhir ANR ("KodeNusa isn't responding").
-                // Bendera state dipakai supaya peluncuran terjadi setelah bingkai ini selesai.
-                GhostButton(
-                    "Impor .zip",
-                    { mintaImpor = true },
-                    Modifier.testTag("impor-zip"),
-                )
-                GhostButton("Dari GitHub", { klon = true }, Modifier.testTag("buka-klon"))
+
+            // Laporan galat dari proses yang mati sebelumnya. Ditempatkan paling atas supaya
+            // terlihat sebelum pengguna mulai bekerja, dan hilang begitu dihapus.
+            LaporanGalatCard(onHapus = { refresh += 1 })
+
+            if (projects.isEmpty()) {
+                // Keadaan kosong mendapat panggung utama — dan TIDAK meninggalkan paruh bawah layar
+                // menggantung: aksi sekunder (impor, GitHub) ikut dikelompokkan di dalam panel kosong
+                // supaya semua jalan masuk terlihat dalam satu pandangan (temuan audit v0.16).
+                Panel(Modifier.fillMaxWidth()) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        EmptyState(
+                            title = "Belum ada projek",
+                            body = "Mulai dari template kasir, katalog, atau aplikasi halo dunia. Tidak perlu koneksi internet.",
+                            action = { PrimaryButton("Buat projek pertama", onNewProject) },
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Peluncur pemilih berkas TIDAK dipanggil langsung di dalam onClick: di
+                            // Android 11+, peluncuran intent di tengah pembongkaran koneksi aksesibilitas
+                            // Compose membuat main thread menunggu Binder dan berakhir ANR. Bendera
+                            // state dipakai supaya peluncuran terjadi setelah bingkai ini selesai.
+                            GhostButton(
+                                "Impor .zip",
+                                { mintaImpor = true },
+                                Modifier.testTag("impor-zip"),
+                            )
+                            GhostButton("Dari GitHub", { klon = true }, Modifier.testTag("buka-klon"))
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            if (projects.isNotEmpty()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    GhostButton(
+                        "Impor .zip",
+                        { mintaImpor = true },
+                        Modifier.testTag("impor-zip"),
+                    )
+                    GhostButton("Dari GitHub", { klon = true }, Modifier.testTag("buka-klon"))
+                }
             }
             Spacer(Modifier.height(8.dp))
             Text(
-                "Ekspor projek ada di menu ⋯ pada tiap baris. Tidak perlu izin penyimpanan: berkas " +
-                    "diakses lewat pemilih bawaan Android.",
+                "Ekspor projek ada di menu ⋯ pada tiap baris.",
                 style = MaterialTheme.typography.labelSmall,
                 color = Kode.textDim,
-                modifier = Modifier.testTag("catatan-izin"),
             )
             pesan?.let { teks ->
                 Spacer(Modifier.height(6.dp))
@@ -262,14 +307,26 @@ fun WorkspaceScreen(
 @Composable
 private fun ProjectRow(project: ProjectSummary, onClick: () -> Unit, onDelete: () -> Unit, onExport: () -> Unit) {
     Panel(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        // Panel adalah Box: TANPA Column di sini, ketiga baris di bawah saling menumpuk di titik
+        // yang sama (bug nyata yang ditemukan uji perangkat v0.16 — nama projek jadi kacau dan
+        // klik mendarat di tombol Ekspor).
         Column {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(
-                    project.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Kode.text,
-                    modifier = Modifier.weight(1f),
-                )
+            // Baris asimetris ala DESIGN.md §10: identitas di kiri, status + metadata nyata di kanan.
+            // Dulu semua metadata menumpuk di kiri sehingga kanan kartu kosong; kini kanan membawa
+            // angka yang dipakai untuk memutuskan projek mana yang dibuka.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        project.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Kode.text,
+                    )
+                    Text(
+                        project.applicationId,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Kode.textDim,
+                    )
+                }
                 if (project.buildable) {
                     Pill("siap build", Kode.ok)
                 } else {
@@ -277,17 +334,18 @@ private fun ProjectRow(project: ProjectSummary, onClick: () -> Unit, onDelete: (
                 }
             }
             Spacer(Modifier.height(6.dp))
-            Text(
-                project.applicationId,
-                style = MaterialTheme.typography.bodySmall,
-                color = Kode.textDim,
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                "Terakhir dibuka ${tanggal(project.lastOpened)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = Kode.textDim,
-            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(
+                    "${project.jumlahBerkas} berkas · ${ringkasByte(project.ukuranBytes)}",
+                    style = MaterialTheme.typography.bodySmall.angkaTabular(),
+                    color = Kode.textDim,
+                )
+                Text(
+                    "Dibuka ${tanggal(project.lastOpened)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Kode.textDim,
+                )
+            }
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 GhostButton("Ekspor .zip", onExport, Modifier.testTag("ekspor-${project.name}"))
@@ -295,6 +353,13 @@ private fun ProjectRow(project: ProjectSummary, onClick: () -> Unit, onDelete: (
             }
         }
     }
+}
+
+/** Ringkasan ukuran untuk metadata baris: byte → KB/MB dengan satu desimal. */
+private fun ringkasByte(byte: Long): String = when {
+    byte >= 1_048_576 -> String.format(Locale("in", "ID"), "%.1f MB", byte / 1_048_576.0)
+    byte >= 1_024 -> String.format(Locale("in", "ID"), "%.0f KB", byte / 1_024.0)
+    else -> "$byte B"
 }
 
 private fun tanggal(millis: Long): String =

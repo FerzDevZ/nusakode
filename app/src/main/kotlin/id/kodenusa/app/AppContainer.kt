@@ -32,6 +32,9 @@ class AppContainer(context: Context) {
     /** Riwayat tulisan AI per projek, bisa dibuka ulang dari layar AI. */
     val riwayatAgen = RiwayatAgen(File(context.filesDir, "riwayat-agen"))
 
+    /** Riwayat build per projek (docs/13 C3): waktu, sukses, ukuran APK, durasi. */
+    val riwayatBuild = RiwayatBuild(File(context.filesDir, "riwayat-build"))
+
     fun newEngine(toolchain: Toolchain): BuildEngine = Tier0BuildEngine(toolchain)
 
     private companion object {

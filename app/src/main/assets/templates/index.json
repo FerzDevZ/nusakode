@@ -45,6 +45,36 @@
       ]
     },
     {
+      "id": "absensi-kelas",
+      "title": "Absensi Kelas",
+      "tagline": "Catat hadir atau tidaknya siswa per hari, lengkap dengan rekap angka. Data tersimpan di HP.",
+      "audience": "guru dan pengajar bimbel",
+      "jenis": "aplikasi",
+      "files": [
+        "kodenusa.json",
+        "src/main/AndroidManifest.xml",
+        "src/main/java/app/MainActivity.java",
+        "src/main/java/app/DatabaseAbsensi.java",
+        "src/main/res/layout/activity_main.xml",
+        "src/main/res/values/strings.xml"
+      ]
+    },
+    {
+      "id": "laporan-warung",
+      "title": "Laporan Warung",
+      "tagline": "Catat uang masuk dan keluar tiap hari, lihat total dan sisa secara langsung. Tanpa internet.",
+      "audience": "pemilik warung yang ingin pembukuan sederhana",
+      "jenis": "aplikasi",
+      "files": [
+        "kodenusa.json",
+        "src/main/AndroidManifest.xml",
+        "src/main/java/app/MainActivity.java",
+        "src/main/java/app/DatabaseLaporan.java",
+        "src/main/res/layout/activity_main.xml",
+        "src/main/res/values/strings.xml"
+      ]
+    },
+    {
       "id": "situs-murni",
       "title": "Situs murni (tanpa APK)",
       "tagline": "HTML, CSS, JavaScript saja. Hasilnya situs yang bisa dibuka siapa pun lewat tautan — tanpa memasang aplikasi.",

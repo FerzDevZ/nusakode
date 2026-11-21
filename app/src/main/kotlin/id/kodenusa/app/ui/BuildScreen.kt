@@ -44,6 +44,7 @@ import id.kodenusa.core.build.Severity
 import id.kodenusa.core.project.ProjectLoader
 import id.kodenusa.ui.CodeTextStyle
 import id.kodenusa.ui.GhostButton
+import id.kodenusa.ui.angkaTabular
 import id.kodenusa.ui.KodenusaPalette
 import id.kodenusa.ui.Panel
 import id.kodenusa.ui.Pill
@@ -66,17 +67,32 @@ fun BuildScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val batasHemat = remember(context) { ModeHemat.untukKonteks(context) }
-    val session = remember(projectDir, batasHemat.batasLog) { BuildSession(scope, batasHemat.batasLog) }
+    val session = remember(projectDir, batasHemat.batasLog) {
+        BuildSession(scope, batasHemat.batasLog, container.riwayatBuild)
+    }
     var ukuranBuild by remember(projectDir) { mutableStateOf(PenyimpananProjek.ukuranBuild(projectDir)) }
     var pesanBersih by remember(projectDir) { mutableStateOf<String?>(null) }
     var state by remember { mutableStateOf(BuildUiState()) }
     var setupMessage by remember { mutableStateOf<String?>(null) }
     var aiTerbuka by remember { mutableStateOf(false) }
+    var namaProjek by remember { mutableStateOf("") }
 
     session.onChange = { state = it }
 
+    // Haptic satu kali saat build tuntas sukses (DESIGN.md §6) — bukan berulang, bukan saat gagal.
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    var hapticTerakhir by remember { mutableStateOf<Any?>(null) }
+    LaunchedEffect(state.result) {
+        val hasil = state.result ?: return@LaunchedEffect
+        if (hasil.success && hapticTerakhir !== hasil) {
+            hapticTerakhir = hasil
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+        }
+    }
+
     LaunchedEffect(projectDir) {
         val loaded = ProjectLoader.load(projectDir)
+        namaProjek = loaded.config?.appName ?: projectDir.name
         if (!loaded.isBuildable) {
             setupMessage = container.projectStore.issuesText(loaded)
             return@LaunchedEffect
@@ -164,7 +180,7 @@ fun BuildScreen(
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 PenyimpananProjek.ringkasByte(ukuranBuild) + " di folder build/",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodySmall.angkaTabular(),
                                 color = Kode.textDim,
                                 modifier = Modifier.testTag("ukuran-build"),
                             )
@@ -207,6 +223,37 @@ fun BuildScreen(
             }
 
             StepsPanel(state)
+
+            // Riwayat build (docs/13 C3): 10 build terakhir per projek, dengan ukuran APK.
+            // Muat dari disk saat komposisi — berkasnya kecil (maks 10 catatan) jadi tidak perlu
+            // state reaktif; daftar hanya berubah setelah build berikutnya.
+            val riwayat = remember(projectDir) { container.riwayatBuild.muat(namaProjek) }
+            if (riwayat.isNotEmpty()) {
+                Panel(Modifier.fillMaxWidth().testTag("riwayat-build")) {
+                    Column {
+                        Text("Riwayat build", style = MaterialTheme.typography.titleMedium, color = Kode.text)
+                        Spacer(Modifier.height(6.dp))
+                        riwayat.take(5).forEach { catatan ->
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(
+                                    (if (catatan.sukses) "✓ " else "✗ ") +
+                                        PenyimpananProjek.waktuPendek(catatan.waktu),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (catatan.sukses) Kode.ok else Kode.error,
+                                )
+                                Text(
+                                    catatan.ukuranApk?.let { PenyimpananProjek.ringkasByte(it) } ?: "—",
+                                    style = MaterialTheme.typography.bodySmall.angkaTabular(),
+                                    color = Kode.textDim,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
 
             if (state.log.isNotEmpty()) {
                 LogPanel(state.log)
@@ -255,7 +302,7 @@ fun BuildScreen(
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "${apk.name} · ${ukuran(apk.length())}",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodySmall.angkaTabular(),
                             color = Kode.textDim,
                         )
                         Spacer(Modifier.height(10.dp))

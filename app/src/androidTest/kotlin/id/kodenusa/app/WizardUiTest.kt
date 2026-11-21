@@ -56,6 +56,15 @@ class WizardUiTest {
     }
 
     @Test
+    fun penjelasan_tanpa_izin_tampil_di_layar_awal() {
+        // Laporan pengguna (Samsung A17 5G, Android 15): "kok tidak ada dialog izin penyimpanan,
+        // aneh". Itu memang disengaja (ADR-022) — tapi harus dijelaskan di dalam aplikasi, bukan
+        // cuma di README, supaya pengguna Android 10+ tidak mengira aplikasinya rusak.
+        layar.onNodeWithTag("info-tanpa-izin").assertExists()
+        layar.onNodeWithText("Tidak ada dialog izin penyimpanan? Itu memang disengaja.").assertExists()
+    }
+
+    @Test
     fun template_tampil_dan_tombol_buat_projek_bisa_ditekan() {
         bukaFormProjekBaru()
 

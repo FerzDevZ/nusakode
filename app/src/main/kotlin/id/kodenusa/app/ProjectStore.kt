@@ -12,6 +12,10 @@ data class ProjectSummary(
     val applicationId: String,
     val lastOpened: Long,
     val buildable: Boolean,
+    /** Jumlah berkas di dalam projek — metadata nyata untuk baris daftar, bukan angka karangan. */
+    val jumlahBerkas: Int = 0,
+    /** Ukuran total folder projek dalam byte — dipakai metadata baris daftar. */
+    val ukuranBytes: Long = 0,
 )
 
 /**
@@ -26,12 +30,15 @@ class ProjectStore(private val root: File) {
         .mapNotNull { dir ->
             val loaded = ProjectLoader.load(dir)
             val project = loaded.project ?: return@mapNotNull null
+            val isi = dir.walkTopDown().filter { it.isFile }.toList()
             ProjectSummary(
                 dir = dir,
                 name = project.name,
                 applicationId = project.applicationId,
                 lastOpened = dir.lastModified(),
                 buildable = loaded.isBuildable,
+                jumlahBerkas = isi.size,
+                ukuranBytes = isi.sumOf { it.length() },
             )
         }
         .sortedByDescending { it.lastOpened }

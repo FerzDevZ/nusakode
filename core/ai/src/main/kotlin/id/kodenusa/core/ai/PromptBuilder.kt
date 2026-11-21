@@ -12,6 +12,9 @@ object PromptBuilder {
     /** Batas aman isi berkas yang dikirim; sisanya dipotong dengan penanda yang jelas. */
     const val BATAS_KONTEKS = 5_000
 
+    /** Batas saat mode hemat kuota (docs/13 C5): setengah ukuran normal. */
+    const val BATAS_KONTEKS_HEMAT = 2_500
+
     const val SISTEM: String = "Kamu asisten koding di dalam KodeNusa, IDE Android untuk HP kelas " +
         "bawah di Indonesia. Pengguna memegang HP, bukan komputer, jadi jawaban harus bisa langsung " +
         "dipakai.\n\n" +
@@ -44,10 +47,15 @@ object PromptBuilder {
     }
 
     /** Menjelaskan atau mengubah satu berkas. */
-    fun untukBerkas(permintaan: String, jalur: String, isiBerkas: String): List<ChatMessage> = buildList {
+    fun untukBerkas(
+        permintaan: String,
+        jalur: String,
+        isiBerkas: String,
+        hemat: Boolean = false,
+    ): List<ChatMessage> = buildList {
         add(pesanSistem())
         val konteks = StringBuilder("Berkas: ").append(jalur).append("\n```\n")
-        konteks.append(potong(isiBerkas, BATAS_KONTEKS)).append("\n```\n\n")
+        konteks.append(potong(isiBerkas, if (hemat) BATAS_KONTEKS_HEMAT else BATAS_KONTEKS)).append("\n```\n\n")
         konteks.append("Permintaan pengguna: ").append(permintaan.trim())
         add(ChatMessage(ChatMessage.Peran.PENGGUNA, konteks.toString()))
     }
@@ -59,12 +67,16 @@ object PromptBuilder {
     fun untukBerkasSematan(
         permintaan: String,
         berkas: List<Pair<String, String>>,
+        hemat: Boolean = false,
     ): List<ChatMessage> = buildList {
         add(pesanSistem())
+        // Mode hemat kuota: maksimal 2 berkas disematkan (docs/13 C5) — kuota terbatas lebih
+        // penting daripada konteks berkas ketiga yang mungkin tidak dipakai model.
+        val batasJumlah = if (hemat) 2 else 3
         val konteks = StringBuilder("Berkas yang disematkan pengguna (isi utuh):\n")
-        berkas.forEach { (jalur, isi) ->
+        berkas.take(batasJumlah).forEach { (jalur, isi) ->
             konteks.append("\n--- ").append(jalur).append(" ---\n")
-            konteks.append(potong(isi, BATAS_KONTEKS)).append('\n')
+            konteks.append(potong(isi, if (hemat) BATAS_KONTEKS_HEMAT else BATAS_KONTEKS)).append('\n')
         }
         konteks.append("\nPermintaan pengguna: ").append(permintaan.trim())
         add(ChatMessage(ChatMessage.Peran.PENGGUNA, konteks.toString()))
@@ -82,13 +94,14 @@ object PromptBuilder {
         konteksProjek: String,
         galatSebelumnya: String,
         templat: String? = null,
+        hemat: Boolean = false,
     ): List<ChatMessage> =
         buildList {
             add(pesanSistem())
             add(ChatMessage(ChatMessage.Peran.SISTEM, ATURAN_AGEN))
             val isi = StringBuilder("Tugas dari pengguna:\n")
             isi.append(tugas.trim()).append("\n\nKeadaan projek sekarang:\n")
-            isi.append(potong(konteksProjek, BATAS_KONTEKS))
+            isi.append(potong(konteksProjek, if (hemat) BATAS_KONTEKS_HEMAT else BATAS_KONTEKS))
             // Struktur tipikal template membantu model mengikuti pola kelas yang sudah ada
             // (saran #7 di docs/12) — tanpa ini model menebak struktur dari nama berkas saja.
             if (templat != null) isi.append("\n\n").append(templat)
@@ -118,6 +131,16 @@ object PromptBuilder {
         "katalog-whatsapp" ->
             "Struktur template katalog-whatsapp: MainActivity.java (layar daftar katalog) dan layout " +
                 "res/layout/activity_main.xml. Ikuti pola yang sudah ada."
+        "absensi-kelas" ->
+            "Struktur template absensi-kelas: MainActivity.java (layar absensi), DatabaseAbsensi.java " +
+                "(SQLiteOpenHelper dengan tabel absensi: nama, hadir, waktu), dan layout " +
+                "res/layout/activity_main.xml. Ikuti pola kelas yang sudah ada — jangan membuat " +
+                "basis data baru kalau bisa memakai DatabaseAbsensi."
+        "laporan-warung" ->
+            "Struktur template laporan-warung: MainActivity.java (layar catatan uang masuk/keluar), " +
+                "DatabaseLaporan.java (SQLiteOpenHelper dengan tabel catatan: keterangan, jumlah, " +
+                "masuk, waktu), dan layout res/layout/activity_main.xml. Ikuti pola kelas yang " +
+                "sudah ada — jangan membuat basis data baru kalau bisa memakai DatabaseLaporan."
         "web-katalog" ->
             "Struktur template web-katalog: WebView di src/main/java/app/MainActivity.java memuat " +
                 "halaman di src/main/assets/ (index.html, gaya.css, aplikasi.js). Ubah isi web di " +

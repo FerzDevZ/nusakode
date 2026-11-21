@@ -79,6 +79,23 @@ Sama seperti `.py`: saat pengguna membuka `.kt`, jelaskan bahwa Tier 0 hanya Jav
 Rencana v0.12 dan kandidat setelahnya disusun terpisah: lihat [`11-rencana-v0.12.md`](11-rencana-v0.12.md).
 
 
+## v0.16.0 — polesan UI/UX penuh & template baru (21 November 2026)
+
+Semua paket dari [`13-rencana-ui-ux.md`](13-rencana-ui-ux.md) terlaksana:
+
+- **Paket A**: sentuhan lebih hidup (tombol mengecil 0,96× saat ditekan, getar sekali saat build
+  sukses), angka pakai font tabel (tnum) agar tidak "menari", titik status build ala Linear.
+- **Paket B**: baris projek asimetris (nama kiri, status kanan, aksi di bawah), fokus ring untuk
+  keyboard/OTG, pesan AI bertata letak (kirim kanan, balasan kiri dengan garis aksen).
+- **Paket C**: pencarian lintas berkas (sudah ada, diverifikasi), tombol **Rapikan** indentasi
+  konservatif (hanya spasi depan; Python/Markdown tak disentuh), **riwayat build** per projek
+  (10 terakhir, JSON di penyimpanan privat), **mode hemat kuota** AI (opsi, bawaan mati), dan dua
+  template baru: **absensi-kelas** & **laporan-warung** — total 7 template, semuanya dibuktikan
+  terbangun jadi APK bertanda tangan oleh `scripts/prove/build-templates.sh` (6/6, web-murni
+  dilewati karena memang tanpa APK).
+- **Perbaikan bug nyata dari audit perangkat**: kartu penjelasan izin dan baris projek menumpuk
+  karena `Panel` adalah `Box` — kini dibungkus `Column` (terverifikasi lewat bounds uiautomator).
+
 ## v0.15.0 — riwayat agen & prompt tahu template projek (20 November 2026)
 
 Dua saran terakhir dari [`12-saran-ui-ux-ai.md`](12-saran-ui-ux-ai.md) — daftar saran kini tuntas:

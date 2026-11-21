@@ -78,8 +78,9 @@ class BerkasHpUiTest {
 
     @Test
     fun layar_projek_menjelaskan_bahwa_tidak_perlu_izin() {
-        layar.onNodeWithTag("catatan-izin").assertExists()
-        layar.onNodeWithText("Tidak perlu izin penyimpanan", substring = true).assertExists()
+        // Sejak v0.16 kartu penjelasan memakai tag info-tanpa-izin (dokumen docs/13 A1).
+        layar.onNodeWithTag("info-tanpa-izin").assertExists()
+        layar.onNodeWithText("memang disengaja", substring = true).assertExists()
     }
 
     @Test
