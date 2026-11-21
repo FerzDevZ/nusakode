@@ -74,4 +74,16 @@ class AgenUiTest {
         }
         layar.onNodeWithTag("mulai-agen").performScrollTo().assertIsEnabled()
     }
+
+    @Test
+    fun pemilih_putaran_dan_estimasi_karakter_tampil() {
+        val projek = projek()
+        konten(projek)
+
+        // SegmentedControl batas putaran: dua pilihan, bawaan 3.
+        layar.onNodeWithTag("putaran-agen-0").performScrollTo().assertExists()
+        layar.onNodeWithTag("putaran-agen-1").assertExists()
+        // Estimasi karakter dihitung dari konteks projek sungguhan, bukan angka mati.
+        layar.onNodeWithTag("estimasi-karakter").assertExists()
+    }
 }

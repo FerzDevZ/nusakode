@@ -56,6 +56,14 @@ class AiSettingsStore(
         prefs.edit().putString(KUNCI_MODEL, id).apply()
     }
 
+    /** Alamat galeri komunitas terakhir (docs/14 4.4) — bukan rahasia, cukup prefs biasa. */
+    fun muatGaleriUrl(): String =
+        prefs.getString(KUNCI_GALERI, GALERI_BAWAAN).orEmpty().ifBlank { GALERI_BAWAAN }
+
+    fun simpanGaleriUrl(url: String) {
+        prefs.edit().putString(KUNCI_GALERI, url.trim()).apply()
+    }
+
     /** Daftar model terakhir, disimpan supaya layar AI tidak kosong saat dibuka tanpa internet. */
     fun simpanModel(model: List<AiModel>) {
         prefs.edit()
@@ -145,6 +153,11 @@ class AiSettingsStore(
         const val KUNCI_DAFTAR = "daftar_model"
         const val KUNCI_PERCAKAPAN = "percakapan_"
         const val KUNCI_KARAKTER = "karakter_"
+        const val KUNCI_GALERI = "galeri_url"
+
+        /** Alamat daftar galeri bawaan: berkas di repo KodeNusa sendiri (ADR-001, tanpa server). */
+        const val GALERI_BAWAAN =
+            "https://raw.githubusercontent.com/FerzDevZ/nusakode/main/galeri/galeri.json"
         const val KUNCI_HEMAT_KUOTA = "hemat_kuota"
     }
 }

@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.18.0** (`versionCode 30`) · **404 uji unit · 127 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.19.0** (`versionCode 31`) · **312 uji unit · 127 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -131,6 +131,8 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | **Indikator karakter terkirim ke endpoint AI** | ✅ | "terkirim: N karakter ke endpoint" (`indikator-karakter`), dihitung per projek via `AiSettingsStore.tambahKarakter`, di-nol-kan lewat "Bersihkan" |
 | **Riwayat tulisan AI yang bisa dibuka ulang** (tugas → berkas berubah) | ✅ | `RiwayatAgen.kt` (`filesDir/riwayat-agen/`, maks 20 catatan per projek, JSON); dialog "Riwayat tulisan AI" (`riwayat-ai`), berkas bisa diketuk untuk dibuka di editor; jalur Simpan & Sisip sama-sama tercatat. Uji: `RiwayatAgenTest` (5 uji), `AiUiTest.tombol_riwayat_membuka_dialog_dengan_pesan_jujur_ketua_kosong` |
 | **Prompt agen tahu struktur tipikal template projek** | ✅ | `PromptBuilder.templatProjek(id)` — kasir-warung menyebut DatabaseKasir/Produk, web-katalog menyebut assets, dst.; template tak dikenal → `null` (tidak mengarang). Uji: 3 uji baru di `PromptBuilderTest` |
+| **"Template saya" — scaffold projek dari deskripsi AI** (docs/14 4.3) | ✅ | `TemplateSaya.kt` (`filesDir/template-saya/`): simpan menolak template setengah jadi (wajib `kodenusa.json` sah + manifest + MainActivity), jalur `../`/absolut ditolak; wizard menampilkan template pengguna + tombol `buka-scaffold` → dialog pratinjau ADR-038 → simpan → langsung muncul di daftar. Uji: `TemplateSayaTest` (9 uji), `PromptBuilderTest.scaffold_menyuruh_format_berkas_dan_penanda_wajib` |
+| **Galeri template komunitas** (docs/14 4.4, opsional online) | ✅ | `GaleriTemplate.kt` (core/project): unduh `galeri.json` dari GitHub raw pilihan pengguna, tiap zip diverifikasi ukuran + SHA-256 sebelum dibuka, zip-slip ditolak; tanpa jaringan = pesan jujur, daftar bawaan tetap jalan. Uji: `GaleriTemplateTest` (6 uji) |
 
 **Bukti ke endpoint sungguhan** (dijalankan terhadap endpoint milik pengguna):
 model terbaca `zai-org/GLM-5.3-Flash`, `deepseek-ai/DeepSeek-V4-Flash-0731`, `MiniMaxAI/MiniMax-M2.7`;
@@ -148,7 +150,8 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | Baca balasan model menjadi banyak berkas (`<<<BERKAS: jalur>>>`) | ✅ | `UbahanBerkasTest` (6 uji) |
 | Tolak jalur berbahaya dari model (absolut, `..`, `~`) | ✅ | `UbahanBerkas.rapikanJalur` + uji |
 | Loop tugas → ubah berkas → build → galat dikirim balik ke model | ✅ | `AgenBuildTest` (5 uji) |
-| Batas keras 3 putaran (jangan bakar kuota pengguna) | ✅ | `AgenBuildTest.berhenti_setelah_batas_putaran…` |
+| Batas keras 3 putaran (jangan bakar kuota pengguna) | ✅ | `AgenBuildTest.berhenti_setelah_batas_putaran…`; **v0.19: pilihan 3/5 putaran di layar Agen** (`putaran-agen` SegmentedControl) + estimasi karakter terkirim sebelum mulai (`estimasi-karakter`, dihitung dari konteks projek sungguhan × putaran) |
+| **Evaluasi agen 10 tugas dengan model nyata** | ✅ | `EvalAgenTest` (`AI_EVAL=1`): **9/10 LULUS, median 18,6–41,8 s** (2 putaran, 21 Nov 2026, `zai-org/GLM-5.3-Flash`); 1 gagal-penyedia 503 dicatat terpisah — lihat `docs/07-eval-agen.md` |
 | Build tidak dijalankan bila tak ada berkas tertulis | ✅ | `AgenBuildTest.build_tidak_dijalankan_bila_semua_berkas_ditolak…` |
 | **Layar "Minta AI buatkan…"** dengan log per putaran & tombol Hentikan | ✅ | `AgenUiTest` (2 uji: terkunci tanpa kunci AI, aktif setelah kunci + tugas) |
 | **Papan tulis projek nyata**: ringkasan ≤ 2,4 KB, tulis berkas lewat penjaga jalur | ✅ | `AiProjectBoardTest` (6 uji: jalur luar projek, biner, batas ukuran) |
@@ -225,7 +228,7 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 
 | Fitur | Status | Bukti |
 |---|---|---|
-| Uji unit | ✅ | 404 uji (`./gradlew test`) |
+| Uji unit | ✅ | 312 uji unik (`./gradlew test`; varian debug — debug+release menghitung ganda) |
 | Uji di perangkat | ✅ | 127 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
 | Analisis statis detekt, 0 temuan | ✅ | `./gradlew detekt` |
 | CI menjalankan gerbang yang sama | ✅ | `.github/workflows/ci.yml` |

@@ -234,3 +234,20 @@ fun templat_baru_v0_16_dikenali() {
     assertTrue(PromptBuilder.templatProjek("absensi-kelas")!!.contains("DatabaseAbsensi"))
     assertTrue(PromptBuilder.templatProjek("laporan-warung")!!.contains("DatabaseLaporan"))
 }
+
+@Test
+fun scaffold_menyuruh_format_berkas_dan_penanda_wajib() {
+    val pesan = PromptBuilder.untukScaffold("aplikasi pencatat utang")
+    // Pesan pengguna harus menyebut kelima berkas wajib + penanda pengganti nama.
+    val isi = pesan.last().isi
+    assertTrue(isi.contains("kodenusa.json"))
+    assertTrue(isi.contains("AndroidManifest.xml"))
+    assertTrue(isi.contains("MainActivity.java"))
+    assertTrue(isi.contains("__APP_NAME__"))
+    assertTrue(isi.contains("__APP_ID__"))
+    assertTrue(isi.contains("<<<BERKAS"))
+    // Deskripsi pengguna diteruskan apa adanya.
+    assertTrue(isi.contains("pencatat utang"))
+    // Aturan Tier 0 tetap dikirim lewat ATURAN_AGEN.
+    assertTrue(pesan.any { it.isi.contains("AndroidX") })
+}

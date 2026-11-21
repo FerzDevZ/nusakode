@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import id.kodenusa.app.AppContainer
 import id.kodenusa.app.IkonAplikasi
 import id.kodenusa.app.TemplateInfo
+import id.kodenusa.app.TemplateSaya
 import id.kodenusa.app.Templates
 import id.kodenusa.core.build.Severity
 import id.kodenusa.core.project.KodenusaProject
@@ -80,11 +81,20 @@ fun WizardScreen(
     val dimuat = remember { container.templates.load() }
     val templates = dimuat.getOrNull().orEmpty()
 
+    // "Template saya" (docs/14 4.3): dimuat ulang tiap kali dialog scaffold ditutup supaya
+    // template yang baru disimpan langsung muncul di daftar.
+    var daftarSaya by remember { mutableStateOf(container.templateSaya.list()) }
+    var tampilkanScaffold by remember { mutableStateOf(false) }
+    var pesanScaffold by remember { mutableStateOf<String?>(null) }
+    var tampilkanGaleri by remember { mutableStateOf(false) }
+    var pesanGaleri by remember { mutableStateOf<String?>(null) }
+    val semuaTemplate = templates + daftarSaya
+
     var jenis by remember { mutableStateOf(Jenis.APLIKASI) }
-    val pilihan = remember(templates, jenis) {
+    val pilihan = remember(semuaTemplate, jenis) {
         when (jenis) {
             Jenis.KOSONG -> listOf(TemplateInfoKosong)
-            else -> templates.filter { it.jenis == jenis.keyword }.ifEmpty {
+            else -> semuaTemplate.filter { it.jenis == jenis.keyword }.ifEmpty {
                 // Kalau aset tidak punya template bergaya itu, projek kosong tetap harus bisa dibuat.
                 listOf(TemplateInfoKosong)
             }
@@ -165,13 +175,23 @@ fun WizardScreen(
                                 failure = null
                                 scope.launch {
                                     val result = withContext(Dispatchers.IO) {
-                                        container.templates.create(
-                                            templateId = template.id,
-                                            target = container.projectStore.uniqueFolder(name.trim()),
-                                            appName = name.trim(),
-                                            appId = efektifId,
-                                            warnaIkon = if (jenis == Jenis.WEB) null else warnaIkon,
-                                        )
+                                        if (template.id.startsWith(TemplateSaya.PREFIKS)) {
+                                            container.templateSaya.create(
+                                                templateId = template.id,
+                                                target = container.projectStore.uniqueFolder(name.trim()),
+                                                appName = name.trim(),
+                                                appId = efektifId,
+                                                warnaIkon = if (jenis == Jenis.WEB) null else warnaIkon,
+                                            )
+                                        } else {
+                                            container.templates.create(
+                                                templateId = template.id,
+                                                target = container.projectStore.uniqueFolder(name.trim()),
+                                                appName = name.trim(),
+                                                appId = efektifId,
+                                                warnaIkon = if (jenis == Jenis.WEB) null else warnaIkon,
+                                            )
+                                        }
                                     }
                                     busy = false
                                     result.onSuccess(onCreated).onFailure { failure = it.message }
@@ -291,6 +311,51 @@ fun WizardScreen(
                 }
             }
 
+            // Pintu masuk scaffold AI (docs/14 4.3): tampil di semua jenis supaya mudah ditemukan;
+            // hasilnya selalu template aplikasi.
+            item {
+                GhostButton(
+                    "Buat template dengan AI",
+                    {
+                        pesanScaffold = null
+                        tampilkanScaffold = true
+                    },
+                    Modifier.fillMaxWidth().testTag("buka-scaffold"),
+                )
+            }
+            pesanScaffold?.let { pesan ->
+                item {
+                    Text(
+                        pesan,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Kode.ok,
+                        modifier = Modifier.testTag("pesan-scaffold"),
+                    )
+                }
+            }
+
+            // Galeri komunitas (docs/14 4.4): opsional online, tanpa jaringan daftar bawaan tetap jalan.
+            item {
+                GhostButton(
+                    "Galeri komunitas",
+                    {
+                        pesanGaleri = null
+                        tampilkanGaleri = true
+                    },
+                    Modifier.fillMaxWidth().testTag("buka-galeri"),
+                )
+            }
+            pesanGaleri?.let { pesan ->
+                item {
+                    Text(
+                        pesan,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Kode.ok,
+                        modifier = Modifier.testTag("pesan-galeri"),
+                    )
+                }
+            }
+
             item {
                 if (jenis == Jenis.WEB) {
                     Panel(Modifier.fillMaxWidth()) {
@@ -393,6 +458,51 @@ fun WizardScreen(
                         )
                     }
                 }
+            }
+        }
+    }
+
+    // Dialog scaffold AI (ADR-038): pratinjau dulu, simpan hanya setelah disetujui.
+    if (tampilkanScaffold) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { tampilkanScaffold = false }) {
+            Panel(Modifier.fillMaxWidth()) {
+                ScaffoldAiDialog(
+                    setelan = container.aiStore,
+                    templateSaya = container.templateSaya,
+                    scope = scope,
+                    onTutup = {
+                        tampilkanScaffold = false
+                        daftarSaya = container.templateSaya.list()
+                    },
+                    onTersimpan = { pesan ->
+                        tampilkanScaffold = false
+                        daftarSaya = container.templateSaya.list()
+                        pesanScaffold = pesan
+                    },
+                )
+            }
+        }
+    }
+
+    // Dialog galeri komunitas: unduhan diverifikasi SHA-256 sebelum pratinjau (docs/14 4.4).
+    if (tampilkanGaleri) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { tampilkanGaleri = false }) {
+            Panel(Modifier.fillMaxWidth()) {
+                GaleriDialog(
+                    templateSaya = container.templateSaya,
+                    urlTersimpan = container.aiStore.muatGaleriUrl(),
+                    onSimpanUrl = { container.aiStore.simpanGaleriUrl(it) },
+                    scope = scope,
+                    onTutup = {
+                        tampilkanGaleri = false
+                        daftarSaya = container.templateSaya.list()
+                    },
+                    onTersimpan = { pesan ->
+                        tampilkanGaleri = false
+                        daftarSaya = container.templateSaya.list()
+                        pesanGaleri = pesan
+                    },
+                )
             }
         }
     }

@@ -20,6 +20,9 @@ class AppContainer(context: Context) {
 
     val templates = Templates(context)
 
+    /** "Template saya": template buatan pengguna lewat AI (docs/14 4.3). */
+    val templateSaya = TemplateSaya(java.io.File(context.filesDir, "template-saya").apply { mkdirs() })
+
     /** Setelan endpoint + kunci AI milik pengguna (kosong = AI belum aktif). */
     val aiStore = AiSettingsStore(context)
 

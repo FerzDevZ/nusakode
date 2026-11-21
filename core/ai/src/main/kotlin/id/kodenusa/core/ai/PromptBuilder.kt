@@ -191,6 +191,38 @@ object PromptBuilder {
     )
 
     /**
+     * Prompt perancang template baru dari deskripsi pengguna (docs/14 4.3). Keluarannya dipakai
+     * sebagai berkas template di "template saya" — bukan projek langsung — supaya hasilnya
+     * melewati pratinjau tulis (ADR-038) dan diganti namanya saat dibuat.
+     */
+    fun untukScaffold(deskripsi: String): List<ChatMessage> = listOf(
+        pesanSistem(),
+        ChatMessage(ChatMessage.Peran.SISTEM, ATURAN_AGEN),
+        ChatMessage(
+            ChatMessage.Peran.PENGGUNA,
+            "Rancangkan SATU template aplikasi Android lengkap dari deskripsi ini:\n" +
+                deskripsi.trim() + "\n\n" +
+                "Wajib mengirim semua berkas berikut dengan penanda <<<BERKAS: ...>>> (isi lengkap):\n" +
+                "1. kodenusa.json — format persis seperti contoh ini, ganti nilai deskripsi saja:\n" +
+                "   {\"format\":1,\"name\":\"__APP_NAME__\",\"applicationId\":\"__APP_ID__\"," +
+                "\"versionName\":\"1.0.0\",\"versionCode\":1,\"minSdk\":24,\"targetSdk\":34," +
+                "\"javaVersion\":8,\"buildEngine\":\"tier0\"}\n" +
+                "2. src/main/AndroidManifest.xml — seperti template lain: package=\"app\", satu activity" +
+                " dengan android:name=\".MainActivity\" android:exported=\"true\".\n" +
+                "3. src/main/java/app/MainActivity.java — Activity biasa, setContentView(R.layout.activity_main).\n" +
+                "4. src/main/res/layout/activity_main.xml — LinearLayout vertikal, id jelas untuk tiap" +
+                " elemen yang dipakai kode.\n" +
+                "5. src/main/res/values/strings.xml — minimal <string name=\"app_name\">__APP_NAME__</string>.\n" +
+                "6. Boleh menambah berkas lain (mis. Database...java) bila deskripsinya membutuhkan.\n\n" +
+                "Aturan keras:\n" +
+                "- Ganti teks judul dan label dengan __APP_NAME__ bila itu nama aplikasi; jangan mengarang nama lain.\n" +
+                "- Java 8 saja, tanpa AndroidX, tanpa Kotlin, tanpa library pihak ketiga (API framework sejak API 24).\n" +
+                "- Import __APP_ID__.R di berkas java (id aplikasi diganti saat projek dibuat).\n" +
+                "- Jangan tulis penjelasan di luar berkas; hanya penanda <<<BERKAS: ...>>> + blok berpagar.",
+        ),
+    )
+
+    /**
      * Memotong teks panjang dengan penanda di tengah, bukan membuang ekornya diam-diam: model perlu
      * tahu bahwa ada bagian yang tidak dikirim supaya tidak "menebak" isi yang hilang.
      */

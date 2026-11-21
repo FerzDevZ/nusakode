@@ -16,6 +16,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -36,9 +37,11 @@ import id.kodenusa.core.ai.GerbangModel
 import id.kodenusa.core.ai.HasilAgen
 import id.kodenusa.core.ai.LangkahAgen
 import id.kodenusa.core.ai.OpenAiCompatClient
+import id.kodenusa.core.ai.PromptBuilder
 import id.kodenusa.ui.CodeTextStyle
 import id.kodenusa.ui.GhostButton
 import id.kodenusa.ui.KodenusaPalette
+import id.kodenusa.ui.SegmentedControl
 import id.kodenusa.ui.Panel
 import id.kodenusa.ui.Pill
 import id.kodenusa.ui.PrimaryButton
@@ -70,6 +73,17 @@ fun AgenScreen(
     var galat by remember(projectDir) { mutableStateOf<String?>(null) }
     var berjalan by remember(projectDir) { mutableStateOf(false) }
     var pekerjaan by remember(projectDir) { mutableStateOf<Job?>(null) }
+    var putaranTerpilih by remember { mutableIntStateOf(AgenBuild.MAKS_PUTARAN_BAWAAN) }
+
+    // Estimasi karakter terkirim dihitung dari konteks projek sungguhan, bukan angka mati.
+    val estimasiKarakter: Int? = remember(projectDir, tugas, putaranTerpilih) {
+        runCatching {
+            val konteks: String = AiProjectBoard(projectDir).konteks()
+            val satuPutaran: Int = PromptBuilder.untukAgen(tugas.ifBlank { " " }, konteks, "")
+                .sumOf { pesan: ChatMessage -> pesan.isi.length }
+            satuPutaran * putaranTerpilih
+        }.getOrNull()
+    }
 
     val config = setelan.muat()
     val alasanMulai = when {
@@ -103,7 +117,7 @@ fun AgenScreen(
                             Spacer(Modifier.height(6.dp))
                             Text(
                                 "Tulis keinginanmu dalam bahasa Indonesia. Agen mengubah berkas projek, " +
-                                    "lalu build dijalankan sendiri. Maksimal 3 putaran per tugas.",
+                                    "lalu build dijalankan sendiri. Batas putaran kamu pilih sendiri di bawah.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Kode.textDim,
                             )
@@ -114,6 +128,24 @@ fun AgenScreen(
                                 label = { Text("Contoh: tambah tombol Bagikan dan layar kedua") },
                                 modifier = Modifier.fillMaxWidth().height(110.dp).testTag("tugas-agen"),
                             )
+                            Spacer(Modifier.height(10.dp))
+                            // Batas putaran jadi pilihan (docs/14 4.2): 3 hemat kuota, 5 untuk tugas besar.
+                            SegmentedControl(
+                                pilihan = listOf("3 putaran", "5 putaran"),
+                                terpilih = if (putaranTerpilih == 5) 1 else 0,
+                                onPilih = { putaranTerpilih = if (it == 1) 5 else 3 },
+                                testTagAwalan = "putaran-agen",
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            // Estimasi jujur: panjang konteks + tugas × putaran, sebelum kuota terpakai.
+                            estimasiKarakter?.let { estimasi ->
+                                Text(
+                                    "Perkiraan terkirim: ~$estimasi karakter per tugas ($putaranTerpilih putaran).",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Kode.textDim,
+                                    modifier = Modifier.testTag("estimasi-karakter"),
+                                )
+                            }
                             Spacer(Modifier.height(12.dp))
                             PrimaryButton(
                                 text = "Mulai",
@@ -142,6 +174,7 @@ fun AgenScreen(
                                             model = model,
                                             papan = AiProjectBoard(projectDir),
                                             build = AiBuildGate(projectDir, container.newEngine(siap.toolchain)),
+                                            maksPutaran = putaranTerpilih,
                                         )
                                         val keluaran = runCatching {
                                             agen.jalankan(tugas) { satu -> langkah = langkah + satu }

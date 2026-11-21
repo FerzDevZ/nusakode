@@ -2,7 +2,7 @@
 
 Dokumen ini dulu berisi target v0.7/v1.0. Sekarang isinya **apa yang benar-benar terjadi**, karena rencana yang tidak diperbarui lebih berbahaya daripada tidak ada rencana: ia membuat orang (termasuk saya) mengira sesuatu sudah selesai.
 
-Baseline hari ini: **0.9.6**, 252 uji unit, 77 uji perangkat, APK 32,3 MB.
+Baseline hari ini: **0.18.0**, 312 uji unit, 127 uji perangkat, APK 32,9 MB, 9 template terbukti 9/9.
 
 ## 1. Prinsip yang tidak boleh dilanggar
 
@@ -14,15 +14,15 @@ Baseline hari ini: **0.9.6**, 252 uji unit, 77 uji perangkat, APK 32,3 MB.
 
 ## 2. Ukuran keberhasilan: target lama vs kenyataan
 
-| Ukuran | Target lama | Kenyataan 0.9.6 | Catatan |
+| Ukuran | Target lama | Kenyataan 0.18.0 | Catatan |
 |---|---|---|---|
-| Ukuran APK | ≤ 30 MB | **32,3 MB** | Target itu ditolak sendiri oleh ADR-028: `android.jar` adalah classpath kompilasi. Memangkasnya membuat kode sah gagal dikompilasi |
-| RAM menganggur | ≤ 120 MB | **67 MB** (emulator) | HP fisik belum diukur |
+| Ukuran APK | ≤ 30 MB | **32,9 MB** | Target itu ditolak sendiri oleh ADR-028: `android.jar` adalah classpath kompilasi. Memangkasnya membuat kode sah gagal dikompilasi |
+| RAM menganggur | ≤ 120 MB | **67 MB** (emulator) | HP fisik belum diukur (todo #10, skrip siap) |
 | Buka projek → editor | ≤ 1,5 s | ≈ 0,4 s (emulator) | |
 | Build template pertama | ≤ 10 s | **1,4–1,9 s** | |
 | Susun situs | ≤ 3 s | belum diukur terpisah | |
-| Tugas agen selesai tanpa sentuh | ≥ 85% | **belum ada angka** | Harness ada (`AI_EVAL=1`), angka kosong |
-| Uji unit / perangkat | ≥ 300 / ≥ 60 | **252 / 77** | Uji perangkat melewati target |
+| Tugas agen selesai tanpa sentuh | ≥ 85% | **belum ada angka** | Harness ada (`AI_EVAL=1`), angka kosong — penyedia `api.crown.ai.id` 503 sesaat berulang saat diukur |
+| Uji unit / perangkat | ≥ 300 / ≥ 60 | **312 / 127** | Keduanya melewati target |
 | Android 7+ | 100% fitur | 100% | Diuji di API 24, 34, 35 |
 
 ## 3. Status tiap langkah rencana lama
@@ -43,9 +43,9 @@ Baseline hari ini: **0.9.6**, 252 uji unit, 77 uji perangkat, APK 32,3 MB.
 |---|---|---|---|
 | G1 | Setelan repo + token terpisah dari projek | ✅ | `GitSettingsStore`, tersandi Keystore |
 | G2 | Layar GitHub: commit, kirim, riwayat | ✅ | `GitUiTest`, `GitDeviceTest` (JGit nyata) |
-| G3 | Buat repo otomatis (REST) | ⚠️ fungsi ada, **belum tersambung UI** | `GitHubRilis.buatRepo` diuji, tidak ada tombolnya |
+| G3 | Buat repo otomatis (REST) | ✅ | `BuatRepoCard` tersambung di layar Git, `BuatRepoUiTest` |
 | G4 | Bagikan APK ke Releases | ✅ | `BagikanApkCard`, uji jaringan nyata dengan `GH_TOKEN` |
-| G5 | Buka projek dari GitHub (klon) | ⚠️ `RepoGit.klon` ada & teruji, **belum tersambung UI** | — |
+| G5 | Buka projek dari GitHub (klon) | ✅ | `KlonProjek` tersambung di layar Git, `KlonProjekUiTest` |
 
 ### Fase 3 — Agen AI
 
@@ -55,7 +55,7 @@ Baseline hari ini: **0.9.6**, 252 uji unit, 77 uji perangkat, APK 32,3 MB.
 | A2 | Gerbang build di atas Tier 0 | ✅ `AiBuildGate`, `AiBuildGateTest` |
 | A3 | Layar Agen (tugas, hentikan, log, hasil) | ✅ `AgenScreen`, `AgenUiTest` |
 | A4 | Batas 3 putaran, 12 berkas, timeout, pembatalan | ✅ `AgenBuild`, `EvalAgenJalurTest` |
-| A5 | Evaluasi 10 tugas | ⚠️ harness siap, **angka belum ada** (butuh `AI_EVAL=1` + kunci) |
+| A5 | Evaluasi 10 tugas | ⚠️ harness siap, **angka belum ada** (butuh `AI_EVAL=1` + kunci; penyedia masih 503 sesaat saat diukur) |
 
 ### Fase 4 — Keamanan & ukuran
 
@@ -77,28 +77,27 @@ Baseline hari ini: **0.9.6**, 252 uji unit, 77 uji perangkat, APK 32,3 MB.
 
 | # | Langkah | Status |
 |---|---|---|
-| R1 | Ukur di HP 4 GB fisik | ⚠️ skrip `scripts/ukur-hp.sh` jalan; baru baris **emulator** tercatat |
-| R2 | Uji 24 jam tanpa internet | ❌ belum |
-| R3 | Suhu & throttling 10 build | ❌ belum |
+| R1 | Ukur di HP 4 GB fisik | ⚠️ skrip `scripts/ukur-hp.sh` jalan; baru baris **emulator** tercatat (tunggu Samsung A17 5G pengguna) |
+| R2 | Uji 24 jam tanpa internet | ❌ butuh HP fisik |
+| R3 | Suhu & throttling 10 build | ❌ butuh HP fisik |
 
-## 4. Yang berikutnya, berurutan
+## 4. Yang berikutnya, berurutan (diselaraskan docs/14 v0.19)
 
 ```
-1. Hapus janji palsu "build di server"      ← kecil, menutup kebohongan di UI
-2. Penangkap crash + bagikan laporan        ← satu-satunya cara tahu apa yang rusak di HP orang
-3. G5: klon projek dari GitHub              ← kode inti sudah ada, tinggal UI + uji nyata
-4. Catatan "Kotlin belum didukung"          ← kecil, sejajar dengan catatan Python
-5. G3: tombol "buat repo"                   ← fungsi REST sudah ada
-6. Ukur di HP fisik + AI_EVAL               ← butuh perangkat & kunci pengguna
+1. AI_EVAL angka nyata di docs/07        ← sedang: penyedia 503 sesaat, harness tahan-coba-ulang
+2. Mode belajar (3.3) uji coba halo-dunia ← setelah angka eval
+3. Ukur HP fisik (todo #10)              ← butuh Samsung A17 5G pengguna
+4. R2/R3 di HP fisik                     ← setelah ukur
 ```
 
-Jalur kritis untuk "bisa dipercaya orang lain" adalah **1 → 2 → 3**. Kotlin dan Tier 1 tetap ditunda (ADR-003, ADR-001) sampai ada bukti bahwa pengguna benar-benar membutuhkannya dan tidak sekadar menginginkannya.
+Semua butir UI/fitur docs/13 dan docs/14 butir 1–3 sudah tuntas sejak 0.18.0; sisanya butuh
+perangkat fisik atau kunci AI yang pulih stabil.
 
 ## 5. Definisi selesai untuk setiap rilis
 
 ```bash
 ./gradlew clean test detekt :app:assembleDebug        # 0 gagal, detekt 0 temuan
-./gradlew :app:connectedDebugAndroidTest              # 77 uji hijau
+./gradlew :app:connectedDebugAndroidTest              # 127 uji hijau
 ./gradlew :app:assembleRelease -PsemuaAbi             # dipasang & dibuka di emulator
 bash scripts/prove/build-hello.sh                     # pipeline host tetap sah
 ```

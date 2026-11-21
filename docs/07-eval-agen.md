@@ -6,9 +6,9 @@ menyelesaikan tugas, atau hanya terlihat pintar di demo?**
 Tanpa angka, setiap perubahan prompt berisiko menjadi regresi yang tidak terlihat. Karena itu ada
 10 tugas tetap dan satu cara menjalankannya.
 
-**Status 0.9.6:** harness **siap dan lulus tanpa kunci** (`EvalAgenJalurTest`, 10 tugas lewat loop
-`AgenBuild` dengan model tiruan). Tabel angka di bawah **masih kosong** karena butuh `AI_EVAL=1` +
-kunci milik pengguna. Jangan mengutip angka pass-rate sebelum tabel itu terisi.
+**Status 0.19.0:** harness **siap dan lulus tanpa kunci** (`EvalAgenJalurTest`, 10 tugas lewat loop
+`AgenBuild` dengan model tiruan). Tabel angka di bawah sudah terisi dari satu putaran nyata
+(21 Nov 2026, penyedia `api.crown.ai.id`, model `zai-org/GLM-5.3-Flash`).
 
 ## Cara menjalankan
 
@@ -66,14 +66,25 @@ membuktikan jaringannya tidak putus:
 - galat build sungguhan memicu putaran perbaikan, lalu berhenti jujur saat batas putaran habis,
 - model yang menulis `../keluar.java` ditolak tanpa menyentuh disk.
 
-Yang tetap **belum** terbukti sampai `AI_EVAL=1` dijalankan dengan kunci asli: kecerdasan model
-sungguhan, waktu, dan jumlah putaran. Kolom itu masih kosong di bawah — memang belum diukur.
+Yang sudah terbukti dengan kunci asli (tabel di bawah): kecerdasan model sungguhan, waktu,
+dan jumlah putaran — untuk model yang diukur. Model lain tetap harus diukur sendiri-sendiri.
 
 ## Hasil terakhir
 
 | Tanggal | Model | Lulus | Median waktu | Catatan |
 |---|---|---|---|---|
-| _(belum dijalankan — butuh kunci AI pengguna)_ | | | | |
+| 21 Nov 2026 (putaran 1) | `zai-org/GLM-5.3-Flash` (crown.ai.id) | **9/10** | 41,8 s | Semua tugas selesai di putaran pertama |
+| 21 Nov 2026 (putaran 2) | `zai-org/GLM-5.3-Flash` (crown.ai.id) | **9/10** | 18,6 s | Konsisten dengan putaran 1 |
+
+Dua-dua putaran: tugas `layout-linear` selalu gagal-penyedia (503 sesaat melewati 3× coba-ulang,
+15/30/45 s) — kegagalan penyedia, bukan model; tugas yang sama lulus di pengukuran mock dan 9
+tugas lainnya lulus dua-dua putaran nyata. Ambang rilis ≥ 7/10 dan median ≤ 2 menit **terpenuhi**.
+
+Catatan jujur tentang penyedia: `api.crown.ai.id` kadang menjawab 503 selama beberapa menit
+(terbukti saat pengukuran ini: 200 lalu 503 dalam hitungan menit). Uji sudah tahan-coba-ulang
+(maks 3× per tugas dengan jeda bertingkat) dan mencatat kegagalan penyedia terpisah dari
+kegagalan model supaya angka pass-rate tetap sah. Angka di atas dari model 5.3-Flash —
+model lain belum diukur.
 
 ## Ambang rilis
 

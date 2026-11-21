@@ -183,4 +183,25 @@ class WizardUiTest {
         layar.onNodeWithTag("alasan-buat").assertDoesNotExist()
         layar.onNodeWithTag("tombol-buat").assertIsEnabled()
     }
+
+    @Test
+    fun tombol_template_ai_dan_galeri_tampil_dan_dialog_galeri_terbuka() {
+        bukaFormProjekBaru()
+        // Kedua tombol baru v0.19 ada di daftar wizard.
+        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasTestTag("buka-scaffold"))
+        layar.onNodeWithTag("buka-scaffold").performClick()
+        layar.waitForIdle()
+        // Dialog scaffold terbuka; tanpa kunci AI, alasannya jujur dan tombol Rancang terkunci.
+        layar.onNodeWithTag("alasan-scaffold").assertExists()
+        layar.onNodeWithTag("batal-scaffold").performClick()
+        layar.waitForIdle()
+
+        layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasTestTag("buka-galeri"))
+        layar.onNodeWithTag("buka-galeri").performClick()
+        layar.waitForIdle()
+        // Dialog galeri memuat kolom alamat dengan nilai bawaan yang bisa diedit.
+        layar.onNodeWithTag("url-galeri").assertExists()
+        layar.onNodeWithTag("batal-galeri").performClick()
+        layar.waitForIdle()
+    }
 }
