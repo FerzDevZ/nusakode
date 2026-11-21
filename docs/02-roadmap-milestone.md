@@ -90,6 +90,11 @@ Dua saran terakhir dari [`12-saran-ui-ux-ai.md`](12-saran-ui-ux-ai.md) — dafta
   memberi tahu model tentang `DatabaseKasir.java`/`Produk.java`, web-katalog tentang folder
   `assets/`, dst. Template tak dikenal tidak menambah apa pun (tidak mengarang).
 - 243 uji unit · 105 uji perangkat · detekt 0.
+- **Catatan jujur**: dialog riwayat dan tombolnya teruji di perangkat (uji otomatis), dan logika
+  pencatatannya teruji di JVM — tetapi uji end-to-end "tulis AI nyata → entri riwayat" belum bisa
+  dijalankan karena penyedia AI (api.crown.ai.id) kembali 503 untuk payload dalam aplikasi
+  (4 percobaan; curl kecil tetap 200). Aplikasi menampilkan galat itu apa adanya — perilaku yang
+  benar. Uji ulang saat penyedia pulih, seperti pola v0.13.
 
 
 ## v0.14.0 — AI yang tidak merusak: pratinjau, undo, berkas sematan (20 November 2026)
