@@ -4,9 +4,11 @@ Dibaca di awal setiap sesi. Format dari `AGENTS.md` Gate 3:
 `- **[YY-MM-DD · Komponen]**: gejala → **Root Cause**: penyebab teknis → **Invariant Rule**: aturan permanen.`
 
 Jumlah invariant terus bertambah seiring rilis; hitung dengan `grep -c "^- \*\*" MEMORY.md`.
-Invariant terbaru (v0.20.0) antara lain: gutter tidak boleh menyimpan cache `lineCount`;
+Invariant terbaru (v0.21.0) antara lain: gutter tidak boleh menyimpan cache `lineCount`;
 `mutableIntStateOf` dibandingkan lewat `.intValue`; back otomatis pemasang hanya boleh saat fokus
-Setelan; asersi JUnit 5 = `(kondisi, pesan)` vs JUnit 4 = `(pesan, kondisi)`.
+Setelan; saklar "Allow from this source" yang sudah aktif tidak boleh diklik lagi (klik = mematikan
+izin); failover AI hanya untuk galat penyedia/jaringan (kunci salah tidak dipindah ke cadangan);
+hasil `--tests` terfilter tidak boleh dipakai menghitung jumlah uji.
 
 Cara memakai:
 
@@ -182,3 +184,6 @@ Cara memakai:
 - **[26-11-21 · Compose state uji]** Panel tidak maju langkah di uji meski tombol bekerja → **Root Cause**: state panel disimpan `var x = 1` biasa — tidak memicu rekomposisi sehingga perubahan tak terlihat Compose test → **Invariant Rule**: state Compose yang dibaca/ditulis uji wajib `mutableIntStateOf`/`mutableStateOf`; asersi membaca `.intValue`, bukan objek state-nya.
 - **[26-11-21 · pemasang APK flake]** `PasangApkDeviceTest` gagal "paket tidak terdaftar" secara berkala → **Root Cause**: loop mengikuti pemasang menekan `pressBack()` otomatis saat tombol belum tampak (transisi setelah izin) — itu MEMBATALKAN pemasangan; bukti: fokus berakhir di launcher → **Invariant Rule**: back hanya boleh ditekan bila fokus benar-benar `com.android.settings`; uji gagal wajib melampirkan bukti (paket fokus + uiautomator dump) di pesan asersi, bukan ditebak-ulang.
 - **[26-11-21 · assertTrue JUnit5]** Uji unit gagal kompilasi "None of the following candidates" → **Root Cause**: argumen ditulis urutan JUnit 4 `assertTrue(pesan, kondisi)` padahal modul memakai JUnit 5 `assertTrue(kondisi, pesan)` → **Invariant Rule**: JUnit 5 = kondisi dulu, pesan belakang; JUnit 4 (androidTest) = pesan dulu, kondisi belakang.
+- **[26-11-22 · saklar izin pemasang]** `PasangApkDeviceTest` gagal lagi "paket tidak terdaftar", fokus launcher, layar tertahan di halaman Setelan "Allow from this source" → **Root Cause**: task pemasang melanjutkan sesi lama yang tertahan di halaman Setelan dengan saklar SUDAH AKTIF; loop mengklik teks itu lagi → izin justru dimatikan → pemasangan dibatalkan (logcat: "Session was abandoned") → **Invariant Rule**: sebelum mengklik saklar izin, baca status `checkable(true)`; bila sudah aktif, tekan back ke pemasang, jangan klik. (Bonus: `uiautomator dump` dari dalam instrumentation sering gagal senyap — bukti layar ambil dari shell host.)
+- **[26-11-22 · failover AI cadangan]** detekt `SwallowedException` saat cadangan juga gagal → **Root Cause**: `gagalCadangan` ditangkap lalu dibuang karena hanya `gagalUtama` dilempar → **Invariant Rule**: kegagalan endpoint cadangan tidak boleh hilang — lempar `AiGagal` utama dengan cadangan sebagai `cause`; failover hanya untuk galat penyedia/jaringan, kunci salah/kuota tidak dipindah ke cadangan.
+- **[26-11-22 · filter --tests menghapus hasil]** Hitung uji unit jadi 151 padahal sumber 368 → **Root Cause**: menjalankan `--tests '*X*'` menimpa folder hasil uji modul dengan hasil kelas itu saja, lalu hitungan dibaca dari sisa XML → **Invariant Rule**: hitung uji dari hasil `./gradlew test` penuh (glob rekursif `**/build/test-results/*/*.xml`), bukan setelah run terfilter; angka dokumen wajib direproduksi dengan satu perintah.

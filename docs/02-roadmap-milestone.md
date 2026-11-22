@@ -79,15 +79,18 @@ Sama seperti `.py`: saat pengguna membuka `.kt`, jelaskan bahwa Tier 0 hanya Jav
 Rencana v0.12 dan kandidat setelahnya disusun terpisah: lihat [`11-rencana-v0.12.md`](11-rencana-v0.12.md).
 
 
-## v0.20.0 — perombakan editor & AI paham projek (21 November 2026)
+## v0.21.0 — perombakan editor, AI paham projek, ketahanan harian (22 November 2026)
 
-Dua keluhan pengguna dituntaskan sampai akar penyebabnya:
+Dua keluhan pengguna dituntaskan sampai akar penyebabnya, ditambah empat fitur ketahanan:
 
 - **Gutter nomor baris diperombak total** (keluhan: "nomor cuma 1 / 1–33 lalu hitam"). Akar: cache `lineCount` dibaca sebelum layout dibangun. Kini `GutterView` custom View melukis dari `Layout` hidup tiap gambar — akurat saat scroll, wrap, ganti ukuran font; baris kursor disorot. Bukti layar di `bukti/`.
-- **AI mempelajari seluruh projek tanpa pilih berkas 1-1** (keluhan: "masa kita harus pilih di editor 1-1"). `PetaProjek` menyusun peta (identitas, daftar berkas berperan, kerangka kelas/metode/resource); `PemilihKonteks` memilih berkas relevan dari pertanyaan (skor leksikal + bobot kepentingan, deterministik, tanpa server). Tombol **Pelajari projek** + info jujur "N dari M berkas · X karakter".
-- **Mode belajar** (docs/14 3.3): pelajaran langkah-demi-langkah per template, progres tersimpan per projek.
-- Flake `PasangApkDeviceTest` dituntaskan akar-cause: back otomatis membatalkan pemasang; kini back hanya saat fokus Setelan + bukti dump di pesan gagal.
-- 354 uji unit · 140 uji perangkat · detekt 0.
+- **AI mempelajari seluruh projek tanpa pilih berkas 1-1** (keluhan: "masa kita harus pilih di editor 1-1"). `PetaProjek` menyusun peta (identitas, daftar berkas berperan, kerangka kelas/metode/resource); `PemilihKonteks` memilih berkas relevan dari pertanyaan (skor leksikal + bobot kepentingan, deterministik, tanpa server). Tombol **Pelajari projek** + info jujur "N dari M berkas · X karakter". Verifikasi kualitas di projek besar (40+ berkas): pertanyaan kasir memilih `DatabaseKasir`/`MainActivity`/layout/strings dan MENOLAK berkas stok-laporan; pertanyaan stok memilih sisi stok (`KonteksOtomatisTest`).
+- **Mode belajar** (docs/14 3.3): pelajaran langkah-demi-langkah per template, progres tersimpan per projek. Template kedua: **kasir-warung** (7 langkah, dari kenal layar sampai ekspor CSV).
+- **Cadangan otomatis harian** (docs/09 P2 #10): projek dengan `kodenusa.json` di-zip per hari ke `cadangan-harian/`, maks 2 salinan, jeda 24 jam, status tertulis; berjalan di latar saat aplikasi dibuka, tanpa dialog.
+- **Penyedia AI cadangan** (docs/14 4.6): endpoint + kunci + model kedua di setelan AI; failover otomatis hanya untuk galat penyedia/jaringan (503) — kunci salah/kuota TIDAK dipindah ke cadangan; bila cadangan juga gagal, galat utama tetap yang dilaporkan (cadangan jadi penyebab). Info jujur "jawaban lewat endpoint cadangan".
+- **Lampiran galat build untuk AI**: tombol "Perbaiki galat build" kini menyertakan 40 baris terakhir log build — konteks nyata tanpa tangkapan layar.
+- Uji `PasangApkDeviceTest` dituntaskan akar-cause kedua: saklar "Allow from this source" yang sudah aktif (sisa sesi) tidak boleh diklik lagi — klik mematikan izin dan pemasangan batal; kini saklar aktif → back ke pemasang.
+- 356 uji unit · 142 uji perangkat · detekt 0.
 
 ## v0.19.0 — agen putaran pilihan & galeri komunitas (21 November 2026)
 

@@ -54,7 +54,7 @@ Yang sudah tuntas dari backlog lama: tombol **Ambil foto** (v0.9.4), dan pemberi
 
 | Komponen | Ukuran terukur | Catatan |
 |---|---|---|
-| **APK rilis (dibagikan sekarang)** | **35,2 MB** | R8 + shrink + arm64/v7a, ditandatangani kunci perangkat/pengguna |
+| **APK rilis (dibagikan sekarang)** | **32,9 MB** | R8 + shrink + arm64/v7a, ditandatangani kunci perangkat/pengguna |
 | APK debug (untuk emulator) | ±46 MB | + dex tanpa R8 + aapt2 x86/x86_64 |
 | `android.jar` | 26,4 MB | **tidak bisa dipangkas** tanpa memutus kompilasi Java; bahan wajib Tier 0 (ADR-028) |
 | libaapt2 | 1,7–2,1 MB per ABI | rilis hanya arm64 + v7a |
@@ -89,7 +89,7 @@ Kesimpulan jujur: **ukuran APK bukan hambatan pasang** di HP 64 GB, tetapi **pen
 | # | Butir | Status |
 |---|---|---|
 | 9 | Folder projek di luar sandbox (SAF persisted tree) | ⛔ belum |
-| 10 | Cadangan otomatis harian | 🟡 manual "Cadangkan semua" ✅; otomatis belum |
+| 10 | Cadangan otomatis harian | ✅ v0.21 — zip per hari ke `cadangan-harian/`, maks 2 salinan, jeda 24 jam, hanya projek dengan `kodenusa.json`; berjalan latar saat aplikasi dibuka (`CadanganOtomatis`, 4 uji). Manual "Cadangkan semua" tetap ada |
 | 11 | Buka projek dari GitHub (klon) + buat repo | ✅ v0.13 |
 
 ### P3 — situs & distribusi

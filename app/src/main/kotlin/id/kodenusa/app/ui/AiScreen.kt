@@ -112,6 +112,11 @@ fun AiScreen(
     var config by remember { mutableStateOf(store.muat()) }
     var endpoint by remember { mutableStateOf(config.baseUrl) }
     var kunci by remember { mutableStateOf(config.apiKey) }
+    // Endpoint cadangan (v0.21.0): kalau penyedia utama 503/jaringan gagal, jawaban dicoba sekali
+    // lagi di sini. Semua tersimpan langsung, sama seperti endpoint utama.
+    var cadanganEndpoint by remember { mutableStateOf(config.cadanganBaseUrl) }
+    var cadanganKunci by remember { mutableStateOf(config.cadanganApiKey) }
+    var cadanganModel by remember { mutableStateOf(config.cadanganModel) }
     var modelList by remember { mutableStateOf(store.modelTerakhir()) }
     // Formulir tetap dibuka selama model belum dipilih: mendarat di layar obrolan tanpa model
     // membuat orang bingung dan mengira setelannya hilang.
@@ -124,6 +129,9 @@ fun AiScreen(
     var berpikir by remember { mutableStateOf(false) }
     var sibuk by remember { mutableStateOf(false) }
     var galat by remember { mutableStateOf<String?>(null) }
+    // Info jujur (bukan galat): dipakai untuk memberi tahu "jawaban lewat cadangan" tanpa
+    // menakut-nakuti pengguna dengan warna merah.
+    var info by remember { mutableStateOf<String?>(null) }
     var pekerjaan by remember { mutableStateOf<Job?>(null) }
     var gambar by remember { mutableStateOf<String?>(null) }
     var memuatGambar by remember { mutableStateOf(false) }
@@ -187,7 +195,7 @@ fun AiScreen(
         muatGambar(uri)
     }
 
-    fun simpanDraf() = store.simpanDraf(endpoint, kunci)
+    fun simpanDraf() = store.simpanDraf(endpoint, kunci, cadanganEndpoint, cadanganKunci, cadanganModel)
 
     /** Isi berkas projek, dipakai untuk melampirkan berkas mana pun sebagai konteks. */
     fun isiBerkas(jalur: String): String? = runCatching {
@@ -238,6 +246,7 @@ fun AiScreen(
     fun kirim(teks: String, pelajari: Boolean = false) {
         if ((teks.isBlank() && !pelajari) || sibuk) return
         galat = null
+        info = null
         jawaban = ""
         berpikir = false
         sibuk = true
@@ -263,6 +272,10 @@ fun AiScreen(
                         pesan = pesan,
                         onReasoning = { berpikir = true },
                         onDelta = { potongan -> jawaban += potongan },
+                        onCadangan = {
+                            info = "Jawaban ini berhasil lewat endpoint cadangan " +
+                                "(${config.cadanganBaseUrl.trimEnd('/')})."
+                        },
                     )
                 }
                 val akhir = jawaban.ifEmpty { hasil }
@@ -381,13 +394,25 @@ fun AiScreen(
                         galat = galat,
                         onEndpoint = { endpoint = it; simpanDraf() },
                         onKunci = { kunci = it; simpanDraf() },
+                        cadanganEndpoint = cadanganEndpoint,
+                        cadanganKunci = cadanganKunci,
+                        cadanganModel = cadanganModel,
+                        onCadanganEndpoint = { cadanganEndpoint = it; simpanDraf() },
+                        onCadanganKunci = { cadanganKunci = it; simpanDraf() },
+                        onCadanganModel = { cadanganModel = it; simpanDraf() },
                         onPilihModel = ::pilihModel,
                         onMuatModel = {
                             galat = null
                             memuatModel = true
                             scope.launch {
                                 try {
-                                    val calon = config.copy(baseUrl = endpoint, apiKey = kunci)
+                                    val calon = config.copy(
+                                        baseUrl = endpoint,
+                                        apiKey = kunci,
+                                        cadanganBaseUrl = cadanganEndpoint,
+                                        cadanganApiKey = cadanganKunci,
+                                        cadanganModel = cadanganModel,
+                                    )
                                     val daftar = withContext(Dispatchers.IO) { klien.daftarModel(calon) }
                                     modelList = daftar
                                     store.simpan(calon)
@@ -409,6 +434,7 @@ fun AiScreen(
                 } else {
                     ChatAiPanel(
                         model = config.model,
+                        info = info,
                         riwayat = riwayat,
                         jawaban = jawaban,
                         berpikir = berpikir,
@@ -726,12 +752,18 @@ internal fun DialogBuatBerkasDariKode(
 private fun AturAiPanel(
     endpoint: String,
     kunci: String,
+    cadanganEndpoint: String,
+    cadanganKunci: String,
+    cadanganModel: String,
     modelList: List<AiModel>,
     modelTerpilih: String,
     memuat: Boolean,
     galat: String?,
     onEndpoint: (String) -> Unit,
     onKunci: (String) -> Unit,
+    onCadanganEndpoint: (String) -> Unit,
+    onCadanganKunci: (String) -> Unit,
+    onCadanganModel: (String) -> Unit,
     onPilihModel: (String) -> Unit,
     onMuatModel: () -> Unit,
 ) {
@@ -748,6 +780,30 @@ private fun AturAiPanel(
         IsianAi("Alamat endpoint", endpoint, onEndpoint, "https://api.crown.ai.id/v1", rahasia = false)
         Spacer(Modifier.height(8.dp))
         IsianAi("Kunci API", kunci, onKunci, "tempel kuncimu di sini", rahasia = true)
+        Spacer(Modifier.height(14.dp))
+        Text(
+            "Endpoint cadangan (opsional) — dipakai hanya kalau penyedia utama sedang bermasalah.",
+            style = MaterialTheme.typography.titleSmall,
+            color = Kode.text,
+        )
+        Spacer(Modifier.height(6.dp))
+        IsianAi(
+            "Alamat endpoint cadangan",
+            cadanganEndpoint,
+            onCadanganEndpoint,
+            "https://penyedia-lain.com/v1",
+            rahasia = false,
+        )
+        Spacer(Modifier.height(8.dp))
+        IsianAi("Kunci API cadangan", cadanganKunci, onCadanganKunci, "tempel kunci cadangan", rahasia = true)
+        Spacer(Modifier.height(8.dp))
+        IsianAi(
+            "Model cadangan",
+            cadanganModel,
+            onCadanganModel,
+            "kosong = pakai model yang sama",
+            rahasia = false,
+        )
         Spacer(Modifier.height(6.dp))
         Text(
             "Yang diketik langsung tersimpan — boleh ditutup lalu dibuka lagi.",
@@ -833,6 +889,7 @@ private fun IsianAi(
 @Composable
 private fun ChatAiPanel(
     model: String,
+    info: String? = null,
     riwayat: List<Pair<String, String>>,
     jawaban: String,
     berpikir: Boolean,
@@ -974,6 +1031,16 @@ private fun ChatAiPanel(
                         style = MaterialTheme.typography.bodySmall,
                         color = Kode.error,
                         modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
+            }
+            info?.let { catatan ->
+                item {
+                    Text(
+                        catatan,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Kode.textDim,
+                        modifier = Modifier.padding(vertical = 8.dp).testTag("info-cadangan"),
                     )
                 }
             }

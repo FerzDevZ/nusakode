@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.20.0** (`versionCode 32`) · **354 uji unit · 140 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.21.0** (`versionCode 33`) · **356 uji unit · 142 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -19,6 +19,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Daftar projek + buka + hapus | ✅ | `WorkspaceScreen` |
 | Ekspor projek ke `.zip` di lokasi pilihan (Unduhan/Drive/kartu SD) | ✅ | `ProjectArchiveTest` (6 uji) |
 | **Cadangkan semua projek jadi satu `.zip`** | ✅ | `ProjectArchive.exportSemua` + tombol "Cadangkan semua" di layar projek; `ProjectArchiveTest` (9 uji: isi zip, buka kembali jadi beberapa projek, penolakan zip tanpa projek) |
+| **Cadangan OTOMATIS harian (0.21.0)** | ✅ | `CadanganOtomatis`: tiap projek dengan `kodenusa.json` di-zip per hari ke `filesDir/cadangan-harian/`, maks 2 salinan (yang lebih tua dihapus), jeda minimal 24 jam, status tertulis di `status.txt`; berjalan di latar saat aplikasi dibuka, tanpa dialog, tanpa izin. Uji: `CadanganOtomatisTest` (4) |
 | Impor projek dari `.zip` milik sendiri | ✅ | `ProjectArchiveTest`, penolakan zip jahat ikut diuji |
 | **Ekspor data ke CSV** (template Kasir Warung & Laporan Warung) | ✅ | tombol "Ekspor CSV" — Android 10+ langsung ke folder Unduhan via `MediaStore` (tanpa izin), di bawahnya lewat bagikan teks; escape RFC 4180 diuji `CsvTemplateTest` (8 uji, mengompilasi `Csv.java` aset sungguhan dengan javac) |
 | Pilih folder sembarang sebagai tempat projek | ⛔ | Android 11+ melarang aplikasi menulis ke folder bebas tanpa izin; build juga butuh folder yang boleh mengeksekusi biner. Jalan yang jujur: ekspor/impor zip (ADR-022) |
@@ -46,8 +47,8 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Fitur | Status | Bukti / catatan |
 |---|---|---|
 | Editor kode dengan penyorotan sintaks | ✅ | `HighlighterTest` |
-| **Gutter nomor baris digambar ulang penuh (perombakan 0.20.0)** | ✅ | Keluhan pengguna "nomor cuma 1 / 1–33 lalu hitam" — akar: cache `lineCount` dibaca sebelum layout dibangun. Kini `GutterView` custom View melukis dari `Layout` hidup tiap gambar; angka hanya untuk baris terlihat, benar saat wrap (baris lanjutan tanpa nomor), baris kursor disorot, lebar menyesuaikan digit. Uji: `GutterModelTest` (8), `GutterDeviceTest` (3) + bukti layar `bukti/gutter-sesudah.png` |
-| **Mode belajar (0.20.0)** | ✅ | Panel pelajaran langkah-demi-langkah per template (`pelajaran.md` di aset template; pilot: halo-dunia); langkah menunjuk berkas yang harus dibuka/ubah, progres tersimpan per projek di `filesDir/pelajaran-progres/`. Uji: `PelajaranTest` (7), `PelajaranDeviceTest` (3), `PanelPelajaranUiTest` (3) |
+| **Gutter nomor baris digambar ulang penuh (perombakan 0.21.0)** | ✅ | Keluhan pengguna "nomor cuma 1 / 1–33 lalu hitam" — akar: cache `lineCount` dibaca sebelum layout dibangun. Kini `GutterView` custom View melukis dari `Layout` hidup tiap gambar; angka hanya untuk baris terlihat, benar saat wrap (baris lanjutan tanpa nomor), baris kursor disorot, lebar menyesuaikan digit. Terverifikasi juga di font terkecil (14sp) di viewport HP kecil 720×1280 — tetap berurutan. Uji: `GutterModelTest` (8), `GutterDeviceTest` (4) + bukti layar `bukti/gutter-sesudah.png` |
+| **Mode belajar (0.21.0)** | ✅ | Panel pelajaran langkah-demi-langkah per template (`pelajaran.md` di aset template; **halo-dunia + kasir-warung** — 7 langkah dari kenal layar sampai ekspor CSV); langkah menunjuk berkas yang harus dibuka/ubah, progres tersimpan per projek di `filesDir/pelajaran-progres/`. Uji: `PelajaranTest`, `PelajaranDeviceTest` (4), `PanelPelajaranUiTest` (3) |
 | Tab banyak berkas + penanda belum disimpan | ✅ | `EditorSession` (maks 8 tab untuk RAM) |
 | Simpan manual + simpan otomatis | ✅ | `AutoSave`, `KeyBar` |
 | Cari dalam berkas + lompat antar hasil | ✅ | `FindBar` |
@@ -104,7 +105,8 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Fitur | Status | Bukti / catatan |
 |---|---|---|
 | Isi endpoint sendiri (mis. `https://api.crown.ai.id/v1`) + kunci sendiri | ✅ | `AiUiTest` — tombol terkunci sebelum diisi |
-| **Konteks OTOMATIS — AI mempelajari seluruh projek tanpa pilih berkas 1-1 (0.20.0)** | ✅ | `PetaProjek` menyusun peta (identitas, daftar berkas berperan, kerangka kelas/metode/resource via regex murah — tanpa server); `PemilihKonteks` memilih berkas relevan dari isi pertanyaan (skor leksikal + bobot kepentingan, manifest & berkas aktif selalu ikut, deterministik). Tombol **"Pelajari projek"** sekali ketuk → AI meringkas pemahamannya. Info jujur di layar: "N dari M berkas · X karakter". Uji: `PetaProjekTest` (5), `PemilihKonteksTest` (6), `KonteksOtomatisTest` (4), `AiUiTest` chip |
+| **Endpoint cadangan + failover otomatis (0.21.0)** | ✅ | Isian kedua di setelan AI: endpoint + kunci + model cadangan. Bila utama kena galat penyedia/jaringan (mis. 503), klien mencoba cadangan sekali; info jujur "jawaban lewat endpoint cadangan" di layar. Aturan jujur: kunci salah/kuota habis TIDAK dipindah ke cadangan (itu masalah akun, bukan penyedia); bila cadangan juga gagal, galat utama tetap yang dilaporkan (kegagalan cadangan jadi penyebab). Uji: `OpenAiCompatClientTest` (3 uji failover), `AiConfigTest` (4) |
+| **Konteks OTOMATIS — AI mempelajari seluruh projek tanpa pilih berkas 1-1 (0.21.0)** | ✅ | `PetaProjek` menyusun peta (identitas, daftar berkas berperan, kerangka kelas/metode/resource via regex murah — tanpa server); `PemilihKonteks` memilih berkas relevan dari isi pertanyaan (skor leksikal + bobot kepentingan, manifest & berkas aktif selalu ikut, deterministik). Tombol **"Pelajari projek"** sekali ketuk → AI meringkas pemahamannya. Info jujur di layar: "N dari M berkas · X karakter". **Kualitas terverifikasi di projek sintetis 40+ berkas**: pertanyaan kasir memilih berkas kasir & menolak stok/laporan; pertanyaan stok memilih sisi stok; mode hemat tetap membawa berkas inti. Uji: `PetaProjekTest` (5), `PemilihKonteksTest` (6), `KonteksOtomatisTest` (8), `AiUiTest` chip |
 | Baca daftar model otomatis dari endpoint | ✅ | `OpenAiCompatClientTest.daftar_model_dibaca_dari_endpoint_pengguna` |
 | Ganti model kapan saja | ✅ | Layar AI → Atur → pilih model |
 | Jawaban mengalir (streaming) huruf demi huruf | ✅ | `aliran_sse_content_dan_reasoning_dirakit_benar` |
@@ -112,7 +114,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Galat 401/404/429/5xx/jaringan dijelaskan dalam bahasa Indonesia | ✅ | 8 uji klien |
 | Penyedia yang mengabaikan `stream` tetap terbaca | ✅ | `penyedia_yang_mengabaikan_stream_tetap_terbaca` |
 | 503 sesaat dicoba ulang sekali | ✅ | `galat_503_dicoba_ulang_sekali_lalu_berhasil` |
-| Jelaskan & perbaiki galat build dari layar Build | ✅ | tombol "Tanya AI" di `BuildScreen` |
+| Jelaskan & perbaiki galat build dari layar Build | ✅ | tombol "Tanya AI" di `BuildScreen`; **sejak 0.21.0 menyertakan 40 baris terakhir log build** sebagai konteks nyata (bukan tangkapan layar) — `BARIS_LOG_UNTUK_AI` |
 | Perbaiki/ubah berkas aktif | ✅ | konteks berkas otomatis dikirim |
 | Masukkan kode jawaban ke berkas aktif sekali tekan | ✅ | `CodeBlocks.terbesar` + tombol "Masukkan kode ke berkas" |
 | Prompt mengunci batas projek (Java 8, tanpa Gradle/AndroidX/Kotlin) | ✅ | `PromptBuilderTest` |
@@ -231,8 +233,8 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 
 | Fitur | Status | Bukti |
 |---|---|---|
-| Uji unit | ✅ | 354 uji unik (`./gradlew test`; varian debug — debug+release menghitung ganda) |
-| Uji di perangkat | ✅ | 140 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
+| Uji unit | ✅ | 356 uji unik (`./gradlew test`; varian debug — debug+release menghitung ganda) |
+| Uji di perangkat | ✅ | 142 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
 | Analisis statis detekt, 0 temuan | ✅ | `./gradlew detekt` |
 | CI menjalankan gerbang yang sama | ✅ | `.github/workflows/ci.yml` |
 | Template bawaan terbukti jadi APK | ✅ | `scripts/prove/build-templates.sh`: 9/9 APK sah tanda tangannya (web-murni dilewati — memang tanpa APK) |
@@ -250,7 +252,7 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | 4 | ~~Catatan "Kotlin belum didukung" saat membuka `.kt`~~ ✅ | Selesai di 0.10.0: `catatan-kotlin`, sejajar catatan Python | Selesai |
 | 5 | ~~Tombol "buat repo" di layar Git~~ ✅ | Selesai di 0.10.0: `BuatRepoCard` tersambung ke `GitHubRilis.buatRepo` | Selesai |
 | 6 | Ukur di HP 4 GB fisik | Satu-satunya angka yang belum bisa diukur sendiri; `AI_EVAL=1` sudah terisi 9/10 ([docs/07](07-eval-agen.md)) | Butuh perangkat fisik |
-| 7 | Umpan balik kualitas konteks otomatis (v0.20.0) | Bobot kepentingan & anggaran karakter `KonteksOtomatis` bisa dituning bila pilihan berkas kurang tepat di projek nyata | Menunggu umpan balik pengguna |
+| 7 | Umpan balik kualitas konteks otomatis (v0.21.0) | Bobot kepentingan & anggaran karakter `KonteksOtomatis` bisa dituning bila pilihan berkas kurang tepat di projek nyata | Menunggu umpan balik pengguna |
 | 8 | Ulangi verifikasi tulisan AI nyata saat penyedia pulih | Cukup jalankan `AI_ENDPOINT=… AI_KEY=… ./gradlew :core:ai:test --tests '*ChatNyataTest*'` lalu uji manual "Simpan berkas" di layar AI | Menunggu penyedia (503) |
 
 Yang **tidak** akan dikerjakan tanpa bukti kebutuhan nyata: Kotlin di perangkat (ADR-003), Tier 1

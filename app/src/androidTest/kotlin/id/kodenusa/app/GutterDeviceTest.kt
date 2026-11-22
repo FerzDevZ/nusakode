@@ -117,6 +117,42 @@ class GutterDeviceTest {
         assertTrue("setelah ganti font nomor tetap berurutan dari 1", angka.first() == "1")
     }
 
+    @Test
+    fun gutter_font_terkecil_di_layar_kecil_tetap_berurutan() {
+        // Verifikasi v0.21.0: ukuran font minimum (14sp) di viewport HP kecil (720x1280) —
+        // kombinasi terkecil yang pengguna bisa pilih di setelan editor.
+        val host = android.widget.FrameLayout(konteks)
+        val view = CodeEditorView(konteks)
+        val isi = (1..90).joinToString("\n") { "int x$it = $it;" }
+        view.setContent(isi, Language.JAVA)
+        host.addView(
+            view,
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+        )
+        val instr = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        instr.runOnMainSync {
+            view.setTextSizeSp(14f)
+            host.measure(
+                android.view.View.MeasureSpec.makeMeasureSpec(720, android.view.View.MeasureSpec.EXACTLY),
+                android.view.View.MeasureSpec.makeMeasureSpec(1280, android.view.View.MeasureSpec.EXACTLY),
+            )
+            host.layout(0, 0, 720, 1280)
+        }
+        var angka = emptyList<String>()
+        val batasWaktu = android.os.SystemClock.elapsedRealtime() + 2_000
+        while (angka.isEmpty() && android.os.SystemClock.elapsedRealtime() < batasWaktu) {
+            instr.runOnMainSync { angka = gutterDari(view).angkaTergambar() }
+        }
+        assertTrue("gutter tidak boleh kosong di 14sp/720x1280", angka.isNotEmpty())
+        assertEquals("1", angka.first())
+        assertTrue(
+            "nomor harus berurutan di font terkecil",
+            angka == angka.mapIndexed { i, s -> (i + 1).toString() },
+        )
+        assertTrue("layar kecil harus memuat banyak baris (dapat ${angka.size})", angka.size >= 20)
+    }
+
     private fun gutterDari(view: CodeEditorView): GutterView {
         val field = CodeEditorView::class.java.getDeclaredField("gutter")
         field.isAccessible = true

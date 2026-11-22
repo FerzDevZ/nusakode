@@ -4,7 +4,7 @@ Proyek ini dibangun dengan disiplin *swarm*: 113 persona di `.agents/agents/`, 6
 
 Dokumen ini mencatat **siapa mengerjakan apa** dan **bukti seperti apa yang dituntut** — bukan daftar lengkap 611 skill.
 
-**Status dokumen:** terakhir diselaraskan dengan rilis **v0.20.0**.
+**Status dokumen:** terakhir diselaraskan dengan rilis **v0.21.0**.
 
 ---
 
@@ -33,7 +33,7 @@ Dokumen ini mencatat **siapa mengerjakan apa** dan **bukti seperti apa yang ditu
 | `distributed-systems-scale-2026` | Idempotensi unggah rilis, backoff, pemetaan galat HTTP |
 | `cybersecurity-appsec-redteam-2026` | Penolakan jalur berbahaya dari model AI, tanpa secret di log |
 | `jwt-session-security-passkeys` (pola rahasia) | Penyimpanan token/kunci dengan Android Keystore, bukan SharedPreferences polos |
-| `ai-agent-mcp-orchestration-2026` + `rag-llm-integrator` | Konteks otomatis v0.20.0: memilih leksikal-deterministik, bukan embeddings, karena target offline 2 GB |
+| `ai-agent-mcp-orchestration-2026` + `rag-llm-integrator` | Konteks otomatis v0.21.0: memilih leksikal-deterministik, bukan embeddings, karena target offline 2 GB |
 | `verification-loop` | Gerbang 6 fase sebelum rilis |
 | `adr-tech-documentation` | 41 ADR dengan konteks–keputusan–konsekuensi |
 | `memory-keeper` | `MEMORY.md` sebagai memori akar masalah |
@@ -43,20 +43,20 @@ Dokumen ini mencatat **siapa mengerjakan apa** dan **bukti seperti apa yang ditu
 | Milestone | Status | Isi ringkas |
 |---|---|---|
 | **M0 — Fondasi** | ✅ | Proyek Gradle multi-modul, JDK 17, SDK 35, `detekt.yml` (maxIssues 0), CI `test detekt assembleDebug` |
-| **M1 — Editor** | ✅ | `CodeEditorView` di atas `EditText`, gutter (diperombak total di v0.20.0), penyorotan hanya viewport, tab ganda, cari dalam berkas, cari se-projek, ganti semua, simpan otomatis 900 ms |
+| **M1 — Editor** | ✅ | `CodeEditorView` di atas `EditText`, gutter (diperombak total di v0.21.0), penyorotan hanya viewport, tab ganda, cari dalam berkas, cari se-projek, ganti semua, simpan otomatis 900 ms |
 | **M2 — Build engine** | ✅ (paling kritis) | 9 langkah pipeline; 9 akar masalah diselesaikan dan dicatat (ECJ bootclasspath, W^X, dx relokasi, apksigner 0.8, keystore per perangkat, alignment Kotlin). Bukti: 9 template APK terbangun di API 24 dan 35 |
 | **M3 — Onboarding & template** | ✅ | 10 template. Wizard menanyakan hanya yang perlu; `Jenis` wajib cocok dengan `jenis` di `templates/index.json` |
-| **M4 — Belajar & diagnosa** | ✅ | `DiagnosticParser` + `ErrorCatalog` (26 entri) mengubah keluaran alat menjadi "judul · berkas · baris · cara perbaiki". Semua galat yang dikirim ke AI melewati katalog ini. **Mode belajar** (v0.20.0): pelajaran langkah-demi-langkah per template |
+| **M4 — Belajar & diagnosa** | ✅ | `DiagnosticParser` + `ErrorCatalog` (26 entri) mengubah keluaran alat menjadi "judul · berkas · baris · cara perbaiki". Semua galat yang dikirim ke AI melewati katalog ini. **Mode belajar** (v0.21.0): pelajaran langkah-demi-langkah per template |
 | **M5 — Cloud** | ⛔ sengaja | Tier 1 (worker Gradle) dan Tier 2 (proot/JDK) **tidak dibangun** — ADR-001 dan ADR-007: server berarti data pengguna berpindah dan janji "tanpa server" gugur. Konsekuensinya projek Gradle tidak bisa dibuild, dan itu dikatakan di UI |
 | **M6 — Kolaborasi** | ✅ | Git nyata di HP (JGit 3.7.1), commit, kirim ke GitHub, riwayat, terbit situs ke `gh-pages`, klon dari GitHub (`KlonProjekDialog`, menolak alamat bukan-HTTPS dengan kalimat yang jelas) |
-| **M7 — Rilis** | ✅ | v0.1.0 → v0.20.0 di GitHub Releases, APK arm-only ditandatangani kunci perangkat/pengguna, `-PsemuaAbi` untuk emulator, setiap rilis dipasang dan dibuka sebelum dibagikan |
+| **M7 — Rilis** | ✅ | v0.1.0 → v0.21.0 di GitHub Releases, APK arm-only ditandatangani kunci perangkat/pengguna, `-PsemuaAbi` untuk emulator, setiap rilis dipasang dan dibuka sebelum dibagikan |
 
 ## 4. Gate yang tidak boleh dilewati
 
 | Gate | Perintah | Ambang |
 |---|---|---|
 | 1 · Kompilasi & tipe | `./gradlew test detekt` | 0 gagal, 0 temuan |
-| 2 · Perilaku nyata | `./gradlew :app:connectedDebugAndroidTest` | 140/140 hijau |
+| 2 · Perilaku nyata | `./gradlew :app:connectedDebugAndroidTest` | 142/142 hijau |
 | 3 · Pipeline tanpa Gradle | `scripts/prove/build-templates.sh` | semua template APK sah, `apksigner verify` lulus |
 | 4 · Anti-slop & keamanan | tinjauan manual + `grep` rahasia | tidak ada `TODO`, `any`, jalur model tanpa validasi, token di disk |
 | 5 · Rilis | pasang APK minified, buka, tekan satu alur | aplikasi hidup, tanpa crash |
@@ -69,4 +69,4 @@ Dokumen ini mencatat **siapa mengerjakan apa** dan **bukti seperti apa yang ditu
 3. **Uji yang cocok teks harus memakai pohon tak tergabung** (`useUnmergedTree = true`) bila elemen berada di dalam baris yang bisa diklik.
 4. **Jangan menyimpulkan dari "BUILD SUCCESSFUL".** Rilis diverifikasi dengan memasang dan membukanya.
 5. **Heredoc shell tidak dipakai** untuk mengubah repo; pakai editor berkas agar diff terbaca.
-6. **Uji perangkat yang gagal melampirkan bukti** (paket fokus + dump uiautomator) di pesan asersinya, bukan ditebak-ulang — lahir dari flake `PasangApkDeviceTest` (v0.20.0).
+6. **Uji perangkat yang gagal melampirkan bukti** (paket fokus + dump uiautomator) di pesan asersinya, bukan ditebak-ulang — lahir dari flake `PasangApkDeviceTest` (v0.21.0).

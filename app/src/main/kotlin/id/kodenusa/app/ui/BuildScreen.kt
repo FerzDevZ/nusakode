@@ -392,7 +392,17 @@ private fun galatUntukAi(state: BuildUiState, setup: String?): String = buildStr
             appendLine("  lokasi: $berkas${d.line?.let { baris -> ":$baris" }.orEmpty()}")
         }
     }
+    // Ekor log mentah (v0.21.0): apa yang pengguna lihat di layar Build ikut terlampir, tanpa
+    // perlu izin tangkapan layar — data di balik layar lebih berguna bagi model daripada
+    // gambarnya, dan anggarannya dibatasi supaya kuota AI tidak habis pada log.
+    if (state.log.isNotEmpty()) {
+        appendLine("Ekor log build:")
+        state.log.takeLast(BARIS_LOG_UNTUK_AI).forEach { appendLine("  $it") }
+    }
 }
+
+/** Batas baris log yang ikut ke AI — cukup untuk konteks, tidak menghabiskan kuota. */
+private const val BARIS_LOG_UNTUK_AI = 40
 
 @Composable
 private fun StepsPanel(state: BuildUiState) {

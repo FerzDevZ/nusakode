@@ -14,8 +14,33 @@ data class AiConfig(
     /** Model yang dipilih pengguna; boleh kosong sebelum daftar model dimuat. */
     val model: String = "",
     val temperature: Double = 0.2,
+    /**
+     * Endpoint cadangan (v0.21.0, docs/14 4.6): penyedia AI kadang 503 sesaat berhari-hari, dan
+     * pengguna tidak bisa mengerjakan apa pun selama itu. Kalau cadangan diisi dan utama gagal
+     * karena penyedia/jaringan, permintaan dicoba sekali lagi ke cadangan — bukan ke mana-mana
+     * selain endpoint yang pengguna isi sendiri.
+     */
+    val cadanganBaseUrl: String = "",
+    val cadanganApiKey: String = "",
+    /** Kosong = pakai id model yang sama dengan utama; banyak penyedia memakai nama model serupa. */
+    val cadanganModel: String = "",
 ) {
     val terpasang: Boolean get() = baseUrl.isNotBlank() && apiKey.isNotBlank()
+
+    /** Cadangan hanya dianggap terpasang bila alamat DAN kuncinya diisi — setengah isi ditolak. */
+    val cadanganTerpasang: Boolean
+        get() = cadanganBaseUrl.isNotBlank() && cadanganApiKey.isNotBlank()
+
+    /**
+     * Konfigurasi siap pakai untuk endpoint cadangan. Model kosong diwarisi dari model utama;
+     * kalau penyedia cadangan tidak punya model itu, galatnya jujur menyebut model yang gagal.
+     */
+    fun cadangan(): AiConfig = AiConfig(
+        baseUrl = cadanganBaseUrl,
+        apiKey = cadanganApiKey,
+        model = cadanganModel.ifBlank { model },
+        temperature = temperature,
+    )
 
     /** Alamat dasar tanpa garis miring di ujung, supaya penggabungan path tidak menghasilkan `//`. */
     fun dasar(): String = baseUrl.trim().trimEnd('/')

@@ -184,9 +184,8 @@ class OpenAiCompatClientTest {
         var dihitung = 0
 
         val gagal = runCatching {
-            klien.bicara(config(), PromptBuilder.untukTanya("panjang"), batalkan = { dihitung > 2 }) {
-                dihitung += 1
-            }
+            klien.bicara(config(), PromptBuilder.untukTanya("panjang"), batalkan = { dihitung > 2 },
+                onDelta = { dihitung += 1 })
         }.exceptionOrNull() as AiGagal
 
         assertEquals(AiGagal.Jenis.DIBATALKAN, gagal.jenis)
@@ -219,5 +218,71 @@ class OpenAiCompatClientTest {
 
         assertEquals(AiGagal.Jenis.PENYEDIA, gagal.jenis)
         assertTrue(gagal.saran.contains("max tokens too large"))
+    }
+
+    // ---- Failover ke endpoint cadangan (v0.21.0, docs/14 4.6) ----
+
+    @Test
+    fun utama_503_dilanjutkan_ke_cadangan_dan_jawabannya_dipakai() = runTest {
+        balasan = { ex ->
+            if (ex.requestURI.path.startsWith("/v1")) {
+                kirimJson(ex, 503, """{"error":{"message":"penyedia down"}}""")
+            } else {
+                kirimJson(ex, 200, """{"choices":[{"message":{"content":"jawaban cadangan"}}]}""")
+            }
+        }
+        var lewatCadangan = false
+        val hasil = klien.bicara(
+            config().copy(
+                cadanganBaseUrl = dasar().replace("/v1", "/cadangan"),
+                cadanganApiKey = "kunci-cadangan",
+            ),
+            listOf(ChatMessage(ChatMessage.Peran.PENGGUNA, "hai")),
+            onCadangan = { lewatCadangan = true },
+        )
+
+        assertEquals("jawaban cadangan", hasil)
+        assertTrue(lewatCadangan, "callback cadangan harus dipanggil")
+        assertTrue(jalurTerakhir.startsWith("/cadangan"), "jalur terakhir: $jalurTerakhir")
+        assertEquals("Bearer kunci-cadangan", otorisasiTerakhir)
+    }
+
+    @Test
+    fun kunci_salah_di_utama_tidak_dipindah_ke_cadangan() = runTest {
+        balasan = { ex -> kirimJson(ex, 401, "{}") }
+
+        val gagal = runCatching {
+            klien.bicara(
+                config().copy(
+                    cadanganBaseUrl = dasar().replace("/v1", "/cadangan"),
+                    cadanganApiKey = "kunci-cadangan",
+                ),
+                listOf(ChatMessage(ChatMessage.Peran.PENGGUNA, "hai")),
+            )
+        }.exceptionOrNull() as AiGagal
+
+        assertEquals(AiGagal.Jenis.KUNCI_SALAH, gagal.jenis)
+        assertTrue(
+            !jalurTerakhir.startsWith("/cadangan"),
+            "cadangan tidak boleh dicoba untuk kunci salah; jalur terakhir: $jalurTerakhir",
+        )
+    }
+
+    @Test
+    fun cadangan_juga_gagal_galat_utama_yang_dilaporkan() = runTest {
+        balasan = { ex -> kirimJson(ex, 503, """{"error":{"message":"down"}}""") }
+
+        val gagal = runCatching {
+            klien.bicara(
+                config().copy(
+                    cadanganBaseUrl = dasar().replace("/v1", "/cadangan"),
+                    cadanganApiKey = "kunci-cadangan",
+                ),
+                listOf(ChatMessage(ChatMessage.Peran.PENGGUNA, "hai")),
+            )
+        }.exceptionOrNull() as AiGagal
+
+        assertEquals(AiGagal.Jenis.PENYEDIA, gagal.jenis)
+        assertTrue(jalurTerakhir.startsWith("/cadangan"), "cadangan harus sudah dicoba")
     }
 }

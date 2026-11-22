@@ -42,14 +42,20 @@ class AiSettingsStore(
         baseUrl = prefs.getString(KUNCI_ENDPOINT, "").orEmpty(),
         apiKey = bacaRahasia(KUNCI_RAHASIA),
         model = prefs.getString(KUNCI_MODEL, "").orEmpty(),
+        cadanganBaseUrl = prefs.getString(KUNCI_ENDPOINT_CADANGAN, "").orEmpty(),
+        cadanganApiKey = bacaRahasia(KUNCI_RAHASIA_CADANGAN),
+        cadanganModel = prefs.getString(KUNCI_MODEL_CADANGAN, "").orEmpty(),
     )
 
     fun simpan(config: AiConfig) {
         prefs.edit()
             .putString(KUNCI_ENDPOINT, config.baseUrl.trim())
             .putString(KUNCI_MODEL, config.model)
+            .putString(KUNCI_ENDPOINT_CADANGAN, config.cadanganBaseUrl.trim())
+            .putString(KUNCI_MODEL_CADANGAN, config.cadanganModel.trim())
             .apply()
         tulisRahasia(KUNCI_RAHASIA, config.apiKey)
+        tulisRahasia(KUNCI_RAHASIA_CADANGAN, config.cadanganApiKey)
     }
 
     fun pilihModel(id: String) {
@@ -84,10 +90,22 @@ class AiSettingsStore(
     /**
      * Menyimpan apa yang sedang diketik pengguna, bukan hanya setelah "Muat model" ditekan.
      * Tanpa ini, menutup layar AI lalu membukanya lagi terasa seperti "reset" — keluhan nyata pengguna.
+     * Endpoint/kunci cadangan ikut disimpan (v0.21.0) supaya failover tetap hidup setelah layar ditutup.
      */
-    fun simpanDraf(endpoint: String, kunci: String) {
-        prefs.edit().putString(KUNCI_ENDPOINT, endpoint.trim()).apply()
+    fun simpanDraf(
+        endpoint: String,
+        kunci: String,
+        endpointCadangan: String = "",
+        kunciCadangan: String = "",
+        modelCadangan: String = "",
+    ) {
+        prefs.edit()
+            .putString(KUNCI_ENDPOINT, endpoint.trim())
+            .putString(KUNCI_ENDPOINT_CADANGAN, endpointCadangan.trim())
+            .putString(KUNCI_MODEL_CADANGAN, modelCadangan.trim())
+            .apply()
         tulisRahasia(KUNCI_RAHASIA, kunci)
+        tulisRahasia(KUNCI_RAHASIA_CADANGAN, kunciCadangan)
     }
 
     /** Menyimpan obrolan per projek supaya jawaban panjang tidak hilang saat layar ditutup. */
@@ -150,6 +168,9 @@ class AiSettingsStore(
         const val KUNCI_ENDPOINT = "endpoint"
         const val KUNCI_RAHASIA = "kunci"
         const val KUNCI_MODEL = "model"
+        const val KUNCI_ENDPOINT_CADANGAN = "endpoint_cadangan"
+        const val KUNCI_RAHASIA_CADANGAN = "kunci_cadangan"
+        const val KUNCI_MODEL_CADANGAN = "model_cadangan"
         const val KUNCI_DAFTAR = "daftar_model"
         const val KUNCI_PERCAKAPAN = "percakapan_"
         const val KUNCI_KARAKTER = "karakter_"

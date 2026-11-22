@@ -53,6 +53,9 @@ class AppContainer(context: Context) {
     /** Kunci tanda tangan milik pengguna (docs/14 2.1, ADR-041). */
     val kunciPengguna = KunciPengguna(context)
 
+    /** Cadangan otomatis harian (docs/09 P2 #10): zip cadangan-semua per hari, maks 2 salinan. */
+    val cadanganOtomatis = CadanganOtomatis.bawaan(context, workspaceRoot)
+
     fun newEngine(toolchain: Toolchain): BuildEngine = Tier0BuildEngine(toolchain)
 
     private companion object {

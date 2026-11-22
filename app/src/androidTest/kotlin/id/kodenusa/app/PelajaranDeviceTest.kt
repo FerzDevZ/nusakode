@@ -32,8 +32,19 @@ class PelajaranDeviceTest {
     }
 
     @Test
+    fun pelajaran_kasir_warung_membawa_7_langkah_dari_aset_apk() {
+        val pelajaran = store.muat("kasir-warung")
+        assertNotNull("pelajaran.md kasir-warung hilang dari APK", pelajaran)
+        assertEquals("kasir-warung", pelajaran!!.templateId)
+        assertEquals(7, pelajaran.langkah.size)
+        assertEquals("Kenali layar editor", pelajaran.langkah[0].judul)
+        assertEquals("Ekspor ke CSV", pelajaran.langkah[6].judul)
+        assertEquals(7, pelajaran.langkah.count { it.isi.isNotBlank() })
+    }
+
+    @Test
     fun template_tanpa_pelajaran_menghasilkan_null() {
-        assertNull(store.muat("kasir-warung"))
+        assertNull(store.muat("stok-barang"))
         assertNull(store.muat(null))
     }
 

@@ -66,7 +66,12 @@ class GitUiTest {
             RepoGit.adalahRepo(projek) && RepoGit.daftarCommit(projek).isNotEmpty()
         }
         assertTrue(RepoGit.adalahRepo(projek))
-        assertEquals(1, RepoGit.daftarCommit(projek).size)
+        assertEquals(
+            "commit terbaca: ${RepoGit.daftarCommit(projek)} — isi .git: " +
+                projek.resolve(".git").list()?.joinToString(),
+            1,
+            RepoGit.daftarCommit(projek).size,
+        )
     }
 
     @Test

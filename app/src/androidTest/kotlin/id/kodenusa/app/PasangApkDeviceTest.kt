@@ -133,9 +133,20 @@ class PasangApkDeviceTest {
                     sudahIzin = true
                 }
                 teksTombol == "Allow from this source" || teksTombol == "Izinkan dari sumber ini" -> {
-                    klikTeks(teksTombol)
-                    sudahIzin = true
-                    Thread.sleep(1_500)
+                    // Klik HANYA bila saklar masih mati. Bila sudah aktif (sisa sesi pemasang
+                    // sebelumnya yang berhenti di halaman ini), klik justru MEMATIKAN izin dan
+                    // uji terjebak berbalik-balik di halaman Setelan sampai waktu habis — bukti
+                    // logcat: "Session was abandoned" + fokus berakhir di launcher. Saklar sudah
+                    // aktif artinya cukup kembali ke pemasang.
+                    val saklar = perangkat.findObject(By.checkable(true))
+                    if (saklar != null && saklar.isChecked) {
+                        perangkat.pressBack()
+                        Thread.sleep(1_500)
+                    } else {
+                        (saklar ?: perangkat.findObject(By.text(teksTombol)))?.click()
+                        sudahIzin = true
+                        Thread.sleep(1_500)
+                    }
                 }
                 // HANYA kembali dari Setelan ke pemasang — bukan back buta. Bukti uji: back
                 // otomatis saat transisi pemasang (tombol belum tampak) MEMBATALKAN pemasangan

@@ -208,7 +208,7 @@ class WizardUiTest {
     @Test
     fun projek_dari_halodunia_menampilkan_pelajaran_di_editor() {
         // Mode belajar (docs/14 3.3): projek dari template halo-dunia membuka editor dengan
-        // panel pelajaran langkah 1 dari 5 — pelajaran tidak muncul di projek lain.
+        // panel pelajaran langkah 1 dari 5 — template lain tanpa pelajaran.md tidak menampilkannya.
         bukaFormProjekBaru()
         layar.onNodeWithTag("daftar-wizard").performScrollToNode(hasTestTag("template-halo-dunia"))
         layar.onNodeWithTag("template-halo-dunia").performClick()

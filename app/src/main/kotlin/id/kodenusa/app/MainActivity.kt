@@ -22,12 +22,27 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         pasangPenangkapGalat()
         container = AppContainer(applicationContext)
+        jalankanCadanganHarian()
         // Anti-kilat: token tema dibaca sebelum setContent, jadi frame pertama sudah warna benar.
         val tokensAwal = container.temaStore.tokens()
         pasangkanStatusBar(window, tokensAwal)
         setContent {
             KodeNusaApp(container, tokensAwal)
         }
+    }
+
+    /**
+     * Cadangan otomatis harian (docs/09 P2 #10): dibuat sekali sehari di benang belakang saat
+     * aplikasi dibuka, tanpa dialog dan tanpa mengganggu. Kegagalan tercatat di status.txt di
+     * folder cadangan, bukan diam-diam.
+     */
+    private fun jalankanCadanganHarian() {
+        val cadangan = container.cadanganOtomatis
+        if (!cadangan.perluCadangkan()) return
+        Thread {
+            runCatching { cadangan.jalankan() }
+                .onFailure { cadangan.catatGagal(it) }
+        }.start()
     }
 
     /**

@@ -2,7 +2,7 @@
 
 Dokumen ini menjawab satu pertanyaan: **benda apa saja yang ikut di dalam APK supaya HP bisa mengompilasi sendiri, dan mengapa versi itu yang dipilih?**
 
-**Status dokumen:** terakhir diselaraskan dengan rilis **v0.20.0** (APK rilis 35.189.881 bita).
+**Status dokumen:** terakhir diselaraskan dengan rilis **v0.21.0** (APK rilis 32.896.476 bita).
 
 ---
 
@@ -18,7 +18,7 @@ Dokumen ini menjawab satu pertanyaan: **benda apa saja yang ikut di dalam APK su
 | ZipAligner | Kotlin murni | ✅ | tanpa biner `zipalign` |
 | Keystore | dibuat di perangkat | ✅ | `filesDir/keys/debug.keystore`, ADR-019; kunci pengguna opsional, ADR-041 |
 
-APK rilis membawa komponen di atas: **35.189.881 bita (± 35 MB)**. Analisis mengapa tidak bisa lebih kecil ada di ADR-028.
+APK rilis membawa komponen di atas: **32.896.476 bita (± 35 MB)**. Analisis mengapa tidak bisa lebih kecil ada di ADR-028.
 
 ## 2. Lokasi dan cara dijalankan
 
@@ -75,6 +75,6 @@ bash scripts/prove/build-templates.sh
 |---|---|---|
 | 24 | `kodenusa24` | template ter-build, APK terpasang |
 | 34 | `kodenusa34` | build & pasang |
-| 35 | `kodenusa35` | 140 uji perangkat hijau, rilis minified dipasang & dibuka |
+| 35 | `kodenusa35` | 142 uji perangkat hijau, rilis minified dipasang & dibuka |
 
 Catatan: build pertama setelah instalasi menyalin `android.jar` 24 MB ke penyimpanan internal (21,4 detik di emulator). Build berikutnya (hangat) 1,4–1,9 detik. Angka HP fisik belum ada — lihat [lembar ukur](08-lembar-ukur-4gb.md).

@@ -69,6 +69,8 @@ class OpenAiCompatClient(
         batalkan: () -> Boolean = { false },
         onReasoning: (String) -> Unit = {},
         onDelta: (String) -> Unit = {},
+        /** Dipanggil sekali bila jawaban akhirnya berhasil lewat endpoint cadangan (v0.21.0). */
+        onCadangan: () -> Unit = {},
     ): String = withContext(Dispatchers.IO) {
         if (!config.terpasang) throw AiGagal.belumDiatur()
         if (config.model.isBlank()) {
@@ -84,13 +86,44 @@ class OpenAiCompatClient(
                 return@withContext sekaliBicara(config, pesan, batalkan, onReasoning, onDelta)
             } catch (gagal: AiGagal) {
                 val layakUlang = gagal.jenis == AiGagal.Jenis.PENYEDIA && sisaPercobaan > 0
-                if (!layakUlang) throw gagal
+                if (!layakUlang) {
+                    // Failover ke cadangan (docs/14 4.6): hanya untuk kegagalan penyedia/jaringan —
+                    // kunci salah atau kuota habis di utama TIDAK dipindahkan ke cadangan, karena
+                    // cadangan punya kunci berbeda dan galat aslinya lebih jujur untuk ditampilkan.
+                    val layakCadangan = config.cadanganTerpasang &&
+                        (gagal.jenis == AiGagal.Jenis.PENYEDIA || gagal.jenis == AiGagal.Jenis.JARINGAN)
+                    if (!layakCadangan) throw gagal
+                    return@withContext bicaraCadangan(gagal, config, pesan, batalkan, onReasoning, onDelta, onCadangan)
+                }
                 sisaPercobaan -= 1
                 delay(jedaUlangMs)
             }
         }
         @Suppress("UNREACHABLE_CODE")
         ""
+    }
+
+    /** Satu percobaan ke endpoint cadangan, tanpa putaran ulang lagi — utama sudah mencoba. */
+    private suspend fun bicaraCadangan(
+        gagalUtama: AiGagal,
+        config: AiConfig,
+        pesan: List<ChatMessage>,
+        batalkan: () -> Boolean,
+        onReasoning: (String) -> Unit,
+        onDelta: (String) -> Unit,
+        onCadangan: () -> Unit,
+    ): String {
+        val cadangan = config.cadangan()
+        try {
+            val jawaban = sekaliBicara(cadangan, pesan, batalkan, onReasoning, onDelta)
+            onCadangan()
+            return jawaban
+        } catch (gagalCadangan: AiGagal) {
+            // Galat utama tetap yang dilaporkan: penyebab aslinya lebih berguna daripada galat
+            // kedua di endpoint cadangan yang mungkin salah alamat/model. Kegagalan cadangan
+            // tetap tercatat sebagai penyebab, tidak hilang.
+            throw AiGagal(gagalUtama.jenis, gagalUtama.pesan, gagalUtama.saran, gagalCadangan)
+        }
     }
 
     private fun sekaliBicara(
