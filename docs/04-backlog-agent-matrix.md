@@ -4,7 +4,7 @@ Proyek ini dibangun dengan disiplin *swarm*: 113 persona di `.agents/agents/`, 6
 
 Dokumen ini mencatat **siapa mengerjakan apa** dan **bukti seperti apa yang dituntut** — bukan daftar lengkap 611 skill.
 
-**Status dokumen:** terakhir diselaraskan dengan rilis **v0.21.0**.
+**Status dokumen:** terakhir diselaraskan dengan rilis **v0.22.0**.
 
 ---
 
@@ -33,7 +33,7 @@ Dokumen ini mencatat **siapa mengerjakan apa** dan **bukti seperti apa yang ditu
 | `distributed-systems-scale-2026` | Idempotensi unggah rilis, backoff, pemetaan galat HTTP |
 | `cybersecurity-appsec-redteam-2026` | Penolakan jalur berbahaya dari model AI, tanpa secret di log |
 | `jwt-session-security-passkeys` (pola rahasia) | Penyimpanan token/kunci dengan Android Keystore, bukan SharedPreferences polos |
-| `ai-agent-mcp-orchestration-2026` + `rag-llm-integrator` | Konteks otomatis v0.21.0: memilih leksikal-deterministik, bukan embeddings, karena target offline 2 GB |
+| `ai-agent-mcp-orchestration-2026` + `rag-llm-integrator` | Konteks otomatis v0.21.0 + tulis berkas otomatis di chat v0.22.0: memilih leksikal-deterministik, bukan embeddings, karena target offline 2 GB |
 | `verification-loop` | Gerbang 6 fase sebelum rilis |
 | `adr-tech-documentation` | 41 ADR dengan konteks–keputusan–konsekuensi |
 | `memory-keeper` | `MEMORY.md` sebagai memori akar masalah |
@@ -49,7 +49,7 @@ Dokumen ini mencatat **siapa mengerjakan apa** dan **bukti seperti apa yang ditu
 | **M4 — Belajar & diagnosa** | ✅ | `DiagnosticParser` + `ErrorCatalog` (26 entri) mengubah keluaran alat menjadi "judul · berkas · baris · cara perbaiki". Semua galat yang dikirim ke AI melewati katalog ini. **Mode belajar** (v0.21.0): pelajaran langkah-demi-langkah per template |
 | **M5 — Cloud** | ⛔ sengaja | Tier 1 (worker Gradle) dan Tier 2 (proot/JDK) **tidak dibangun** — ADR-001 dan ADR-007: server berarti data pengguna berpindah dan janji "tanpa server" gugur. Konsekuensinya projek Gradle tidak bisa dibuild, dan itu dikatakan di UI |
 | **M6 — Kolaborasi** | ✅ | Git nyata di HP (JGit 3.7.1), commit, kirim ke GitHub, riwayat, terbit situs ke `gh-pages`, klon dari GitHub (`KlonProjekDialog`, menolak alamat bukan-HTTPS dengan kalimat yang jelas) |
-| **M7 — Rilis** | ✅ | v0.1.0 → v0.21.0 di GitHub Releases, APK arm-only ditandatangani kunci perangkat/pengguna, `-PsemuaAbi` untuk emulator, setiap rilis dipasang dan dibuka sebelum dibagikan |
+| **M7 — Rilis** | ✅ | v0.1.0 → v0.22.0 di GitHub Releases, APK arm-only ditandatangani kunci perangkat/pengguna, `-PsemuaAbi` untuk emulator, setiap rilis dipasang dan dibuka sebelum dibagikan |
 
 ## 4. Gate yang tidak boleh dilewati
 

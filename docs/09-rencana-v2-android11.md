@@ -2,7 +2,7 @@
 
 > Dokumen ini menjawab tiga hal yang paling sering ditanya: **kenapa KodeNusa tidak muncul di "data" HP**, **izin apa yang sebenarnya dibutuhkan**, dan **fitur apa yang layak dibangun berikutnya** kalau patokannya HP 4 GB / 64 GB.
 
-**Status dokumen:** terakhir diselaraskan dengan rilis **v0.20.0**. Sebagian besar daftar P0–P3 di bagian 5 sudah tuntas; statusnya ditandai langsung di daftar.
+**Status dokumen:** terakhir diselaraskan dengan rilis **v0.22.0**. Sebagian besar daftar P0–P3 di bagian 5 sudah tuntas; statusnya ditandai langsung di daftar.
 
 ---
 

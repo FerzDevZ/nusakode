@@ -7,7 +7,7 @@ Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif
 | Kalau Anda bertanya… | Baca |
 |---|---|
 | Mengapa tidak memakai Gradle? | ADR-005 |
-| Mengapa APK-nya 35 MB? | ADR-028 |
+| Mengapa APK-nya 33 MB? | ADR-028 |
 | Mengapa Kotlin tidak didukung? | ADR-003 |
 | Mengapa tidak ada izin penyimpanan? | ADR-022 |
 | Mengapa kunci AI/token GitHub aman? | ADR-026 |

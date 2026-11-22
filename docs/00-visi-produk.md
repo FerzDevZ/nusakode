@@ -2,7 +2,7 @@
 
 > **Satu kalimat:** kalau seseorang hanya punya HP Android, ia tetap harus bisa membuat aplikasi Android sendiri — hari itu juga, tanpa laptop, tanpa Android Studio, tanpa menunggu sinyal bagus.
 
-**Status dokumen:** tetap berlaku · terakhir diselaraskan dengan rilis **v0.20.0**.
+**Status dokumen:** tetap berlaku · terakhir diselaraskan dengan rilis **v0.22.0**.
 
 ---
 

@@ -1,9 +1,9 @@
 # KodeNusa — IDE Android di dalam HP
 
 [![Rilis](https://img.shields.io/badge/rilis-v0.22.0-0f766e?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases/latest)
-[![Unduh APK](https://img.shields.io/badge/unduh-APK%2035%20MB-1d4ed8?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases/latest)
+[![Unduh APK](https://img.shields.io/badge/unduh-APK%2033%20MB-1d4ed8?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases/latest)
 [![Uji unit](https://img.shields.io/badge/uji%20unit-374%20lolos-16a34a?style=flat-square)](docs/FITUR.md)
-[![Uji perangkat](https://img.shields.io/badge/uji%20perangkat-140%20lolos-16a34a?style=flat-square)](docs/FITUR.md)
+[![Uji perangkat](https://img.shields.io/badge/uji%20perangkat-142%20lolos-16a34a?style=flat-square)](docs/FITUR.md)
 [![detekt](https://img.shields.io/badge/detekt-0%20temuan-16a34a?style=flat-square)](detekt.yml)
 
 **KodeNusa adalah IDE Android yang berjalan sepenuhnya di dalam HP: menulis kode, mengompilasi, menandatangani, dan memasang APK — tanpa PC, tanpa Gradle, tanpa internet.**
@@ -46,7 +46,7 @@ Legenda: ✅ teruji otomatis · ⚠️ terbatas, diungkap jujur · ❌ tidak dik
 
 ## Kejujuran teknis (kenapa hal ini penting)
 
-- **APK rilis 35 MB** karena membawa `android.jar` (24 MB) sebagai classpath kompilasi. Memangkasnya membuat kode pengguna yang sah gagal dikompilasi; mengunduhnya belakangan melanggar janji offline. Analisis byte-per-byte: [ADR-028](docs/03-adr.md).
+- **APK rilis 33 MB** karena membawa `android.jar` (24 MB) sebagai classpath kompilasi. Memangkasnya membuat kode pengguna yang sah gagal dikompilasi; mengunduhnya belakangan melanggar janji offline. Analisis byte-per-byte: [ADR-028](docs/03-adr.md).
 - **Kunci tanda tangan dibuat di HP Anda** saat pertama dipakai ([ADR-019](docs/03-adr.md), [ADR-041](docs/03-adr.md)) — build Anda, milik Anda; tapi APK ini bukan produk Play Store.
 - **Kunci AI & token GitHub disandikan Android Keystore** (AES-256-GCM). Tidak ada server KodeNusa — tidak ada satu byte pun yang dikirim ke kami, karena kami tidak punya server.
 - **Tanpa telemetri.** Satu-satunya trafik jaringan adalah yang Anda picu sendiri (endpoint AI, GitHub).
@@ -56,7 +56,7 @@ Legenda: ✅ teruji otomatis · ⚠️ terbatas, diungkap jujur · ❌ tidak dik
 Kami tidak menulis "sudah jalan" untuk hal yang belum dijalankan:
 
 - Pengukuran di **HP 4 GB fisik** (RAM, suhu, waktu build) — baru data emulator di [docs/08-lembar-ukur-4gb.md](docs/08-lembar-ukur-4gb.md).
-- **Unggah APK 35 MB lewat jaringan seluler** — yang teruji: lapisan pengiriman bita dan satu unggahan nyata berkas kecil.
+- **Unggah APK 33 MB lewat jaringan seluler** — yang teruji: lapisan pengiriman bita dan satu unggahan nyata berkas kecil.
 - **Kamera sungguhan** (emulator tidak punya kamera) — yang teruji: deklarasi, penjaga `resolveActivity`, pesan galat.
 - **Pass-rate agen AI dengan model nyata** — jalankan `AI_EVAL=1` dengan kunci Anda ([docs/07-eval-agen.md](docs/07-eval-agen.md)).
 
@@ -90,7 +90,7 @@ Pipeline Tier 0 juga bisa dibuktikan tanpa emulator: `scripts/prove/build-hello.
 :build:hostcli   CLI Tier 0 untuk JVM host (pembuktian tanpa emulator)
 ```
 
-Alasan di balik tiap keputusan (kenapa tanpa Gradle, kenapa SAF-only, kenapa model AI di HP ditolak, dst.) ada di **32 ADR**: [docs/03-adr.md](docs/03-adr.md). Arsitektur teknis lengkap: [docs/01-arsitektur-teknis.md](docs/01-arsitektur-teknis.md).
+Alasan di balik tiap keputusan (kenapa tanpa Gradle, kenapa SAF-only, kenapa model AI di HP ditolak, dst.) ada di **41 ADR**: [docs/03-adr.md](docs/03-adr.md). Arsitektur teknis lengkap: [docs/01-arsitektur-teknis.md](docs/01-arsitektur-teknis.md).
 
 ## Dokumentasi
 
@@ -105,6 +105,8 @@ Alasan di balik tiap keputusan (kenapa tanpa Gradle, kenapa SAF-only, kenapa mod
 | [docs/06-rencana-2026.md](docs/06-rencana-2026.md) | Rencana fitur + status nyatanya |
 | [docs/07-eval-agen.md](docs/07-eval-agen.md) | Cara menguji agen AI, dan apa yang belum terbukti |
 | [docs/08-lembar-ukur-4gb.md](docs/08-lembar-ukur-4gb.md) | Lembar ukur RAM, waktu build, suhu baterai |
+| [docs/09-rencana-v2-android11.md](docs/09-rencana-v2-android11.md) | Kenapa aplikasi tidak muncul di "data" HP, izin, rencana Android 11+ & HP 4 GB |
+| [docs/11-rencana-v0.12.md](docs/11-rencana-v0.12.md) | Rencana perombakan editor (terlaksana di v0.20.0) |
 | [docs/10-tema-desain.md](docs/10-tema-desain.md) | Sistem tema dan format `.kntema` |
 | [docs/12-saran-ui-ux-ai.md](docs/12-saran-ui-ux-ai.md) · [docs/13-rencana-ui-ux.md](docs/13-rencana-ui-ux.md) · [docs/14-saran-pengembangan.md](docs/14-saran-pengembangan.md) | Rencana UI/UX & AI, termasuk konteks otomatis (14) |
 | [docs/FITUR.md](docs/FITUR.md) | Daftar fitur lengkap + uji pembuktinya |
