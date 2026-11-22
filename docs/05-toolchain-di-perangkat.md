@@ -1,27 +1,31 @@
-# Toolchain Tier 0 di dalam perangkat
+# 05 · Toolchain Tier 0 di Dalam Perangkat
 
 Dokumen ini menjawab satu pertanyaan: **benda apa saja yang ikut di dalam APK supaya HP bisa mengompilasi sendiri, dan mengapa versi itu yang dipilih?**
 
-## 1. Status terakhir
+**Status dokumen:** terakhir diselaraskan dengan rilis **v0.20.0** (APK rilis 35.189.881 bita).
+
+---
+
+## 1. Komponen yang dibundel
 
 | Komponen | Versi | Status | Bukti |
 |---|---|---|---|
-| ECJ (kompiler Java) | **3.25.0** | ✅ jalan di API 24 & 35 | 3 template ter-build di perangkat |
+| ECJ (kompiler Java) | **3.25.0** | ✅ jalan di API 24 & 35 | 9 template APK ter-build di perangkat |
 | dx (dexer) | **1.16** (build-tools 28.0.3), paket direlokasi | ✅ | `id.kodenusa.dxtool.command.Main` |
 | apksigner | **0.8** (build-tools 28) | ✅ | APK terpasang di Android 15 |
 | aapt2 | **2.19** bionic, 3 ABI | ✅ | layout + `R.java` benar |
 | `android.jar` | **API 34** | ✅ | classpath kompilasi, 26.361.808 bita |
 | ZipAligner | Kotlin murni | ✅ | tanpa biner `zipalign` |
-| Keystore | dibuat di perangkat | ✅ | `filesDir/keys/debug.keystore`, ADR-019 |
+| Keystore | dibuat di perangkat | ✅ | `filesDir/keys/debug.keystore`, ADR-019; kunci pengguna opsional, ADR-041 |
 
-APK rilis membawa komponen di atas: **32.290.843 bita**. Analisis mengapa tidak bisa lebih kecil ada di ADR-028.
+APK rilis membawa komponen di atas: **35.189.881 bita (± 35 MB)**. Analisis mengapa tidak bisa lebih kecil ada di ADR-028.
 
 ## 2. Lokasi dan cara dijalankan
 
 ```
-toolsDir   = filesDir/toolchain          ← jar dari assets (read-only)
-runnableDir= filesDir/toolchain/bin      ← hasil dex untuk JavaLauncher
-aapt2      = nativeLibraryDir/libaapt2.so ← wajib, lihat ADR-021
+toolsDir    = filesDir/toolchain          ← jar dari assets (read-only)
+runnableDir = filesDir/toolchain/bin      ← hasil dex untuk JavaLauncher
+aapt2       = nativeLibraryDir/libaapt2.so ← wajib, lihat ADR-021
 ```
 
 - **Tidak ada JVM di Android.** Karena itu ECJ/dx/apksigner dijalankan lewat `/system/bin/app_process` (ART) dengan `CLASSPATH` ke dex yang sudah diekstrak. `JavaLauncher` menyusun argumen sesuai tingkat SDK (format `app_process` berbeda antara API < 26 dan ≥ 26).
@@ -37,13 +41,13 @@ aapt2      = nativeLibraryDir/libaapt2.so ← wajib, lihat ADR-021
 5. **Mengubah modul library → `--rerun-tasks`.** Tanpa itu, hasil build perangkat bisa memakai dex lama.
 6. **Aset biner tidak masuk git** (`.gitignore`): `jniLibs/**/*.so`, jar toolchain, `dist/`, `.tools/`. Yang masuk git hanya `toolchain.json` dan skrip pembangunnya.
 
-## 4. Yang sengaja belum ada
+## 4. Yang sengaja tidak dibundel
 
 | Tidak ada | Alasan |
 |---|---|
 | Kotlin compiler | 70 MB+, menaikkan APK ~2,5× (ADR-003) |
 | d8 / R8 | tidak bisa jalan di API 24 |
-| `zipalign` biner | diganti `ZipAligner` Kotlin (100 baris, tanpa biner tambahan) |
+| `zipalign` biner | diganti `ZipAligner` Kotlin (±100 baris, tanpa biner tambahan) |
 | Gradle | diganti `kodenusa.json` (ADR-005) |
 | JDK penuh (proot) | Tier 2, hanya layak ≥ 4 GB, belum dibangun (ADR-001) |
 
@@ -69,8 +73,8 @@ bash scripts/prove/build-templates.sh
 
 | API | Perangkat | Hasil |
 |---|---|---|
-| 24 | `kodenusa24` | 3 template ter-build, APK terpasang |
+| 24 | `kodenusa24` | template ter-build, APK terpasang |
 | 34 | `kodenusa34` | build & pasang |
-| 35 | `kodenusa35` | 77 uji perangkat hijau, rilis minified dipasang & dibuka |
+| 35 | `kodenusa35` | 140 uji perangkat hijau, rilis minified dipasang & dibuka |
 
 Catatan: build pertama setelah instalasi menyalin `android.jar` 24 MB ke penyimpanan internal (21,4 detik di emulator). Build berikutnya (hangat) 1,4–1,9 detik. Angka HP fisik belum ada — lihat [lembar ukur](08-lembar-ukur-4gb.md).

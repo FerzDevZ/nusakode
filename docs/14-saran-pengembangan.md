@@ -1,8 +1,7 @@
-# 14 — Saran Pengembangan v0.17+ (lengkap & rinci)
+# 14 · Saran Pengembangan v0.17+ (lengkap & rinci)
 
-**Tanggal:** 21 November 2026 · **Status:** usulan untuk dipilih — belum disetujui
-**Dasar:** audit keadaan nyata v0.16.0 (253 uji unit, 106 uji perangkat, 7 template),
-`FITUR.md` (daftar ⛔/🟡), `docs/06-rencana-2026.md`, dan prinsip `docs/00-visi-produk.md`.
+**Tanggal:** 21 November 2026 · **Status: SEMUA butir v0.17.0–v0.19.0 TUNTAS** (kunci tanda tangan pengguna ADR-041, ikon aplikasi, versionCode otomatis, tombol Pasang, lengkapi kata, ukuran font, buka berkas cepat, riwayat berkas, ekspor CSV, 3 template baru, mode belajar pilot, agen putaran pilihan 9/10, scaffold "template saya", galeri komunitas). Dokumen dipertahankan sebagai rekaman rancangan dan alasan penolakan.
+**Dasar:** audit keadaan nyata v0.16.0, `FITUR.md` (daftar ⛔/🟡), `docs/06-rencana-2026.md`, dan prinsip `docs/00-visi-produk.md`.
 
 Aturan yang sama seperti docs/13 berlaku: **tidak ada janji di UI tanpa kode di belakangnya**,
 dan setiap butir harus punya bukti terukur sebelum boleh diumumkan.

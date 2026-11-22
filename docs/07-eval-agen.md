@@ -6,9 +6,10 @@ menyelesaikan tugas, atau hanya terlihat pintar di demo?**
 Tanpa angka, setiap perubahan prompt berisiko menjadi regresi yang tidak terlihat. Karena itu ada
 10 tugas tetap dan satu cara menjalankannya.
 
-**Status 0.19.0:** harness **siap dan lulus tanpa kunci** (`EvalAgenJalurTest`, 10 tugas lewat loop
-`AgenBuild` dengan model tiruan). Tabel angka di bawah sudah terisi dari satu putaran nyata
-(21 Nov 2026, penyedia `api.crown.ai.id`, model `zai-org/GLM-5.3-Flash`).
+**Status dokumen:** tetap berlaku sejak v0.19.0. Harness **siap dan lulus tanpa kunci**
+(`EvalAgenJalurTest`, 10 tugas lewat loop `AgenBuild` dengan model tiruan). Tabel angka di bawah
+sudah terisi dari **dua putaran nyata** (21 Nov 2026, penyedia `api.crown.ai.id`, model
+`zai-org/GLM-5.3-Flash`): 9/10 dua-duanya, median 41,8 s lalu 18,6 s.
 
 ## Cara menjalankan
 

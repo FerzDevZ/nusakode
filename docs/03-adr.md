@@ -1,13 +1,13 @@
-# 03 — Architecture Decision Records
+# 03 · Architecture Decision Records
 
 Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif yang ditolak.
 
-**31 keputusan.** Dibaca berurutan dari atas ke bawah; nomor besar berarti keputusan yang lebih baru dan biasanya menimpa asumsi yang lebih lama. Untuk cepat: tabel di bawah menunjuk nomor yang paling sering dicari.
+**41 keputusan** (ADR-001 … ADR-041). Dibaca berurutan dari atas ke bawah; nomor besar berarti keputusan yang lebih baru dan biasanya menimpa asumsi yang lebih lama. Untuk cepat: tabel di bawah menunjuk nomor yang paling sering dicari.
 
 | Kalau Anda bertanya… | Baca |
 |---|---|
 | Mengapa tidak memakai Gradle? | ADR-005 |
-| Mengapa APK-nya 32 MB? | ADR-028 |
+| Mengapa APK-nya 35 MB? | ADR-028 |
 | Mengapa Kotlin tidak didukung? | ADR-003 |
 | Mengapa tidak ada izin penyimpanan? | ADR-022 |
 | Mengapa kunci AI/token GitHub aman? | ADR-026 |
@@ -17,6 +17,10 @@ Format ringkas. Setiap ADR: konteks → keputusan → konsekuensi → alternatif
 | Mengapa JGit 3.7.1? | ADR-024 |
 | Mengapa unggah APK lewat GitHub, bukan server sendiri? | ADR-029 |
 | Mengapa palet perintah, bukan tombol tambahan? | ADR-031 |
+| Mengapa tulisan AI wajib lewat pratinjau + undo? | ADR-038 |
+| Mengapa agen punya riwayat per projek + prompt tahu template? | ADR-039 |
+| Mengapa panel memakai kontrak Box? | ADR-040 |
+| Mengapa APK memakai kunci tanda tangan pengguna? | ADR-041 |
 
 ---
 

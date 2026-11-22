@@ -1,10 +1,9 @@
-# Saran UI/UX & fitur — fokus layar AI dan agen
+# 12 · Saran UI/UX & Fitur — Layar AI dan Agen
+
+> **Status: SEMUA butir TUNTAS** di v0.13.0–v0.15.0 (semua uji hijau sejak rilis-rilis itu). Dokumen dipertahankan sebagai rekaman diagnosis → perbaikan; setiap butir diberi label **[FAKTA]** = terverifikasi di kode/uji, **[SARAN]** = usulan yang kini sudah dikerjakan.
 
 > Disusun 20 November 2026 setelah membaca seluruh kode layar AI (`AiScreen.kt`), agen
 > (`AgenBuild.kt`, `AiProjectBoard.kt`, `PromptBuilder.kt`), dan panel berkas editor.
-> Setiap butir diberi label: **[FAKTA]** = sudah terverifikasi di kode/uji, **[SARAN]** =
-> **STATUS: SEMUA butir di bagian 2 sudah dikerjakan dan dirilis di v0.13.0** (232→234 unit,
-> 99→102 perangkat, semua hijau). Bukti per butir ada di bawah.
 
 ## 1. Fakta: apa yang sebenarnya sudah bisa dan belum
 

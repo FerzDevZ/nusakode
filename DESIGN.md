@@ -1,7 +1,8 @@
 # DESIGN.md — Arah Visual KodeNusa
 
-Dikunci sebelum M1 (sesuai `AGENTS.md`: "For UI: settle DESIGN.md first"). Berlaku sampai **v0.9.6**.
-Perubahan arah visual = ADR baru, bukan improvisasi di PR.
+Dikunci sebelum M1 (sesuai `AGENTS.md`: "For UI: settle DESIGN.md first"). **Masih berlaku** — perubahan arah visual = ADR baru, bukan improvisasi di PR (contoh penerapan: ADR-033, ADR-035/036).
+
+Status penerapan: semua prinsip di dokumen ini sudah ditegakkan lewat uji (`ContrastTest`, uji tema, uji perangkat) dan audit visual v0.16.0; inventaris layar di §10 diperbarui sampai v0.20.0.
 
 ---
 
@@ -100,20 +101,23 @@ Aturan praktis:
 - [ ] Semua copy bahasa Indonesia, tanpa buzzword ("seamless", "supercharge", "revolutionary").
 - [ ] Layar 320dp diuji, tanpa overflow horizontal.
 
-## 10. Inventaris layar (nyata, v0.9.6)
+## 10. Inventaris layar (nyata, v0.20.0)
 
 | Layar | Berkas | Inti | Catatan desain yang berlaku |
 |---|---|---|---|
-| Daftar projek | `ui/WorkspaceScreen.kt` | buka/buat/impor, cari projek | Baris padat + aksi "⋯" per baris; tombol "Buat projek" di **bottom bar** tetap, bukan item terakhir daftar |
+| Daftar projek | `ui/WorkspaceScreen.kt` | buka/buat/impor, cari projek, cadangkan semua | Baris padat + aksi "⋯" per baris; tombol "Buat projek" di **bottom bar** tetap, bukan item terakhir daftar |
 | Wizard | `ui/WizardScreen.kt` | jenis → nama → template → buat | Tombol mati wajib punya `alasan-buat`; hanya pertanyaan yang perlu yang ditanyakan |
-| Editor | `ui/EditorScreen.kt` | panel berkas + tab + kode + cari/ganti | Drawer di 360dp; bilah atas dua baris; tombol **Aksi** membuka palet perintah |
-| Palet perintah | `ui/PaletPerintah.kt` | cari aksi | Daftar satu kolom, tanpa ikon dekoratif, `aksi-kosong` menyebut kata yang gagal |
-| Build | `ui/BuildScreen.kt` | langkah, log, galat, bagikan APK | Log dibatasi baris (mode hemat); kartu Bagikan APK **di atas** pesan setup |
+| Editor | `ui/EditorScreen.kt` | panel berkas + tab + kode + cari/ganti + pelajaran | Drawer di 360dp; bilah atas dua baris; tombol **Aksi** membuka palet perintah; gutter custom View (v0.20.0) |
+| Palet perintah | `ui/PaletPerintah.kt` | cari aksi + buka berkas | Daftar satu kolom, tanpa ikon dekoratif, `aksi-kosong` menyebut kata yang gagal |
+| Build | `ui/BuildScreen.kt` | langkah, log, galat, bagikan APK, pasang, kunci | Log dibatasi baris (mode hemat); kartu Bagikan APK **di atas** pesan setup; titik status ala Linear |
+| Kunci tanda tangan | `ui/KunciScreen.kt` | status, buat/ekspor/hapus kunci pengguna | Peringatan jujur: menimpa kunci = APK lama tak bisa diperbarui |
 | Situs | `ui/SitusScreen.kt` | susun, terbit, PWA | Tautan hasil + tombol salin; galat terbit di dalam panel yang sama |
 | Pratinjau situs | `ui/PratinjauSitus.kt` | WebView `file://` | Dialog penuh; catatan batas `file://` (PWA/service worker) ditampilkan apa adanya |
-| Git | `ui/GitScreen.kt` | commit, kirim, riwayat | Tombol kirim mati dengan alasan bila repo/token belum lengkap |
-| Agen | `ui/AgenScreen.kt` | tugas, putaran, hentikan | Log per putaran berurutan; tombol Hentikan benar-benar membatalkan |
-| AI | `ui/AiScreen.kt` | tanya, lampirkan, foto, sisipkan kode | Galat penyedia diterjemahkan; foto kamera diperkecil sebelum dikirim |
+| Git | `ui/GitScreen.kt` | commit, kirim, riwayat, klon, buat repo | Tombol kirim mati dengan alasan bila repo/token belum lengkap |
+| Agen | `ui/AgenScreen.kt` | tugas, putaran 3/5, estimasi kuota, hentikan | Log per putaran berurutan; tombol Hentikan benar-benar membatalkan |
+| AI | `ui/AiScreen.kt` | tanya, lampirkan, foto, sisipkan kode, pelajari projek | Konteks otomatis = bawaan; info jujur "N dari M berkas · X karakter"; galat penyedia diterjemahkan |
+| Tema | `ui/TemaScreen.kt` | 4 tema bawaan + ikut sistem + `.kntema` | Pratinjau kartu memakai token tema itu sendiri |
+| Mode belajar | `ui/PanelPelajaran.kt` | langkah pelajaran per template | Panel kecil di bawah editor, bisa ditutup; progres tersimpan per projek |
 
 ## 11. Yang berubah sejak dokumen ini dikunci
 

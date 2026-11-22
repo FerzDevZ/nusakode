@@ -1,7 +1,12 @@
 # MEMORY.md — Invariant Hasil Root-Cause
 
-Dibaca di awal setiap sesi — 67 invariant per v0.9.6. Format dari `AGENTS.md` Gate 3:
+Dibaca di awal setiap sesi. Format dari `AGENTS.md` Gate 3:
 `- **[YY-MM-DD · Komponen]**: gejala → **Root Cause**: penyebab teknis → **Invariant Rule**: aturan permanen.`
+
+Jumlah invariant terus bertambah seiring rilis; hitung dengan `grep -c "^- \*\*" MEMORY.md`.
+Invariant terbaru (v0.20.0) antara lain: gutter tidak boleh menyimpan cache `lineCount`;
+`mutableIntStateOf` dibandingkan lewat `.intValue`; back otomatis pemasang hanya boleh saat fokus
+Setelan; asersi JUnit 5 = `(kondisi, pesan)` vs JUnit 4 = `(pesan, kondisi)`.
 
 Cara memakai:
 

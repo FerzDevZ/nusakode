@@ -1,4 +1,6 @@
-# Rencana v0.12 dan seterusnya
+# 11 · Rencana v0.12 dan Seterusnya
+
+> **Status: TUNTAS kecuali satu butir.** Nomor 2, 4, 5 selesai di v0.12.0; nomor 3 (nomor baris + undo/redo) ternyata sudah ada sejak awal dan diperombak penuh di **v0.20.0** (gutter custom View). Nomor 1 (ukur HP fisik) masih menunggu perangkat — lihat [docs/08](08-lembar-ukur-4gb.md).
 
 > Disusun 20 November 2026, setelah 0.11.0 (tema) rilis. Urutan berdasarkan **risiko terhadap
 > janji utama** — "semua HP Indonesia, termasuk 2–4 GB RAM, bisa bikin APK tanpa PC" — bukan

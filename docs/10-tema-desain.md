@@ -1,8 +1,8 @@
-# Rencana: Sistem Tema & Peningkatan Sistem Desain KodeNusa
+# 10 · Sistem Tema & Peningkatan Sistem Desain KodeNusa
 
-> Dokumen rencana (belum ADR). Pelaksanaannya akan menghasilkan **ADR-035** (sistem tema) dan
-> **ADR-036** (tema unduhan) sesuai aturan DESIGN.md: "perubahan arah visual = ADR baru".
-> Sasaran: rilis **0.11.0**.
+> **Status: TUNTAS.** Rencana ini dilaksanakan penuh di **v0.11.0** (ADR-035 sistem tema, ADR-036 tema unduhan), diperbaiki di **v0.12.0** (unduh tema dari tautan, bug `gelap` di `.kntema`), dan dipoles di **v0.13.0** (ikon vektor, Banner/SegmentedControl). Dokumen dipertahankan sebagai rekaman rancangan; keadaan kini ada di [FITUR.md §4f](FITUR.md) dan [DESIGN.md](../DESIGN.md).
+
+Sasaran asli: rilis **0.11.0** — tercapai.
 
 ---
 

@@ -1,8 +1,10 @@
-# Rencana induk 2026 — status nyata
+# 06 · Rencana Induk 2026 — Status Nyata
 
-Dokumen ini dulu berisi target v0.7/v1.0. Sekarang isinya **apa yang benar-benar terjadi**, karena rencana yang tidak diperbarui lebih berbahaya daripada tidak ada rencana: ia membuat orang (termasuk saya) mengira sesuatu sudah selesai.
+Dokumen ini dulu berisi target v0.7/v1.0. Sekarang isinya **apa yang benar-benar terjadi**, karena rencana yang tidak diperbarui lebih berbahaya daripada tidak ada rencana: ia membuat orang (termasuk kami) mengira sesuatu sudah selesai.
 
-Baseline hari ini: **0.18.0**, 312 uji unit, 127 uji perangkat, APK 32,9 MB, 9 template terbukti 9/9.
+**Baseline hari ini: v0.20.0** — 354 uji unit, 140 uji perangkat, detekt 0, APK rilis 35,2 MB, 9 template APK terbukti terbangun, konteks otomatis AI aktif.
+
+---
 
 ## 1. Prinsip yang tidak boleh dilanggar
 
@@ -14,15 +16,14 @@ Baseline hari ini: **0.18.0**, 312 uji unit, 127 uji perangkat, APK 32,9 MB, 9 t
 
 ## 2. Ukuran keberhasilan: target lama vs kenyataan
 
-| Ukuran | Target lama | Kenyataan 0.18.0 | Catatan |
+| Ukuran | Target lama | Kenyataan 0.20.0 | Catatan |
 |---|---|---|---|
-| Ukuran APK | ≤ 30 MB | **32,9 MB** | Target itu ditolak sendiri oleh ADR-028: `android.jar` adalah classpath kompilasi. Memangkasnya membuat kode sah gagal dikompilasi |
-| RAM menganggur | ≤ 120 MB | **67 MB** (emulator) | HP fisik belum diukur (todo #10, skrip siap) |
+| Ukuran APK | ≤ 30 MB | **35,2 MB** | Target itu ditolak sendiri oleh ADR-028: `android.jar` adalah classpath kompilasi. Memangkasnya membuat kode sah gagal dikompilasi |
+| RAM menganggur | ≤ 120 MB | **66–67 MB** (emulator) | HP fisik belum diukur (todo #10, skrip siap) |
 | Buka projek → editor | ≤ 1,5 s | ≈ 0,4 s (emulator) | |
-| Build template pertama | ≤ 10 s | **1,4–1,9 s** | |
-| Susun situs | ≤ 3 s | belum diukur terpisah | |
-| Tugas agen selesai tanpa sentuh | ≥ 85% | **belum ada angka** | Harness ada (`AI_EVAL=1`), angka kosong — penyedia `api.crown.ai.id` 503 sesaat berulang saat diukur |
-| Uji unit / perangkat | ≥ 300 / ≥ 60 | **312 / 127** | Keduanya melewati target |
+| Build template hangat | ≤ 10 s | **1,4–1,9 s** | |
+| Tugas agen selesai tanpa sentuh | ≥ 85% | **9/10 (90%)** | Dua putaran nyata 21 Nov 2026, model `GLM-5.3-Flash` — lihat [docs/07](07-eval-agen.md) |
+| Uji unit / perangkat | ≥ 300 / ≥ 60 | **354 / 140** | Keduanya melewati target |
 | Android 7+ | 100% fitur | 100% | Diuji di API 24, 34, 35 |
 
 ## 3. Status tiap langkah rencana lama
@@ -54,15 +55,16 @@ Baseline hari ini: **0.18.0**, 312 uji unit, 127 uji perangkat, APK 32,9 MB, 9 t
 | A1 | Papan tulis projek (ringkasan + tulis/hapus aman) | ✅ `AiProjectBoard` |
 | A2 | Gerbang build di atas Tier 0 | ✅ `AiBuildGate`, `AiBuildGateTest` |
 | A3 | Layar Agen (tugas, hentikan, log, hasil) | ✅ `AgenScreen`, `AgenUiTest` |
-| A4 | Batas 3 putaran, 12 berkas, timeout, pembatalan | ✅ `AgenBuild`, `EvalAgenJalurTest` |
-| A5 | Evaluasi 10 tugas | ⚠️ harness siap, **angka belum ada** (butuh `AI_EVAL=1` + kunci; penyedia masih 503 sesaat saat diukur) |
+| A4 | Batas putaran 3/5, 12 berkas, timeout, pembatalan | ✅ `AgenBuild`, `EvalAgenJalurTest` |
+| A5 | Evaluasi 10 tugas | ✅ **9/10 dua putaran nyata** (21 Nov 2026) — [docs/07](07-eval-agen.md) |
+| A6 | **Konteks otomatis seluruh projek** (v0.20.0) | ✅ `PetaProjek` + `PemilihKonteks` + `KonteksOtomatis`; tombol "Pelajari projek" |
 
 ### Fase 4 — Keamanan & ukuran
 
 | # | Langkah | Status |
 |---|---|---|
 | K1 | Rahasia tersandi Android Keystore | ✅ `Penyandi`/`KunciAman`, 7 uji perangkat, ADR-026 |
-| K2 | APK ≤ 30 MB | ❌ **dibatalkan dengan alasan** — ADR-028 menjelaskan byte-per-byte bahwa 32 MB adalah batas wajar selama `android.jar` dibundel |
+| K2 | APK ≤ 30 MB | ❌ **dibatalkan dengan alasan** — ADR-028 menjelaskan byte-per-byte bahwa ukuran kini adalah batas wajar selama `android.jar` dibundel |
 | K3 | Tidak ada rahasia di log | ✅ tidak ada `Log` yang mencetak kunci/token |
 
 ### Fase 5 — Produktivitas editor
@@ -70,8 +72,9 @@ Baseline hari ini: **0.18.0**, 312 uji unit, 127 uji perangkat, APK 32,9 MB, 9 t
 | # | Langkah | Status |
 |---|---|---|
 | E1 | Cari & ganti seluruh projek | ✅ `ProjectSearch` + `GantiSemuaUiTest` |
-| E2 | Palet perintah | ✅ `PaletPerintah`, 4 uji UI (ADR-031) |
-| E3 | Tab multi-berkas | ✅ `EditorSession` (maks 6 tab) |
+| E2 | Palet perintah | ✅ `PaletPerintah`, uji UI (ADR-031) |
+| E3 | Tab multi-berkas | ✅ `EditorSession` |
+| E4 | **Gutter digambar ulang penuh** (v0.20.0) | ✅ `GutterView`/`GutterModel`, `GutterDeviceTest`, bukti layar `bukti/gutter-sesudah.png` |
 
 ### Fase 6 — Bukti di HP nyata
 
@@ -81,23 +84,22 @@ Baseline hari ini: **0.18.0**, 312 uji unit, 127 uji perangkat, APK 32,9 MB, 9 t
 | R2 | Uji 24 jam tanpa internet | ❌ butuh HP fisik |
 | R3 | Suhu & throttling 10 build | ❌ butuh HP fisik |
 
-## 4. Yang berikutnya, berurutan (diselaraskan docs/14 v0.19)
+## 4. Yang berikutnya, berurutan
 
 ```
-1. AI_EVAL angka nyata di docs/07        ← sedang: penyedia 503 sesaat, harness tahan-coba-ulang
-2. Mode belajar (3.3) uji coba halo-dunia ← setelah angka eval
-3. Ukur HP fisik (todo #10)              ← butuh Samsung A17 5G pengguna
-4. R2/R3 di HP fisik                     ← setelah ukur
+1. Ukur HP fisik (todo #10)              ← butuh Samsung A17 5G pengguna
+2. R2/R3 di HP fisik                     ← setelah ukur
+3. Umpan balik kualitas konteks otomatis ← bobot kepentingan / anggaran karakter bisa dituning
+4. Mode belajar: pelajaran untuk template kedua dan seterusnya
 ```
 
-Semua butir UI/fitur docs/13 dan docs/14 butir 1–3 sudah tuntas sejak 0.18.0; sisanya butuh
-perangkat fisik atau kunci AI yang pulih stabil.
+Semua butir UI/fitur docs/13 dan docs/14 sudah tuntas sejak v0.19.0; sisanya butuh perangkat fisik.
 
 ## 5. Definisi selesai untuk setiap rilis
 
 ```bash
 ./gradlew clean test detekt :app:assembleDebug        # 0 gagal, detekt 0 temuan
-./gradlew :app:connectedDebugAndroidTest              # 127 uji hijau
+./gradlew :app:connectedDebugAndroidTest              # 140 uji hijau
 ./gradlew :app:assembleRelease -PsemuaAbi             # dipasang & dibuka di emulator
 bash scripts/prove/build-hello.sh                     # pipeline host tetap sah
 ```
@@ -110,6 +112,7 @@ Rilis hanya naik bila: `docs/FITUR.md` diperbarui, `MEMORY.md` mendapat invarian
 |---|---|---|
 | JGit 3.7.1 (2015) | push repo besar bisa lambat | Uji nyata di perangkat sebelum rilis |
 | Token GitHub bocor lewat log/crash | akun hilang | Token tidak pernah ditulis ke disk; laporan crash (rencana #2) harus menyaringnya |
-| Agen AI menghabiskan kuota pengguna | pengguna marah | 3 putaran, 12 berkas, tombol Hentikan |
+| Agen AI menghabiskan kuota pengguna | pengguna marah | Putaran 3/5, 12 berkas, estimasi karakter, tombol Hentikan |
 | Blocker Android 13+ | aplikasi tidak bisa dipasang | Tidak ada `MANAGE_EXTERNAL_STORAGE`; diuji di API 35 |
 | Regresi saat menambah layar | kepercayaan turun | Setiap fitur wajib uji perangkat; tag uji didokumentasikan di FITUR.md |
+| Penyedia AI tidak stabil (503 sesaat) | angka eval bisa basi | Uji tahan-coba-ulang (3×, jeda bertingkat); kegagalan penyedia dicatat terpisah dari kegagalan model |

@@ -13,7 +13,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
 | Fitur | Status | Bukti / catatan |
 |---|---|---|
-| Buat projek dari 9 template (Halo Dunia, Kasir Warung, Katalog WhatsApp, Absensi Kelas, Laporan Warung, Jurnal Harian, Stok Barang, Kuis Pelajaran, Web jadi APK) | ✅ | `TemplatesDeviceTest`, `build-templates.sh` (9/9 lulus) |
+| Buat projek dari 10 template — 9 APK (Halo Dunia, Kasir Warung, Katalog WhatsApp, Absensi Kelas, Laporan Warung, Jurnal Harian, Stok Barang, Kuis Pelajaran, Web jadi APK) + 1 situs murni | ✅ | `TemplatesDeviceTest`, `build-templates.sh` (9/9 APK lulus; situs murni dilewati — memang tanpa APK) |
 | Buat projek kosong dari nol | ✅ | `BlankProject`, `TemplateCatalogTest` |
 | ID aplikasi otomatis dari nama | ✅ | `WizardScreen.efektifId`, `WizardUiTest` |
 | Daftar projek + buka + hapus | ✅ | `WorkspaceScreen` |
@@ -47,6 +47,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 |---|---|---|
 | Editor kode dengan penyorotan sintaks | ✅ | `HighlighterTest` |
 | **Gutter nomor baris digambar ulang penuh (perombakan 0.20.0)** | ✅ | Keluhan pengguna "nomor cuma 1 / 1–33 lalu hitam" — akar: cache `lineCount` dibaca sebelum layout dibangun. Kini `GutterView` custom View melukis dari `Layout` hidup tiap gambar; angka hanya untuk baris terlihat, benar saat wrap (baris lanjutan tanpa nomor), baris kursor disorot, lebar menyesuaikan digit. Uji: `GutterModelTest` (8), `GutterDeviceTest` (3) + bukti layar `bukti/gutter-sesudah.png` |
+| **Mode belajar (0.20.0)** | ✅ | Panel pelajaran langkah-demi-langkah per template (`pelajaran.md` di aset template; pilot: halo-dunia); langkah menunjuk berkas yang harus dibuka/ubah, progres tersimpan per projek di `filesDir/pelajaran-progres/`. Uji: `PelajaranTest` (7), `PelajaranDeviceTest` (3), `PanelPelajaranUiTest` (3) |
 | Tab banyak berkas + penanda belum disimpan | ✅ | `EditorSession` (maks 8 tab untuk RAM) |
 | Simpan manual + simpan otomatis | ✅ | `AutoSave`, `KeyBar` |
 | Cari dalam berkas + lompat antar hasil | ✅ | `FindBar` |
@@ -231,7 +232,7 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | Fitur | Status | Bukti |
 |---|---|---|
 | Uji unit | ✅ | 354 uji unik (`./gradlew test`; varian debug — debug+release menghitung ganda) |
-| Uji di perangkat | ✅ | 127 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
+| Uji di perangkat | ✅ | 140 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
 | Analisis statis detekt, 0 temuan | ✅ | `./gradlew detekt` |
 | CI menjalankan gerbang yang sama | ✅ | `.github/workflows/ci.yml` |
 | Template bawaan terbukti jadi APK | ✅ | `scripts/prove/build-templates.sh`: 9/9 APK sah tanda tangannya (web-murni dilewati — memang tanpa APK) |
@@ -248,8 +249,9 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 | 3 | ~~Klon projek dari GitHub~~ ✅ | Selesai di 0.10.0: `KlonProjekDialog` tersambung ke `RepoGit.klon` | Selesai |
 | 4 | ~~Catatan "Kotlin belum didukung" saat membuka `.kt`~~ ✅ | Selesai di 0.10.0: `catatan-kotlin`, sejajar catatan Python | Selesai |
 | 5 | ~~Tombol "buat repo" di layar Git~~ ✅ | Selesai di 0.10.0: `BuatRepoCard` tersambung ke `GitHubRilis.buatRepo` | Selesai |
-| 6 | Ukur di HP 4 GB fisik + `AI_EVAL=1` | Satu-satunya angka yang belum bisa saya ukur sendiri | Butuh perangkat/kunci pengguna |
-| 7 | Ulangi verifikasi tulisan AI nyata saat penyedia pulih | Cukup jalankan `AI_ENDPOINT=… AI_KEY=… ./gradlew :core:ai:test --tests '*ChatNyataTest*'` lalu uji manual "Simpan berkas" di layar AI | Menunggu penyedia (503) |
+| 6 | Ukur di HP 4 GB fisik | Satu-satunya angka yang belum bisa diukur sendiri; `AI_EVAL=1` sudah terisi 9/10 ([docs/07](07-eval-agen.md)) | Butuh perangkat fisik |
+| 7 | Umpan balik kualitas konteks otomatis (v0.20.0) | Bobot kepentingan & anggaran karakter `KonteksOtomatis` bisa dituning bila pilihan berkas kurang tepat di projek nyata | Menunggu umpan balik pengguna |
+| 8 | Ulangi verifikasi tulisan AI nyata saat penyedia pulih | Cukup jalankan `AI_ENDPOINT=… AI_KEY=… ./gradlew :core:ai:test --tests '*ChatNyataTest*'` lalu uji manual "Simpan berkas" di layar AI | Menunggu penyedia (503) |
 
 Yang **tidak** akan dikerjakan tanpa bukti kebutuhan nyata: Kotlin di perangkat (ADR-003), Tier 1
 build di server (ADR-001/007), model AI di dalam HP (ADR-023).
