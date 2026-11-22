@@ -44,7 +44,7 @@ Dokumen ini adalah **indeks dan peta status**. Detail ada di `docs/`; riwayat ri
 
 | Metrik | Angka | Sumber |
 |---|---|---|
-| Ukuran APK rilis | **32.896.476 bita** | rilis v0.22.0 (`KodeNusa-0.22.0.apk`) |
+| Ukuran APK rilis | **32.897.316 bita** | rilis v0.22.0 (`KodeNusa-0.22.0.apk`) |
 | RAM menganggur | **66–67 MB PSS** | emulator API 35 (HP fisik belum) |
 | Build template hangat | **1,4–1,9 s** | emulator, 9 template |
 | Build pertama setelah pasang | **21,4 s** | penyalinan `android.jar` 24 MB |
