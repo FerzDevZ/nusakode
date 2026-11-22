@@ -1,8 +1,8 @@
 # KodeNusa — IDE Android di dalam HP
 
-[![Rilis](https://img.shields.io/badge/rilis-v0.21.0-0f766e?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases/latest)
+[![Rilis](https://img.shields.io/badge/rilis-v0.22.0-0f766e?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases/latest)
 [![Unduh APK](https://img.shields.io/badge/unduh-APK%2035%20MB-1d4ed8?style=flat-square)](https://github.com/FerzDevZ/nusakode/releases/latest)
-[![Uji unit](https://img.shields.io/badge/uji%20unit-356%20lolos-16a34a?style=flat-square)](docs/FITUR.md)
+[![Uji unit](https://img.shields.io/badge/uji%20unit-374%20lolos-16a34a?style=flat-square)](docs/FITUR.md)
 [![Uji perangkat](https://img.shields.io/badge/uji%20perangkat-140%20lolos-16a34a?style=flat-square)](docs/FITUR.md)
 [![detekt](https://img.shields.io/badge/detekt-0%20temuan-16a34a?style=flat-square)](detekt.yml)
 
@@ -10,7 +10,7 @@
 
 Aplikasi ini dibangun untuk perangkat yang paling banyak dipakai orang Indonesia: RAM 2–4 GB, penyimpanan 32–64 GB, sinyal yang sering putus. Tidak ada asumsi bahwa pengguna memiliki laptop, Android Studio, atau koneksi stabil. Semua klaim fitur di repositori ini didukung uji otomatis yang bisa Anda jalankan sendiri — apa yang belum terbukti, ditulis terbuka di bawah.
 
-**→ [Unduh KodeNusa 0.21.0](https://github.com/FerzDevZ/nusakode/releases/download/v0.21.0/KodeNusa-0.21.0.apk)** · [semua rilis](https://github.com/FerzDevZ/nusakode/releases) · [daftar fitur lengkap](docs/FITUR.md)
+**→ [Unduh KodeNusa 0.22.0](https://github.com/FerzDevZ/nusakode/releases/download/v0.22.0/KodeNusa-0.22.0.apk)** · [semua rilis](https://github.com/FerzDevZ/nusakode/releases) · [daftar fitur lengkap](docs/FITUR.md)
 
 ---
 
@@ -31,7 +31,7 @@ Butuh **Android 7.0 (API 24)** ke atas. Teruji di Android 7, 9, 13, 14, dan 15 (
 | Editor kode profesional | ✅ | Gutter digambar ulang penuh (0.21.0): nomor baris selalu akurat saat scroll, wrap, dan ganti ukuran font; baris kursor disorot |
 | Cari & ganti seluruh projek | ✅ | Peka huruf besar/kecil pada penggantian |
 | **AI mempelajari seluruh projek** (0.21.0) | ✅ | Konteks otomatis: AI menyusun peta projek dan memilih sendiri berkas relevan — tanpa memilih berkas satu per satu; tombol **Pelajari projek** |
-| AI asisten (BYOK) | ✅ | Endpoint OpenAI-compatible / Gemini / Qwen / Ollama; **endpoint cadangan otomatis saat utama 503 (0.21.0)**; tanpa kunci = aplikasi tetap 100% offline |
+| AI asisten (BYOK) | ✅ | Endpoint OpenAI-compatible / Gemini / Qwen / Ollama; **endpoint cadangan otomatis saat utama 503 (0.21.0)**; **AI menulis berkas otomatis di chat biasa — format `<<<BERKAS:>>>` + aturan satu-berkas-satu-jenis (0.22.0)**; tanpa kunci = aplikasi tetap 100% offline |
 | Cadangan otomatis harian (0.21.0) | ✅ | Semua projek di-zip per hari, maks 2 salinan, tanpa izin, tanpa dialog |
 | Agen perbaikan build otomatis | ✅ | Maksimum 12 berkas, 3 putaran build, tiap tulisan bisa dibatalkan |
 | Mode belajar | ✅ | Pelajaran langkah-demi-langkah di editor; progres tersimpan per projek |
@@ -69,7 +69,7 @@ export ANDROID_HOME=$HOME/android-sdk
 
 ./gradlew :app:assembleRelease               # arm64-v8a + armeabi-v7a, ditandatangani
 ./gradlew :app:assembleRelease -PsemuaAbi    # + x86_64 (untuk emulator)
-./gradlew test detekt                        # 356 uji unit + analisis statis
+./gradlew test detekt                        # 374 uji unit + analisis statis
 ./gradlew :app:connectedDebugAndroidTest     # 142 uji perangkat (butuh emulator/HP)
 ```
 

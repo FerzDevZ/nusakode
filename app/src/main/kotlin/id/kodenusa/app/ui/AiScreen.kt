@@ -225,11 +225,19 @@ fun AiScreen(
             konteks.galat != null ->
                 PromptBuilder.untukGalat(konteks.galat.orEmpty(), konteks.jalur, konteks.isi)
             // BAWAAN: konteks otomatis. Berkas aktif selalu ikut; berkas lain dipilih mesin
-            // dari isi pertanyaan — bukan dari pilihan manual pengguna.
+            // dari isi pertanyaan — bukan dari pilihan manual pengguna. Aturan berkas + struktur
+            // template ikut dikirim supaya jawaban "buatkan X" langsung bisa disimpan ke berkas
+            // yang benar (v0.22.0 — keluhan: HTML/CSS nyuntik semua ke aplikasi.js).
             else -> {
                 val hasil = konteksOtomatis.kumpulkan(teks, hematKuota, konteks.jalur)
                 hasilOtomatis = hasil
-                PromptBuilder.untukTanyaOtomatis(teks, hasil.peta, hasil.berkas, hematKuota)
+                PromptBuilder.untukTanyaOtomatis(
+                    teks,
+                    hasil.peta,
+                    hasil.berkas,
+                    hematKuota,
+                    PromptBuilder.templatProjek(templatId),
+                )
             }
         }
         // Riwayat obrolan ikut dikirim supaya model ingat konteks percakapan sebelumnya.
@@ -531,9 +539,13 @@ fun AiScreen(
         }
 
         if (buatBerkasTerbuka) {
-            val kodeTerakhir = CodeBlocks.terbesar(jawaban.ifEmpty { riwayat.lastOrNull()?.second.orEmpty() })
+            val jawabanTerakhir = jawaban.ifEmpty { riwayat.lastOrNull()?.second.orEmpty() }
+            val kodeTerakhir = CodeBlocks.terbesar(jawabanTerakhir)
             DialogBuatBerkasDariKode(
                 kode = kodeTerakhir?.isi.orEmpty(),
+                // Jalur ditebak dari jawaban (penanda <<<BERKAS:>>> atau nama berkas yang disebut
+                // model) supaya pengguna tidak mengetik jalur manual tiap kali — keluhan "ribet".
+                jalurAwal = CodeBlocks.saranJalur(jawabanTerakhir, kodeTerakhir?.bahasa.orEmpty()).orEmpty(),
                 akar = akarProjek,
                 onTutup = { buatBerkasTerbuka = false },
                 onJadi = { berkas ->
@@ -676,8 +688,9 @@ internal fun DialogBuatBerkasDariKode(
     akar: java.io.File,
     onTutup: () -> Unit,
     onJadi: (java.io.File) -> Unit,
+    jalurAwal: String = "",
 ) {
-    var jalur by remember { mutableStateOf("") }
+    var jalur by remember { mutableStateOf(jalurAwal) }
     var galat by remember { mutableStateOf<String?>(null) }
     Dialog(onDismissRequest = onTutup) {
         Surface(

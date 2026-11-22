@@ -3,7 +3,7 @@
 Satu halaman untuk menjawab: **apa yang sudah bisa, apa yang belum, dan buktinya mana.**
 Status hanya boleh "✅" kalau ada uji atau perintah yang membuktikannya.
 
-**Rilis terakhir: 0.21.0** (`versionCode 33`) · **356 uji unit · 142 uji perangkat · detekt 0 temuan**
+**Rilis terakhir: 0.22.0** (`versionCode 34`) · **374 uji unit · 142 uji perangkat · detekt 0 temuan**
 
 Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 
@@ -107,6 +107,7 @@ Legenda: ✅ ada dan teruji · 🟡 ada, sebagian · ⛔ belum, sengaja ditunda
 | Isi endpoint sendiri (mis. `https://api.crown.ai.id/v1`) + kunci sendiri | ✅ | `AiUiTest` — tombol terkunci sebelum diisi |
 | **Endpoint cadangan + failover otomatis (0.21.0)** | ✅ | Isian kedua di setelan AI: endpoint + kunci + model cadangan. Bila utama kena galat penyedia/jaringan (mis. 503), klien mencoba cadangan sekali; info jujur "jawaban lewat endpoint cadangan" di layar. Aturan jujur: kunci salah/kuota habis TIDAK dipindah ke cadangan (itu masalah akun, bukan penyedia); bila cadangan juga gagal, galat utama tetap yang dilaporkan (kegagalan cadangan jadi penyebab). Uji: `OpenAiCompatClientTest` (3 uji failover), `AiConfigTest` (4) |
 | **Konteks OTOMATIS — AI mempelajari seluruh projek tanpa pilih berkas 1-1 (0.21.0)** | ✅ | `PetaProjek` menyusun peta (identitas, daftar berkas berperan, kerangka kelas/metode/resource via regex murah — tanpa server); `PemilihKonteks` memilih berkas relevan dari isi pertanyaan (skor leksikal + bobot kepentingan, manifest & berkas aktif selalu ikut, deterministik). Tombol **"Pelajari projek"** sekali ketuk → AI meringkas pemahamannya. Info jujur di layar: "N dari M berkas · X karakter". **Kualitas terverifikasi di projek sintetis 40+ berkas**: pertanyaan kasir memilih berkas kasir & menolak stok/laporan; pertanyaan stok memilih sisi stok; mode hemat tetap membawa berkas inti. Uji: `PetaProjekTest` (5), `PemilihKonteksTest` (6), `KonteksOtomatisTest` (8), `AiUiTest` chip |
+| **AI tulis berkas otomatis di chat biasa (0.22.0)** | ✅ | Format `<<<BERKAS: ...>>>` diajarkan di SEMUA jalur chat (bukan hanya agen): jawaban "buatkan web login" membawa nama berkas tiap potongan, tombol **"Simpan berkas dari jawaban ini ke projek"** muncul otomatis, tiap berkas ditulis ke jalurnya sendiri lewat pratinjau tulis (ADR-038), folder baru dibuat otomatis. Aturan keras **satu berkas satu jenis**: HTML di `.html`, CSS di `.css`, JS di `.js` — DILARANG menaruh HTML/CSS di dalam string JavaScript; setiap halaman web berkas sendiri via `<a href>`. Template `situs-murni`/`web-katalog` memperjelas halaman baru = berkas `.html` baru + `localStorage`. Dialog "Buat berkas baru" terisi otomatis dari penanda/nama berkas (`CodeBlocks.saranJalur`) — tidak perlu mengetik jalur manual. Uji: `PromptBuilderAturanTest` (17), `KntemaSerialisasiTest` |
 | Baca daftar model otomatis dari endpoint | ✅ | `OpenAiCompatClientTest.daftar_model_dibaca_dari_endpoint_pengguna` |
 | Ganti model kapan saja | ✅ | Layar AI → Atur → pilih model |
 | Jawaban mengalir (streaming) huruf demi huruf | ✅ | `aliran_sse_content_dan_reasoning_dirakit_benar` |
@@ -233,7 +234,7 @@ AI_ENDPOINT=https://api.crown.ai.id/v1 AI_KEY=... AI_MODEL=... \
 
 | Fitur | Status | Bukti |
 |---|---|---|
-| Uji unit | ✅ | 356 uji unik (`./gradlew test`; varian debug — debug+release menghitung ganda) |
+| Uji unit | ✅ | 374 uji unik (`./gradlew test`; varian debug — debug+release menghitung ganda) |
 | Uji di perangkat | ✅ | 142 uji, hijau di Android 15 (API 35); subset besar juga dijalankan di API 24 & 34 |
 | Analisis statis detekt, 0 temuan | ✅ | `./gradlew detekt` |
 | CI menjalankan gerbang yang sama | ✅ | `.github/workflows/ci.yml` |

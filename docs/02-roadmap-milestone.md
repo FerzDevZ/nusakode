@@ -79,6 +79,20 @@ Sama seperti `.py`: saat pengguna membuka `.kt`, jelaskan bahwa Tier 0 hanya Jav
 Rencana v0.12 dan kandidat setelahnya disusun terpisah: lihat [`11-rencana-v0.12.md`](11-rencana-v0.12.md).
 
 
+## v0.22.0 — AI tulis berkas otomatis di chat (22 November 2026)
+
+Keluhan pengguna nyata: minta "buat web login register" di chat biasa, model balas blok kode
+polos, dan satu-satunya jalan adalah tombol sisip yang menyuntik SATU blok ke berkas AKTIF —
+seluruh HTML/CSS nyangkut di `aplikasi.js`, dan membuat berkas baru berarti mengetik jalur manual.
+
+- **Format `<<<BERKAS: ...>>>` diajarkan di SEMUA jalur chat** (bukan hanya agen): jawaban "buatkan X" kini membawa nama berkas tiap potongan, tombol **"Simpan berkas dari jawaban ini ke projek"** otomatis muncul, dan tiap berkas ditulis ke jalurnya sendiri lewat pratinjau tulis (ADR-038) — folder baru dibuat otomatis.
+- **Satu berkas satu jenis (aturan keras di prompt):** HTML di `.html`, CSS di `.css`, JS di `.js` — DILARANG menaruh HTML/CSS di dalam string JavaScript; setiap halaman web berkas sendiri, dihubungkan lewat `<a href>`.
+- **Template web diperjelas:** `situs-murni` & `web-katalog` kini mengajarkan halaman baru = berkas `.html` baru di `web/`/`assets/`, data lokal via `localStorage`.
+- **Pagar kode bahasa benar:** prompt sistem tidak lagi memaksa ```java``` untuk semua kode — html/css/js/xml dipagari sesuai jenisnya.
+- **Dialog "Buat berkas baru dari kode" terisi otomatis:** jalur ditebak dari penanda atau nama berkas yang disebut model (`CodeBlocks.saranJalur`) — tidak perlu mengetik manual lagi.
+- **12 test lama yang ternyata tidak pernah dijalankan (ditulis sebagai fungsi top-level, tidak didiscover JUnit 5) dihidupkan** dengan membungkusnya ke dalam class — angka sensus kini jujur mencerminkan test yang benar-benar dieksekusi.
+- Uji: **374 uji unit** (+18 dari 356) · 142 uji perangkat · detekt 0.
+
 ## v0.21.0 — perombakan editor, AI paham projek, ketahanan harian (22 November 2026)
 
 Dua keluhan pengguna dituntaskan sampai akar penyebabnya, ditambah empat fitur ketahanan:
@@ -90,7 +104,7 @@ Dua keluhan pengguna dituntaskan sampai akar penyebabnya, ditambah empat fitur k
 - **Penyedia AI cadangan** (docs/14 4.6): endpoint + kunci + model kedua di setelan AI; failover otomatis hanya untuk galat penyedia/jaringan (503) — kunci salah/kuota TIDAK dipindah ke cadangan; bila cadangan juga gagal, galat utama tetap yang dilaporkan (cadangan jadi penyebab). Info jujur "jawaban lewat endpoint cadangan".
 - **Lampiran galat build untuk AI**: tombol "Perbaiki galat build" kini menyertakan 40 baris terakhir log build — konteks nyata tanpa tangkapan layar.
 - Uji `PasangApkDeviceTest` dituntaskan akar-cause kedua: saklar "Allow from this source" yang sudah aktif (sisa sesi) tidak boleh diklik lagi — klik mematikan izin dan pemasangan batal; kini saklar aktif → back ke pemasang.
-- 356 uji unit · 142 uji perangkat · detekt 0.
+- 374 uji unit · 142 uji perangkat · detekt 0.
 
 ## v0.19.0 — agen putaran pilihan & galeri komunitas (21 November 2026)
 

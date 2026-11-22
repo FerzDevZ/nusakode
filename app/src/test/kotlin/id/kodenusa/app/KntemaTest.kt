@@ -97,6 +97,7 @@ class KntemaTest {
     }
 }
 
+class KntemaSerialisasiTest {
     @Test
     fun `serialisasi_tema_terang_menulis_gelap_false`() {
         val palet = PaletTerangKertas
@@ -106,3 +107,4 @@ class KntemaTest {
         val balik = Kntema.parse(json).getOrThrow()
         assertFalse(balik.gelap, "tema terang harus terbaca kembali sebagai terang")
     }
+}

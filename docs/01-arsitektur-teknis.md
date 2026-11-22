@@ -2,7 +2,7 @@
 
 Dokumen ini menjelaskan **bagaimana** KodeNusa bekerja dan **mengapa** bentuknya begitu. Alasan per keputusan ada di [ADR](03-adr.md); di sini yang dijelaskan adalah rangkaiannya.
 
-**Status dokumen:** terakhir diselaraskan dengan rilis **v0.21.0** (356 uji unit · 142 uji perangkat · detekt 0).
+**Status dokumen:** terakhir diselaraskan dengan rilis **v0.22.0** (374 uji unit · 142 uji perangkat · detekt 0).
 
 ---
 
@@ -91,7 +91,7 @@ BuildScreen → BuildSession → Tier0BuildEngine → BuildEvent
 
 ## 6. Editor
 
-`CodeEditorView` adalah `FrameLayout` berisi **`GutterView`** (nomor baris, custom View) dan `EditText` (teks). Sejak v0.21.0 gutter **tidak menyimpan cache** `lineCount`: ia melukis dari `Layout` hidup pada setiap gambar, sehingga angka tetap benar saat scroll, word-wrap, dan ganti ukuran font; baris kursor disorot; baris lanjutan hasil wrap tidak bernomor. Logika murni dipisah ke `GutterModel` agar bisa diuji di JVM.
+`CodeEditorView` adalah `FrameLayout` berisi **`GutterView`** (nomor baris, custom View) dan `EditText` (teks). Sejak v0.22.0 gutter **tidak menyimpan cache** `lineCount`: ia melukis dari `Layout` hidup pada setiap gambar, sehingga angka tetap benar saat scroll, word-wrap, dan ganti ukuran font; baris kursor disorot; baris lanjutan hasil wrap tidak bernomor. Logika murni dipisah ke `GutterModel` agar bisa diuji di JVM.
 
 Penyorotan hanya untuk baris yang terlihat di viewport, karena mewarnai seluruh berkas 2.000 baris akan membuat `Spannable` menghabiskan RAM di HP 2 GB.
 
@@ -111,7 +111,7 @@ AiScreen → KonteksOtomatis ─┬─ PetaProjek (peta projek: peran + kerangka
                             UbahanBerkas → validasi jalur → tulis berkas
 ```
 
-- **Konteks otomatis adalah jalur bawaan** (v0.21.0): pengguna tidak perlu memilih berkas satu per satu. `PetaProjek.petakan()` menyusun peta (identitas, daftar berkas berperan, kerangka kelas/metode/resource) dengan anggaran karakter; `PemilihKonteks` memilih berkas relevan dari pertanyaan dengan skor leksikal deterministik (tanpa embeddings, tanpa server) — prediktabel, teruji, dan jujur di layar ("N dari M berkas · X karakter").
+- **Konteks otomatis adalah jalur bawaan** (v0.22.0): pengguna tidak perlu memilih berkas satu per satu. `PetaProjek.petakan()` menyusun peta (identitas, daftar berkas berperan, kerangka kelas/metode/resource) dengan anggaran karakter; `PemilihKonteks` memilih berkas relevan dari pertanyaan dengan skor leksikal deterministik (tanpa embeddings, tanpa server) — prediktabel, teruji, dan jujur di layar ("N dari M berkas · X karakter").
 - Awalan prompt dibuat stabil (peta dulu, pertanyaan terakhir) supaya penyedia bisa memanfaatkan prompt caching.
 - Tidak ada kunci bawaan, tidak ada server perantara, tidak ada library HTTP pihak ketiga.
 - Jalur dari model dianggap **tidak tepercaya**: absolut, `..`, dan `~` ditolak tanpa "dirapikan".
@@ -143,7 +143,7 @@ AiScreen → KonteksOtomatis ─┬─ PetaProjek (peta projek: peran + kerangka
 
 | Lapis | Jumlah | Perintah |
 |---|---|---|
-| Uji unit (JVM, JUnit 5) | 356 | `./gradlew test` |
+| Uji unit (JVM, JUnit 5) | 374 | `./gradlew test` |
 | Uji perangkat (API 35, sebagian di 24 & 34) | 140 | `./gradlew :app:connectedDebugAndroidTest` |
 | Analisis statis | 0 temuan | `./gradlew detekt --rerun-tasks` |
 | Bukti pipeline tanpa emulator | 9 template APK | `scripts/prove/build-templates.sh` |

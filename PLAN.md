@@ -2,7 +2,7 @@
 
 > **Satu kalimat:** IDE Android native yang menghasilkan APK asli di dalam HP 2–4 GB RAM / 32–64 GB penyimpanan — tanpa PC, tanpa Gradle, tanpa internet wajib — sepenuhnya berbahasa Indonesia.
 
-**Status: v0.21.0** · 356 uji unit · 142 uji perangkat · detekt 0 temuan · Android 7.0+ (API 24)
+**Status: v0.22.0** · 374 uji unit · 142 uji perangkat · detekt 0 temuan · Android 7.0+ (API 24)
 
 Dokumen ini adalah **indeks dan peta status**. Detail ada di `docs/`; riwayat rilis ada di [`docs/02-roadmap-milestone.md`](docs/02-roadmap-milestone.md).
 
@@ -14,7 +14,7 @@ Dokumen ini adalah **indeks dan peta status**. Detail ada di `docs/`; riwayat ri
 |---|---|---|
 | 0 | [`docs/00-visi-produk.md`](docs/00-visi-produk.md) | Untuk siapa, masalah apa, janji yang dipegang, dan yang sengaja tidak dikerjakan |
 | 1 | [`docs/01-arsitektur-teknis.md`](docs/01-arsitektur-teknis.md) | Modul, pipeline 9 langkah, aliran galat, AI + konteks otomatis, Git, rahasia, verifikasi |
-| 2 | [`docs/02-roadmap-milestone.md`](docs/02-roadmap-milestone.md) | Riwayat v0.1.0 → v0.21.0 dan langkah berikutnya menurut risiko |
+| 2 | [`docs/02-roadmap-milestone.md`](docs/02-roadmap-milestone.md) | Riwayat v0.1.0 → v0.22.0 dan langkah berikutnya menurut risiko |
 | 3 | [`docs/03-adr.md`](docs/03-adr.md) | 41 ADR + tabel "kalau Anda bertanya X, baca nomor ini" |
 | 4 | [`docs/04-backlog-agent-matrix.md`](docs/04-backlog-agent-matrix.md) | Agen/skill yang dipakai, backlog per milestone, gate yang tidak boleh dilewati |
 | 5 | [`docs/05-toolchain-di-perangkat.md`](docs/05-toolchain-di-perangkat.md) | Versi alat, alasan pin, cara verifikasi ulang |
@@ -38,18 +38,18 @@ Dokumen ini adalah **indeks dan peta status**. Detail ada di `docs/`; riwayat ri
 3. **Native Kotlin + Jetpack Compose**, `minSdk 24`, dua ABI (`arm64-v8a`, `armeabi-v7a`). Bukan WebView: editor harus 60 fps di HP kelas bawah.
 4. **Lokal-first.** Folder projek di penyimpanan internal adalah sumber kebenaran. AI, Git, dan GitHub hanya menyala bila pengguna mengisinya.
 5. **Java dulu, Kotlin tidak.** Tier 0 mengompilasi Java 8. Kotlin butuh compiler 70 MB+ atau JVM penuh — ditolak dengan alasan di ADR-003.
-6. **AI BYOK + konteks otomatis** (ADR-023, v0.21.0): kunci milik pengguna, tanpa server perantara; `PetaProjek` + `PemilihKonteks` memilih berkas relevan secara deterministik — tanpa embeddings, tanpa server.
+6. **AI BYOK + konteks otomatis** (ADR-023, v0.22.0): kunci milik pengguna, tanpa server perantara; `PetaProjek` + `PemilihKonteks` memilih berkas relevan secara deterministik — tanpa embeddings, tanpa server.
 
 ## 3. Angka yang mengikat (terukur, bukan target)
 
 | Metrik | Angka | Sumber |
 |---|---|---|
-| Ukuran APK rilis | **32.896.476 bita** | rilis v0.21.0 (`KodeNusa-0.21.0.apk`) |
+| Ukuran APK rilis | **32.896.476 bita** | rilis v0.22.0 (`KodeNusa-0.22.0.apk`) |
 | RAM menganggur | **66–67 MB PSS** | emulator API 35 (HP fisik belum) |
 | Build template hangat | **1,4–1,9 s** | emulator, 9 template |
 | Build pertama setelah pasang | **21,4 s** | penyalinan `android.jar` 24 MB |
 | Cold start editor | **≈ 0,4 s** | emulator |
-| Uji unit / perangkat | **356 / 142** | `./gradlew test` · `:app:connectedDebugAndroidTest` |
+| Uji unit / perangkat | **374 / 142** | `./gradlew test` · `:app:connectedDebugAndroidTest` |
 | Eval agen nyata | **9/10**, median 18,6–41,8 s | [docs/07](docs/07-eval-agen.md), model GLM-5.3-Flash |
 
 ## 4. Cara menjaga rencana ini jujur
@@ -84,6 +84,7 @@ Milestone **tidak** ditandai selesai tanpa exit criteria dijalankan dan exit cod
 | 0.19.0 | Agen putaran pilihan (eval nyata 9/10), "template saya", galeri komunitas |
 | 0.20.0 | Papan projek AI (`PetaProjek`/`PemilihKonteks`), chip "Pelajari projek" |
 | **0.21.0** | **Gutter diperombak total + konteks otomatis terverifikasi di projek besar + mode belajar (2 template) + cadangan otomatis harian + endpoint AI cadangan (failover 503) + lampiran log galat build** |
+| **0.22.0** | **AI tulis berkas otomatis di chat biasa: format `<<<BERKAS:>>>` diajarkan di semua jalur chat, aturan satu-berkas-satu-jenis (anti HTML-dalam-JS), template web diperjelas, dialog "buat berkas baru" terisi otomatis, + 12 test lama yang mati dihidupkan** |
 
 Riwayat lengkap per rilis: [`docs/02-roadmap-milestone.md`](docs/02-roadmap-milestone.md).
 

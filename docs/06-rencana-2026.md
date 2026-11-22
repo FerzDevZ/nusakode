@@ -2,7 +2,7 @@
 
 Dokumen ini dulu berisi target v0.7/v1.0. Sekarang isinya **apa yang benar-benar terjadi**, karena rencana yang tidak diperbarui lebih berbahaya daripada tidak ada rencana: ia membuat orang (termasuk kami) mengira sesuatu sudah selesai.
 
-**Baseline hari ini: v0.21.0** — 356 uji unit, 142 uji perangkat, detekt 0, APK rilis 32,9 MB, 9 template APK terbukti terbangun, konteks otomatis AI aktif.
+**Baseline hari ini: v0.22.0** — 374 uji unit, 142 uji perangkat, detekt 0, APK rilis 32,9 MB, 9 template APK terbukti terbangun, konteks otomatis AI aktif.
 
 ---
 
@@ -16,14 +16,14 @@ Dokumen ini dulu berisi target v0.7/v1.0. Sekarang isinya **apa yang benar-benar
 
 ## 2. Ukuran keberhasilan: target lama vs kenyataan
 
-| Ukuran | Target lama | Kenyataan 0.21.0 | Catatan |
+| Ukuran | Target lama | Kenyataan 0.22.0 | Catatan |
 |---|---|---|---|
 | Ukuran APK | ≤ 30 MB | **32,9 MB** | Target itu ditolak sendiri oleh ADR-028: `android.jar` adalah classpath kompilasi. Memangkasnya membuat kode sah gagal dikompilasi |
 | RAM menganggur | ≤ 120 MB | **66–67 MB** (emulator) | HP fisik belum diukur (todo #10, skrip siap) |
 | Buka projek → editor | ≤ 1,5 s | ≈ 0,4 s (emulator) | |
 | Build template hangat | ≤ 10 s | **1,4–1,9 s** | |
 | Tugas agen selesai tanpa sentuh | ≥ 85% | **9/10 (90%)** | Dua putaran nyata 21 Nov 2026, model `GLM-5.3-Flash` — lihat [docs/07](07-eval-agen.md) |
-| Uji unit / perangkat | ≥ 300 / ≥ 60 | **356 / 142** | Keduanya melewati target |
+| Uji unit / perangkat | ≥ 300 / ≥ 60 | **374 / 142** | Keduanya melewati target |
 | Android 7+ | 100% fitur | 100% | Diuji di API 24, 34, 35 |
 
 ## 3. Status tiap langkah rencana lama
@@ -57,7 +57,7 @@ Dokumen ini dulu berisi target v0.7/v1.0. Sekarang isinya **apa yang benar-benar
 | A3 | Layar Agen (tugas, hentikan, log, hasil) | ✅ `AgenScreen`, `AgenUiTest` |
 | A4 | Batas putaran 3/5, 12 berkas, timeout, pembatalan | ✅ `AgenBuild`, `EvalAgenJalurTest` |
 | A5 | Evaluasi 10 tugas | ✅ **9/10 dua putaran nyata** (21 Nov 2026) — [docs/07](07-eval-agen.md) |
-| A6 | **Konteks otomatis seluruh projek** (v0.21.0) | ✅ `PetaProjek` + `PemilihKonteks` + `KonteksOtomatis`; tombol "Pelajari projek" |
+| A6 | **Konteks otomatis seluruh projek** (v0.22.0) | ✅ `PetaProjek` + `PemilihKonteks` + `KonteksOtomatis`; tombol "Pelajari projek" |
 
 ### Fase 4 — Keamanan & ukuran
 
@@ -74,7 +74,7 @@ Dokumen ini dulu berisi target v0.7/v1.0. Sekarang isinya **apa yang benar-benar
 | E1 | Cari & ganti seluruh projek | ✅ `ProjectSearch` + `GantiSemuaUiTest` |
 | E2 | Palet perintah | ✅ `PaletPerintah`, uji UI (ADR-031) |
 | E3 | Tab multi-berkas | ✅ `EditorSession` |
-| E4 | **Gutter digambar ulang penuh** (v0.21.0) | ✅ `GutterView`/`GutterModel`, `GutterDeviceTest`, bukti layar `bukti/gutter-sesudah.png` |
+| E4 | **Gutter digambar ulang penuh** (v0.22.0) | ✅ `GutterView`/`GutterModel`, `GutterDeviceTest`, bukti layar `bukti/gutter-sesudah.png` |
 
 ### Fase 6 — Bukti di HP nyata
 

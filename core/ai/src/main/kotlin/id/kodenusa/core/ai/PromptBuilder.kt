@@ -23,7 +23,9 @@ object PromptBuilder {
         "dipakai.\n\n" +
         "Aturan wajib:\n" +
         "1. Jawab dalam bahasa Indonesia yang sederhana. Jangan bertele-tele.\n" +
-        "2. Kode selalu di dalam blok berpagar (```java ... ```). Sebut nama berkasnya di atas blok.\n" +
+        "2. Kode selalu di dalam blok berpagar dengan bahasa yang BENAR: ```java untuk Java, " +
+        "```html untuk HTML, ```css untuk CSS, ```js untuk JavaScript, ```xml untuk XML. " +
+        "Sebut nama berkasnya di atas blok.\n" +
         "3. Projek ini di-build tanpa Gradle: hanya Java 8, minSdk 24, tanpa AndroidX, tanpa Kotlin, " +
         "tanpa library pihak ketiga. Jangan pernah menyarankan Kotlin, Jetpack Compose, Gradle, atau " +
         "dependensi baru. Gunakan API framework Android yang ada sejak API 24.\n" +
@@ -66,14 +68,25 @@ object PromptBuilder {
     /**
      * Pertanyaan umum dengan konteks OTOMATIS: peta projek + berkas pilihan mesin dikirim
      * lebih dulu (awalan stabil — ramah kuota), pertanyaan pengguna paling akhir.
+     *
+     * Sejak v0.22.0 format `<<<BERKAS: ...>>>` diajarkan DI SINI juga — bukan hanya di jalur
+     * agen. Keluhan pengguna nyata: minta "buat web login register" di chat, model balas blok
+     * kode biasa, satu-satunya jalan pengguna adalah tombol "Masukkan kode ke berkas" yang
+     * menyuntik SATU blok ke berkas AKTIF — seluruh HTML/CSS nyangkut di aplikasi.js. Dengan
+     * mengajarkan penanda di chat, tombol "Simpan berkas dari jawaban ini ke projek" (yang sudah
+     * ada) otomatis muncul dan tiap berkas ditulis ke jalurnya sendiri.
      */
     fun untukTanyaOtomatis(
         pertanyaan: String,
         petaProjek: String,
         berkas: List<Pair<String, String>>,
         hemat: Boolean = false,
+        templat: String? = null,
+        denganAturanBerkas: Boolean = true,
     ): List<ChatMessage> = buildList {
         add(pesanSistem())
+        // "Pelajari projek" tidak butuh aturan tulis berkas (hanya minta ringkasan) — hemat kuota.
+        if (denganAturanBerkas) add(ChatMessage(ChatMessage.Peran.SISTEM, ATURAN_AGEN))
         val isi = StringBuilder()
         isi.append(potong(petaProjek, if (hemat) BATAS_KONTEKS_HEMAT else BATAS_PETA))
         if (berkas.isNotEmpty()) {
@@ -84,6 +97,7 @@ object PromptBuilder {
             }
         }
         isi.append("\n\nPertanyaan pengguna: ").append(pertanyaan.trim())
+        if (templat != null) isi.append("\n\n").append(templat)
         add(ChatMessage(ChatMessage.Peran.PENGGUNA, isi.toString()))
     }
 
@@ -101,6 +115,7 @@ object PromptBuilder {
             petaProjek,
             berkas,
             hemat = false,
+            denganAturanBerkas = false,
         )
 
     /**
@@ -203,10 +218,16 @@ object PromptBuilder {
         "web-katalog" ->
             "Struktur template web-katalog: WebView di src/main/java/app/MainActivity.java memuat " +
                 "halaman di src/main/assets/ (index.html, gaya.css, aplikasi.js). Ubah isi web di " +
-                "folder assets, bukan di Java, kalau perubahan hanya tampilan."
+                "folder assets, bukan di Java, kalau perubahan hanya tampilan. ATURAN WEB: halaman " +
+                "HTML ditulis di berkas .html sendiri di assets/ (bukan di dalam aplikasi.js), gaya " +
+                "di gaya.css, logika di aplikasi.js."
         "situs-murni" ->
             "Projek web murni tanpa Activity: web/index.html, web/gaya.css, web/aplikasi.js. " +
-                "Tidak ada kode Java dan tidak ada build APK di projek ini."
+                "Tidak ada kode Java dan tidak ada build APK di projek ini. ATURAN WEB: halaman HTML " +
+                "ditulis di berkas .html sendiri (login.html, register.html, dst. — bukan di dalam " +
+                "aplikasi.js), gaya di gaya.css, logika di aplikasi.js. Halaman baru dibuat sebagai " +
+                "berkas .html baru di folder web/ dan dihubungkan dengan <a href=\"login.html\">. " +
+                "Simpan data lokal memakai localStorage."
         "kosong" ->
             "Projek kosong: satu MainActivity.java di src/main/java/<paket>/, manifest Android, " +
                 "layout res/layout/activity_main.xml, dan res/values/strings.xml."
@@ -225,7 +246,11 @@ object PromptBuilder {
         "Kotlin, Gradle, AndroidX, atau library pihak ketiga. Membuat berkas BARU diperbolehkan bila " +
         "tugasnya membutuhkan: tulis jalur lengkap termasuk foldernya (mis. " +
         "src/main/java/app/LayarKedua.java) dan aplikasi akan membuat foldernya otomatis. Kalau " +
-        "tugas tidak mungkin di Tier 0, tulis penjelasannya tanpa penanda berkas sama sekali."
+        "tugas tidak mungkin di Tier 0, tulis penjelasannya tanpa penanda berkas sama sekali.\n\n" +
+        "Satu berkas satu jenis: HTML di berkas .html, CSS di berkas .css, JavaScript di berkas .js, " +
+        "Java di berkas .java, XML di berkas .xml. DILARANG menaruh HTML atau CSS di dalam string " +
+        "JavaScript; setiap halaman web berkas sendiri (mis. login.html, register.html, index.html " +
+        "yang saling terhubung lewat <a href> atau location.href)."
 
     /** Pertanyaan bebas tanpa berkas terbuka. */
     fun untukTanya(pertanyaan: String): List<ChatMessage> = listOf(
@@ -296,6 +321,32 @@ object CodeBlocks {
 
     /** Blok terpanjang — biasanya itulah berkas utuh yang dimaksud, bukan potongan contoh. */
     fun terbesar(jawaban: String): BlokKode? = ambil(jawaban).maxByOrNull { it.isi.length }
+
+    private val NAMA_BERKAS = Regex("[A-Za-z0-9_./-]+\\.(html|css|js|java|xml|json)")
+
+    /**
+     * Menebak jalur berkas dari jawaban model untuk mengisi otomatis dialog "Buat berkas baru".
+     * Prioritas: penanda `<<<BERKAS: ...>>>` pertama, lalu nama berkas yang disebut di teks
+     * dengan jenis yang cocok dengan blok kodenya (blok html → berkas .html). Null berarti tidak
+     * ada petunjuk — pengguna menulis sendiri seperti dulu.
+     */
+    fun saranJalur(jawaban: String, bahasa: String): String? {
+        val penanda = Regex("<<<\\s*BERKAS\\s*:\\s*([^>\\n]+?)\\s*>>>", RegexOption.IGNORE_CASE)
+            .find(jawaban)?.groupValues?.get(1)?.trim()
+        if (!penanda.isNullOrEmpty()) return penanda
+        val ekstensi = when (bahasa.lowercase()) {
+            "java" -> "java"
+            "html" -> "html"
+            "css" -> "css"
+            "js", "javascript" -> "js"
+            "xml" -> "xml"
+            "json" -> "json"
+            else -> return null
+        }
+        return NAMA_BERKAS.findAll(jawaban)
+            .map { it.value }
+            .firstOrNull { it.substringAfterLast('.') == ekstensi }
+    }
 
     /** Membuang pagar kode supaya teks penjelasan bisa dibaca tanpa gangguan. */
     fun tanpaPagar(jawaban: String): String = PAGAR.replace(jawaban, "").trim()
