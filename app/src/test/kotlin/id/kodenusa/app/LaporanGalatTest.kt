@@ -42,12 +42,14 @@ class LaporanGalatTest {
 
     @Test
     fun `kunci ai dan api key umum juga disaring`() {
+        // Nilai di bawah PALSU (contoh format), bukan kunci sungguhan — kunci asli tidak pernah
+        // boleh masuk repositori.
         val teks = LaporanGalat.saringRahasia(
-            "Authorization: Bearer crown-27f7af7aab27f07dfe005f97c6549138\n" +
+            "Authorization: Bearer crown-0000000000000000000000000000\n" +
                 "api_key = sk-abc123def456ghi789\n" +
                 "password: rahasia123",
         )
-        assertFalse(teks.contains("crown-27f7"), teks)
+        assertFalse(teks.contains("crown-0000"), teks)
         assertFalse(teks.contains("sk-abc123"), teks)
         assertFalse(teks.contains("rahasia123"), teks)
         assertEquals(3, Regex("<disembunyikan>").findAll(teks).count())

@@ -79,6 +79,41 @@ Sama seperti `.py`: saat pengguna membuka `.kt`, jelaskan bahwa Tier 0 hanya Jav
 Rencana v0.12 dan kandidat setelahnya disusun terpisah: lihat [`11-rencana-v0.12.md`](11-rencana-v0.12.md).
 
 
+## v0.20.0 — perombakan editor & AI paham projek (21 November 2026)
+
+Dua keluhan pengguna dituntaskan sampai akar penyebabnya:
+
+- **Gutter nomor baris diperombak total** (keluhan: "nomor cuma 1 / 1–33 lalu hitam"). Akar: cache `lineCount` dibaca sebelum layout dibangun. Kini `GutterView` custom View melukis dari `Layout` hidup tiap gambar — akurat saat scroll, wrap, ganti ukuran font; baris kursor disorot. Bukti layar di `bukti/`.
+- **AI mempelajari seluruh projek tanpa pilih berkas 1-1** (keluhan: "masa kita harus pilih di editor 1-1"). `PetaProjek` menyusun peta (identitas, daftar berkas berperan, kerangka kelas/metode/resource); `PemilihKonteks` memilih berkas relevan dari pertanyaan (skor leksikal + bobot kepentingan, deterministik, tanpa server). Tombol **Pelajari projek** + info jujur "N dari M berkas · X karakter".
+- **Mode belajar** (docs/14 3.3): pelajaran langkah-demi-langkah per template, progres tersimpan per projek.
+- Flake `PasangApkDeviceTest` dituntaskan akar-cause: back otomatis membatalkan pemasang; kini back hanya saat fokus Setelan + bukti dump di pesan gagal.
+- 354 uji unit · 140 uji perangkat · detekt 0.
+
+## v0.19.0 — agen putaran pilihan & galeri komunitas (21 November 2026)
+
+- Agen build dengan **putaran pilihan**: batas putaran 3/5 + estimasi kuota sebelum mulai; evaluasi agen nyata 9/10 tugas ([docs/07-eval-agen.md](07-eval-agen.md)).
+- **Template saya**: scaffold AI dari deskripsi singkat → projek siap build.
+- **Galeri komunitas**: impor template `.zip` dengan gerbang SHA-256 + penolakan zip-slip.
+- Housekeeping docs/06: status nyata semua rencana.
+- 312 uji unit · 129 uji perangkat · detekt 0.
+
+## v0.18.0 — ekspor CSV & 3 template baru (21 November 2026)
+
+- **Ekspor CSV** dari template berbasis database (satu sumber aset `Csv.java` bersama).
+- Template baru: **Jurnal Harian**, **Stok Barang**, **Kuis Pelajaran** (total 10 template).
+- **Cadangkan semua projek** ke satu `.zip` (SAF), beserta pemulihannya.
+- 3 template baru membawa uji perangkat masing-masing.
+
+## v0.17.0 — editor makin tajam & kunci milik pengguna (21 November 2026)
+
+- **versionCode otomatis** dari penghitung versi (tidak lagi diedit manual per rilis).
+- **Ukuran font editor** bisa diatur 14–24 sp (tersimpan, uji perangkat).
+- **Buka berkas cepat** lewat palet: cari nama berkas di seluruh projek.
+- **Lengkapi kata** dari kumpulan kata berkas terbuka.
+- **Ikon aplikasi hasil build** dari gambar pengguna + **riwayat berkas** yang baru dibuka.
+- **Tombol Pasang**: APK hasil build langsung dipasang lewat pemasang Android.
+- **Kunci tanda tangan pengguna** (ADR-041): impor keystore `.jks` sendiri lewat SAF.
+
 ## v0.16.0 — polesan UI/UX penuh & template baru (21 November 2026)
 
 Semua paket dari [`13-rencana-ui-ux.md`](13-rencana-ui-ux.md) terlaksana:
